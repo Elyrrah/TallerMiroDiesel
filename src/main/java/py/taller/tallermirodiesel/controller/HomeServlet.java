@@ -1,4 +1,4 @@
-package py.taller.tallermirodiesel;
+package py.taller.tallermirodiesel.controller;
 
 import java.io.IOException;
 import jakarta.servlet.RequestDispatcher;
