@@ -1,0 +1,1938 @@
+-- -- ======================================================================================================================
+-- 02 DATA
+-- INCLUYE: GEOGRAFÍA + TIPOS_DOCUMENTOS + MARCAS + MODELOS + USUARIO DESARROLLADOR
+-- -- ======================================================================================================================
+
+-- Incluye: configuración, tablas, secuencias, defaults y constraints
+Begin;
+-- =============================================================================
+-- PAISES (AMERICA)
+--
+-- Nota:
+--   Se cargan solo paises del continente americano para mantener el sistema simple.
+--   La clave natural utilizada es iso2.
+--   El INSERT es idempotente: si el pais ya existe, se actualizan nombre e iso3.
+-- =============================================================================
+INSERT INTO public.paises (nombre, iso2, iso3)
+VALUES
+('PARAGUAY', 'PY', 'PRY'),
+('ARGENTINA', 'AR', 'ARG'),
+('BRASIL', 'BR', 'BRA'),
+('URUGUAY', 'UY', 'URY'),
+('CHILE', 'CL', 'CHL'),
+('BOLIVIA', 'BO', 'BOL'),
+('PERU', 'PE', 'PER'),
+('COLOMBIA', 'CO', 'COL'),
+('ECUADOR', 'EC', 'ECU'),
+('VENEZUELA', 'VE', 'VEN'),
+('GUYANA', 'GY', 'GUY'),
+('SURINAME', 'SR', 'SUR'),
+('ESTADOS UNIDOS', 'US', 'USA'),
+('CANADA', 'CA', 'CAN'),
+('MEXICO', 'MX', 'MEX'),
+('COSTA RICA', 'CR', 'CRI'),
+('PANAMA', 'PA', 'PAN'),
+('CUBA', 'CU', 'CUB'),
+('REPUBLICA DOMINICANA', 'DO', 'DOM'),
+('HAITI', 'HT', 'HTI')
+ON CONFLICT (iso2) DO UPDATE
+SET nombre = EXCLUDED.nombre,
+    iso3   = EXCLUDED.iso3;
+
+-- =============================================================================
+-- DEPARTAMENTOS
+-- Nota:
+--   Se cargan departamentos/estados/provincias.
+--   No se usan IDs fijos: se resuelve id_pais por iso2.
+--   Idempotente sin requerir UNIQUE adicional: evita duplicados con WHERE NOT EXISTS.
+--   Normalizacion de texto:
+--     - Se mantienen letras especiales (Ñ, Ã, Õ, Ç).
+--     - Se eliminan tildes agudas (Á, É, Í, Ó, Ú) para facilitar busquedas.
+-- =============================================================================
+
+INSERT INTO public.departamentos (id_pais, nombre)
+SELECT p.id_pais, d.nombre
+FROM (
+    -- ----------------------
+    -- PARAGUAY
+    -- ----------------------
+    SELECT 'PY' AS iso2, unnest(ARRAY[
+        'CONCEPCION',
+        'SAN PEDRO',
+        'CORDILLERA',
+        'GUAIRA',
+        'CAAGUAZU',
+        'CAAZAPA',
+        'ITAPUA',
+        'MISIONES',
+        'PARAGUARI',
+        'ALTO PARANA',
+        'CENTRAL',
+        'ÑEEMBUCU',
+        'AMAMBAY',
+        'CANINDEYU',
+        'PRESIDENTE HAYES',
+        'BOQUERON',
+        'ALTO PARAGUAY',
+        'CAPITAL'
+    ]) AS nombre
+
+    UNION ALL
+
+    -- ----------------------
+    -- ARGENTINA
+    -- ----------------------
+    SELECT 'AR', unnest(ARRAY[
+        'BUENOS AIRES',
+        'CIUDAD AUTONOMA DE BUENOS AIRES',
+        'CATAMARCA',
+        'CHACO',
+        'CHUBUT',
+        'CORDOBA',
+        'CORRIENTES',
+        'ENTRE RIOS',
+        'FORMOSA',
+        'JUJUY',
+        'LA PAMPA',
+        'LA RIOJA',
+        'MENDOZA',
+        'MISIONES',
+        'NEUQUEN',
+        'RIO NEGRO',
+        'SALTA',
+        'SAN JUAN',
+        'SAN LUIS',
+        'SANTA CRUZ',
+        'SANTA FE',
+        'SANTIAGO DEL ESTERO',
+        'TIERRA DEL FUEGO',
+        'TUCUMAN'
+    ])
+
+    UNION ALL
+
+    -- ----------------------
+    -- BRASIL
+    -- ----------------------
+    SELECT 'BR', unnest(ARRAY[
+        'ACRE',
+        'ALAGOAS',
+        'AMAPA',
+        'AMAZONAS',
+        'BAHIA',
+        'CEARA',
+        'DISTRITO FEDERAL',
+        'ESPIRITO SANTO',
+        'GOIAS',
+        'MARANHÃO',
+        'MATO GROSSO',
+        'MATO GROSSO DO SUL',
+        'MINAS GERAIS',
+        'PARA',
+        'PARAIBA',
+        'PARANA',
+        'PERNAMBUCO',
+        'PIAUI',
+        'RIO DE JANEIRO',
+        'RIO GRANDE DO NORTE',
+        'RIO GRANDE DO SUL',
+        'RONDONIA',
+        'RORAIMA',
+        'SANTA CATARINA',
+        'SÃO PAULO',
+        'SERGIPE',
+        'TOCANTINS'
+    ])
+) d
+JOIN public.paises p ON p.iso2 = d.iso2
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM public.departamentos dep
+    WHERE dep.id_pais = p.id_pais
+      AND dep.nombre = d.nombre
+);
+
+-- =============================================================================
+-- CIUDADES
+-- Nota:
+--   Carga masiva de ciudades por departamento.
+--   Idempotente gracias a UNIQUE (id_departamento, nombre) y ON CONFLICT DO NOTHING.
+--   Normalizacion:
+--     - Se mantienen letras especiales (Ñ, Ã, Õ, Ç).
+--     - Se eliminan tildes agudas (Á, É, Í, Ó, Ú).
+-- =============================================================================
+
+INSERT INTO public.ciudades (id_departamento, nombre, activo)
+SELECT d.id_departamento, v.ciudad, true
+FROM (
+  VALUES
+    ('ALTO PARAGUAY','BAHIA NEGRA'),
+    ('ALTO PARAGUAY','CARMELO PERALTA'),
+    ('ALTO PARAGUAY','FUERTE OLIMPO'),
+    ('ALTO PARAGUAY','PUERTO CASADO'),
+
+    ('ALTO PARANA','CIUDAD DEL ESTE'),
+    ('ALTO PARANA','DOMINGO MARTINEZ DE IRALA'),
+    ('ALTO PARANA','DR. JUAN LEON MALLORQUIN'),
+    ('ALTO PARANA','DR. RAUL PENA'),
+    ('ALTO PARANA','HERNANDARIAS'),
+    ('ALTO PARANA','IRUNA'),
+    ('ALTO PARANA','ITAKYRY'),
+    ('ALTO PARANA','JUAN E. O''LEARY'),
+    ('ALTO PARANA','LOS CEDRALES'),
+    ('ALTO PARANA','MBARACAYU'),
+    ('ALTO PARANA','MINGA GUAZU'),
+    ('ALTO PARANA','MINGA PORA'),
+    ('ALTO PARANA','NACUNDAY'),
+    ('ALTO PARANA','NARANJAL'),
+    ('ALTO PARANA','PRESIDENTE FRANCO'),
+    ('ALTO PARANA','SAN ALBERTO'),
+    ('ALTO PARANA','SAN CRISTOBAL'),
+    ('ALTO PARANA','SANTA FE DEL PARANA'),
+    ('ALTO PARANA','SANTA RITA'),
+    ('ALTO PARANA','SANTA ROSA DEL MONDAY'),
+    ('ALTO PARANA','TAVAPY'),
+    ('ALTO PARANA','YGUAZU'),
+
+    ('AMAMBAY','BELLA VISTA'),
+    ('AMAMBAY','CAPITAN BADO'),
+    ('AMAMBAY','KARAPAI'),
+    ('AMAMBAY','PEDRO JUAN CABALLERO'),
+    ('AMAMBAY','ZANJA PYTÃ'),
+
+    ('CAPITAL','ASUNCION'),
+
+    ('BOQUERON','FILADELFIA'),
+    ('BOQUERON','LOMA PLATA'),
+    ('BOQUERON','MARISCAL JOSE FELIX ESTIGARRIBIA'),
+
+    ('CAAGUAZU','3 DE FEBRERO'),
+    ('CAAGUAZU','CAAGUAZU'),
+    ('CAAGUAZU','CARAYAO'),
+    ('CAAGUAZU','CORONEL OVIEDO'),
+    ('CAAGUAZU','DR. CECILIO BAEZ'),
+    ('CAAGUAZU','DR. J. EULOGIO ESTIGARRIBIA'),
+    ('CAAGUAZU','DR. JUAN MANUEL FRUTOS'),
+    ('CAAGUAZU','JOSE DOMINGO OCAMPOS'),
+    ('CAAGUAZU','LA PASTORA'),
+    ('CAAGUAZU','MARISCAL FRANCISCO SOLANO LOPEZ'),
+    ('CAAGUAZU','NUEVA LONDRES'),
+    ('CAAGUAZU','NUEVA TOLEDO'),
+    ('CAAGUAZU','R.I. 3 CORRALES'),
+    ('CAAGUAZU','RAUL ARSENIO OVIEDO'),
+    ('CAAGUAZU','REPATRIACION'),
+    ('CAAGUAZU','SAN JOAQUIN'),
+    ('CAAGUAZU','SAN JOSE DE LOS ARROYOS'),
+    ('CAAGUAZU','SANTA ROSA DEL MBUTUY'),
+    ('CAAGUAZU','SIMON BOLIVAR'),
+    ('CAAGUAZU','TEMBIAPORA'),
+    ('CAAGUAZU','VAQUERIA'),
+    ('CAAGUAZU','YHU'),
+
+    ('CAAZAPA','3 DE MAYO'),
+    ('CAAZAPA','ABAI'),
+    ('CAAZAPA','BUENA VISTA'),
+    ('CAAZAPA','CAAZAPA'),
+    ('CAAZAPA','DR. MOISES S. BERTONI'),
+    ('CAAZAPA','GRAL. HIGINIO MORINIGO'),
+    ('CAAZAPA','MACIEL'),
+    ('CAAZAPA','SAN JUAN NEPOMUCENO'),
+    ('CAAZAPA','TAVAI'),
+    ('CAAZAPA','YEGROS'),
+    ('CAAZAPA','YUTY'),
+
+    ('CANINDEYU','CORPUS CHRISTI'),
+    ('CANINDEYU','FRANCISCO CABALLERO ALVAREZ'),
+    ('CANINDEYU','ITANARA'),
+    ('CANINDEYU','KATUETE'),
+    ('CANINDEYU','LA PALOMA DEL ESPIRITU SANTO'),
+    ('CANINDEYU','NUEVA ESPERANZA'),
+    ('CANINDEYU','SALTO DEL GUAIRA'),
+    ('CANINDEYU','VILLA CURUGUATY'),
+    ('CANINDEYU','VILLA YGATIMI'),
+    ('CANINDEYU','YASY CANY'),
+    ('CANINDEYU','YBY PYTA'),
+    ('CANINDEYU','YBYRAROBANA'),
+    ('CANINDEYU','YPEJHU'),
+
+    ('CENTRAL','AREGUA'),
+    ('CENTRAL','CAPIATA'),
+    ('CENTRAL','FERNANDO DE LA MORA'),
+    ('CENTRAL','GUARAMBARE'),
+    ('CENTRAL','ITA'),
+    ('CENTRAL','ITAUGUA'),
+    ('CENTRAL','J. AUGUSTO SALDIVAR'),
+    ('CENTRAL','LAMBARE'),
+    ('CENTRAL','LIMPIO'),
+    ('CENTRAL','LUQUE'),
+    ('CENTRAL','MARIANO ROQUE ALONSO'),
+    ('CENTRAL','NEMBY'),
+    ('CENTRAL','NUEVA ITALIA'),
+    ('CENTRAL','SAN ANTONIO'),
+    ('CENTRAL','SAN LORENZO'),
+    ('CENTRAL','VILLA ELISA'),
+    ('CENTRAL','VILLETA'),
+    ('CENTRAL','YPACARAI'),
+    ('CENTRAL','YPANE'),
+
+    ('CONCEPCION','AZOTE''Y'),
+    ('CONCEPCION','BELEN'),
+    ('CONCEPCION','CONCEPCION'),
+    ('CONCEPCION','HORQUETA'),
+    ('CONCEPCION','LORETO'),
+    ('CONCEPCION','PASO BARRETO'),
+    ('CONCEPCION','SAN ALFREDO'),
+    ('CONCEPCION','SAN CARLOS DEL APA'),
+    ('CONCEPCION','SAN LAZARO'),
+    ('CONCEPCION','SARGENTO JOSE FELIX LOPEZ'),
+    ('CONCEPCION','YBY YAU'),
+
+    ('CORDILLERA','ALTOS'),
+    ('CORDILLERA','ARROYOS Y ESTEROS'),
+    ('CORDILLERA','ATYRA'),
+    ('CORDILLERA','CAACUPE'),
+    ('CORDILLERA','CARAGUATAY'),
+    ('CORDILLERA','EMBOSCADA'),
+    ('CORDILLERA','EUSEBIO AYALA'),
+    ('CORDILLERA','ISLA PUCU'),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA'),
+    ('CORDILLERA','JUAN DE MENA'),
+    ('CORDILLERA','LOMA GRANDE'),
+    ('CORDILLERA','MBOCAYATY DEL YHAGUY'),
+    ('CORDILLERA','NUEVA COLOMBIA'),
+    ('CORDILLERA','PIRIBEBUY'),
+    ('CORDILLERA','PRIMERO DE MARZO'),
+    ('CORDILLERA','SAN BERNARDINO'),
+    ('CORDILLERA','SAN JOSE OBRERO'),
+    ('CORDILLERA','SANTA ELENA'),
+    ('CORDILLERA','TOBATI'),
+    ('CORDILLERA','VALENZUELA'),
+
+    ('GUAIRA','BORJA'),
+    ('GUAIRA','CAPITAN MAURICIO JOSE TROCHE'),
+    ('GUAIRA','CORONEL MARTINEZ'),
+    ('GUAIRA','DOCTOR BOTTRELL'),
+    ('GUAIRA','FELIX PEREZ CARDOZO'),
+    ('GUAIRA','GRAL. EUGENIO A. GARAY'),
+    ('GUAIRA','INDEPENDENCIA'),
+    ('GUAIRA','ITAPE'),
+    ('GUAIRA','ITURBE'),
+    ('GUAIRA','JOSE FASSARDI'),
+    ('GUAIRA','MBOCAYATY'),
+    ('GUAIRA','NATALICIO TALAVERA'),
+    ('GUAIRA','NUMI'),
+    ('GUAIRA','PASO YOBAI'),
+    ('GUAIRA','SAN SALVADOR'),
+    ('GUAIRA','TEBICUARY'),
+    ('GUAIRA','VILLARRICA'),
+    ('GUAIRA','YATAITY'),
+
+    ('ITAPUA','ALTO VERA'),
+    ('ITAPUA','BELLA VISTA'),
+    ('ITAPUA','CAMBYRETA'),
+    ('ITAPUA','CAPITAN MEZA'),
+    ('ITAPUA','CAPITAN MIRANDA'),
+    ('ITAPUA','CARLOS ANTONIO LOPEZ'),
+    ('ITAPUA','CARMEN DEL PARANA'),
+    ('ITAPUA','CORONEL BOGADO'),
+    ('ITAPUA','EDELIRA'),
+    ('ITAPUA','ENCARNACION'),
+    ('ITAPUA','FRAM'),
+    ('ITAPUA','GENERAL ARTIGAS'),
+    ('ITAPUA','GENERAL DELGADO'),
+    ('ITAPUA','HOHENAU'),
+    ('ITAPUA','ITAPUA POTY'),
+    ('ITAPUA','JESUS'),
+    ('ITAPUA','JOSE LEANDRO OVIEDO'),
+    ('ITAPUA','LA PAZ'),
+    ('ITAPUA','MAYOR JULIO DIONISIO OTANO'),
+    ('ITAPUA','NATALIO'),
+    ('ITAPUA','NUEVA ALBORADA'),
+    ('ITAPUA','OBLIGADO'),
+    ('ITAPUA','PIRAPO'),
+    ('ITAPUA','SAN COSME Y DAMIAN'),
+    ('ITAPUA','SAN JUAN DEL PARANA'),
+    ('ITAPUA','SAN PEDRO DEL PARANA'),
+    ('ITAPUA','SAN RAFAEL DEL PARANA'),
+    ('ITAPUA','TOMAS ROMERO PEREIRA'),
+    ('ITAPUA','TRINIDAD'),
+    ('ITAPUA','YATYTAY'),
+
+    ('MISIONES','AYOLAS'),
+    ('MISIONES','SAN IGNACIO'),
+    ('MISIONES','SAN JUAN BAUTISTA DE LAS MISIONES'),
+    ('MISIONES','SAN MIGUEL'),
+    ('MISIONES','SAN PATRICIO'),
+    ('MISIONES','SANTA MARIA'),
+    ('MISIONES','SANTA ROSA'),
+    ('MISIONES','SANTIAGO'),
+    ('MISIONES','VILLA FLORIDA'),
+    ('MISIONES','YABEBYRY'),
+
+    ('ÑEEMBUCU','ALBERDI'),
+    ('ÑEEMBUCU','CERRITO'),
+    ('ÑEEMBUCU','DESMOCHADOS'),
+    ('ÑEEMBUCU','GRAL. JOSE EDUVIGIS DIAZ'),
+    ('ÑEEMBUCU','GUAZU-CUA'),
+    ('ÑEEMBUCU','HUMAITA'),
+    ('ÑEEMBUCU','ISLA UMBU'),
+    ('ÑEEMBUCU','LAURELES'),
+    ('ÑEEMBUCU','MAYOR JOSE DEJESUS MARTINEZ'),
+    ('ÑEEMBUCU','PASO DE PATRIA'),
+    ('ÑEEMBUCU','PILAR'),
+    ('ÑEEMBUCU','SAN JUAN BAUTISTA DE ÑEEMBUCU'),
+    ('ÑEEMBUCU','TACUARAS'),
+    ('ÑEEMBUCU','VILLA FRANCA'),
+    ('ÑEEMBUCU','VILLA OLIVA'),
+    ('ÑEEMBUCU','VILLALBIN'),
+
+    ('PARAGUARI','ACAHAY'),
+    ('PARAGUARI','CAAPUCU'),
+    ('PARAGUARI','CABALLERO'),
+    ('PARAGUARI','CARAPEGUA'),
+    ('PARAGUARI','ESCOBAR'),
+    ('PARAGUARI','LA COLMENA'),
+    ('PARAGUARI','MBUYAPEY'),
+    ('PARAGUARI','PARAGUARI'),
+    ('PARAGUARI','PIRAYU'),
+    ('PARAGUARI','QUIINDY'),
+    ('PARAGUARI','QUYQUYHO'),
+    ('PARAGUARI','ROQUE GONZALEZ DE SANTACRUZ'),
+    ('PARAGUARI','SAPUCAI'),
+    ('PARAGUARI','TEBICUARY-MI'),
+    ('PARAGUARI','YAGUARON'),
+    ('PARAGUARI','YBYCUI'),
+    ('PARAGUARI','YBYTYMI'),
+
+    ('PRESIDENTE HAYES','BENJAMIN ACEVAL'),
+    ('PRESIDENTE HAYES','GENERAL JOSE MARIA BRUGUEZ'),
+    ('PRESIDENTE HAYES','JOSE FALCON'),
+    ('PRESIDENTE HAYES','NANAWA'),
+    ('PRESIDENTE HAYES','PUERTO PINASCO'),
+    ('PRESIDENTE HAYES','TENIENTE ESTEBAN MARTINEZ'),
+    ('PRESIDENTE HAYES','TTE. 1° MANUEL IRALA FERNANDEZ'),
+    ('PRESIDENTE HAYES','VILLA HAYES'),
+
+    ('SAN PEDRO','25 DE DICIEMBRE'),
+    ('SAN PEDRO','ANTEQUERA'),
+    ('SAN PEDRO','CAPIIBARY'),
+    ('SAN PEDRO','CHORE'),
+    ('SAN PEDRO','GENERAL ELIZARDO AQUINO'),
+    ('SAN PEDRO','GENERAL FRANCISCO ISIDORO RESQUIN'),
+    ('SAN PEDRO','GUAJAYVI'),
+    ('SAN PEDRO','ITACURUBI DEL ROSARIO'),
+    ('SAN PEDRO','LIBERACION'),
+    ('SAN PEDRO','LIMA'),
+    ('SAN PEDRO','NUEVA GERMANIA'),
+    ('SAN PEDRO','SAN ESTANISLAO'),
+    ('SAN PEDRO','SAN PABLO'),
+    ('SAN PEDRO','SAN PEDRO DEL YCUAMANDYYU'),
+    ('SAN PEDRO','SANTA ROSA DEL AGUARAY'),
+    ('SAN PEDRO','TACUATI'),
+    ('SAN PEDRO','UNION'),
+    ('SAN PEDRO','VILLA DEL ROSARIO'),
+    ('SAN PEDRO','YATAITY DEL NORTE'),
+    ('SAN PEDRO','YRYBUCUA')
+) AS v(departamento, ciudad)
+JOIN public.departamentos d
+  ON d.nombre = v.departamento
+ON CONFLICT (id_departamento, nombre) DO NOTHING;
+
+-- =============================================================================
+-- DISTRITOS
+-- =============================================================================
+
+-- Cargar DISTRITOS (barrios/localidades) como 'distritos' vinculados a cada ciudad
+-- Fuente: DNIT/DGEEC 'Codigo de Referencia Geografica' (barrios/localidades).
+--
+-- Nota de normalizacion (segun lo que definiste):
+-- - Se mantienen letras especiales propias (Ñ, Ã, etc.).
+-- - Se evitan tildes agudas en general (A/E/I/O/U), para homogeneidad y evitar problemas de encoding.
+-- - Se corrigen caracteres rotos por encoding (ej: Ð -> Ñ, Ë -> O, etc.).
+--
+-- BEGIN;  -- removido: ya habia una transaccion en curso
+SET search_path = public;
+
+WITH cte_ciudad AS (
+  SELECT
+    c.id_ciudad,
+    UPPER(d.nombre) AS dep,
+    UPPER(c.nombre) AS ciu
+  FROM public.ciudades c
+  JOIN public.departamentos d ON d.id_departamento = c.id_departamento
+),
+cte_datos(dep, ciu, nombre, activo) AS (
+  VALUES
+    -- ALTO PARANA / CIUDAD DEL ESTE
+    ('ALTO PARANA','CIUDAD DEL ESTE','10 A 13 ACARAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','10 A 13 MONDAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','23 DE OCTUBRE',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','4 A 5 ACARAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','5 A 6 ACARAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','6 A 7,5 ACARAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','7 A 10 MONDAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','7,5 A 9 ACARAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','9 A 10 ACARAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','AMAMBAY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','AREA 1',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','AREA 8',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','BOQUERON',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','CIUDAD NUEVA',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','DON BOSCO',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','FATIMA',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','JUAN E''OLEARY',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','MICRO CENTRO',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','OBRERO',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','PABLO ROJAS',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','REMANSITO',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','SAN BLAS',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','SAN JOSE',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','SAN MIGUEL',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','SAN ROQUE',true),
+    ('ALTO PARANA','CIUDAD DEL ESTE','SANTA ANA',true),
+
+    -- ALTO PARANA / HERNANDARIAS
+    ('ALTO PARANA','HERNANDARIAS','AREA 6',true),
+    ('ALTO PARANA','HERNANDARIAS','AURORA',true),
+    ('ALTO PARANA','HERNANDARIAS','BELLA VISTA',true),
+    ('ALTO PARANA','HERNANDARIAS','CAACUPE-MI',true),
+    ('ALTO PARANA','HERNANDARIAS','FATIMA',true),
+    ('ALTO PARANA','HERNANDARIAS','MARIA MAGDALENA',true),
+    ('ALTO PARANA','HERNANDARIAS','MCAL. LOPEZ',true),
+    ('ALTO PARANA','HERNANDARIAS','NTRA. SRA. DE LA ASUNCION',true),
+    ('ALTO PARANA','HERNANDARIAS','NUEVA ESPERANZA',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN ANTONIO',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN CARLOS',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN FRANCISCO',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN JOSE',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN LORENZO',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN MIGUEL',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN PABLO',true),
+    ('ALTO PARANA','HERNANDARIAS','SAN RAMON',true),
+    ('ALTO PARANA','HERNANDARIAS','SANTO DOMINGO',true),
+
+    -- ALTO PARANA / ITAKYRY
+    ('ALTO PARANA','ITAKYRY','SAN JOSE',true),
+    ('ALTO PARANA','ITAKYRY','SANTA LIBRADA',true),
+
+    -- ALTO PARANA / JUAN LEON MALLORQUIN
+    ('ALTO PARANA','JUAN LEON MALLORQUIN','INMACULADA',true),
+    ('ALTO PARANA','JUAN LEON MALLORQUIN','SAN ANTONIO',true),
+    ('ALTO PARANA','JUAN LEON MALLORQUIN','SAN FRANCISCO',true),
+    ('ALTO PARANA','JUAN LEON MALLORQUIN','SANTA ROSA',true),
+
+    -- ALTO PARANA / LOS CEDRALES
+    ('ALTO PARANA','LOS CEDRALES','BARRIO B',true),
+    ('ALTO PARANA','LOS CEDRALES','BARRIO LOS LAURELES',true),
+    ('ALTO PARANA','LOS CEDRALES','FRACCION  LA ESPERANZA',true),
+    ('ALTO PARANA','LOS CEDRALES','FRACCION A',true),
+    ('ALTO PARANA','LOS CEDRALES','FRACCION AURORA',true),
+
+    -- ALTO PARANA / MINGA GUAZU
+    ('ALTO PARANA','MINGA GUAZU','CENTRO',true),
+    ('ALTO PARANA','MINGA GUAZU','DORITA',true),
+    ('ALTO PARANA','MINGA GUAZU','FRACCION NORMA LUISA',true),
+    ('ALTO PARANA','MINGA GUAZU','FRACCION SANTA MONICA',true),
+    ('ALTO PARANA','MINGA GUAZU','FRACCION YHAGUY',true),
+    ('ALTO PARANA','MINGA GUAZU','LOS ALAMOS',true),
+    ('ALTO PARANA','MINGA GUAZU','SCHNEIDER',true),
+    ('ALTO PARANA','MINGA GUAZU','VILLA NELIDA I',true),
+    ('ALTO PARANA','MINGA GUAZU','VILLA NELIDA II',true),
+
+    -- ALTO PARANA / MINGA PORA
+    ('ALTO PARANA','MINGA PORA','CENTRO',true),
+    ('ALTO PARANA','MINGA PORA','SANTA CECILIA',true),
+
+    -- ALTO PARANA / PRESIDENTE FRANCO
+    ('ALTO PARANA','PRESIDENTE FRANCO','AREA 5',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','FATIMA',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','FRAY LUIS BOLANOS',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','LAS MERCEDES',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','MARIA AUXILIADORA',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN ANTONIO',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN FRANCISCO',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN JOSE OBRERO',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN LORENZO',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN MIGUEL',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN MIGUEL-VILLA BAJA',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN PABLO-SAN JUAN',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN RAFAEL',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN ROQUE',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SAN SEBASTIAN',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SANTA ROSA',true),
+    ('ALTO PARANA','PRESIDENTE FRANCO','SANTO TOMAS',true),
+
+    -- ALTO PARANA / SANTA RITA
+    ('ALTO PARANA','SANTA RITA','BIRNFER',true),
+    ('ALTO PARANA','SANTA RITA','CARDOZO',true),
+    ('ALTO PARANA','SANTA RITA','EL COLONO',true),
+    ('ALTO PARANA','SANTA RITA','IMPERIAL',true),
+    ('ALTO PARANA','SANTA RITA','NUEVA ESPERANZA',true),
+    ('ALTO PARANA','SANTA RITA','NUEVA PLATA',true),
+    ('ALTO PARANA','SANTA RITA','NUEVA SANTA RITA',true),
+    ('ALTO PARANA','SANTA RITA','SAN RAMON',true),
+    ('ALTO PARANA','SANTA RITA','SHULTZ',true),
+
+    -- AMAMBAY / BELLA VISTA
+    ('AMAMBAY','BELLA VISTA','APA',true),
+    ('AMAMBAY','BELLA VISTA','INMACULADA CONCEPCION',true),
+    ('AMAMBAY','BELLA VISTA','MARIA AUXILIADORA',true),
+    ('AMAMBAY','BELLA VISTA','OBRERO',true),
+    ('AMAMBAY','BELLA VISTA','PERPETUO SOCORRO',true),
+    ('AMAMBAY','BELLA VISTA','SAN ANTONIO',true),
+
+    -- AMAMBAY / CAPITAN BADO
+    ('AMAMBAY','CAPITAN BADO','OBRERO',true),
+    ('AMAMBAY','CAPITAN BADO','PRIMAVERA',true),
+    ('AMAMBAY','CAPITAN BADO','SAN JOSE',true),
+    ('AMAMBAY','CAPITAN BADO','SAN MIGUEL',true),
+    ('AMAMBAY','CAPITAN BADO','SAN ROQUE',true),
+
+    -- AMAMBAY / PEDRO JUAN CABALLERO
+    ('AMAMBAY','PEDRO JUAN CABALLERO','BERNARDINO CABALLERO',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','DEFENSORES DEL CHACO',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','GENERAL DIAZ',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','GENERAL IGNACIO GENES',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','GUARANI',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','JARDIN AURORA',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','MARIA VICTORIA',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','MARISCAL ESTIGARRIBIA',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','OBRERO',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','PERPETUO SOCORRO',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','SAN ANTONIO',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','SAN GERARDO',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','SAN JUAN NEUMANN',true),
+    ('AMAMBAY','PEDRO JUAN CABALLERO','VIRGEN DE CAACUPE',true),
+
+    -- CAAGUAZU / CAAGUAZU
+    ('CAAGUAZU','CAAGUAZU','CENTENARIO',true),
+    ('CAAGUAZU','CAAGUAZU','CENTRO',true),
+    ('CAAGUAZU','CAAGUAZU','EMPALADO',true),
+    ('CAAGUAZU','CAAGUAZU','FLORIDA',true),
+    ('CAAGUAZU','CAAGUAZU','GRAL. BERNARDINO CABALLERO',true),
+    ('CAAGUAZU','CAAGUAZU','INMACULADA CONCEPCION',true),
+    ('CAAGUAZU','CAAGUAZU','IPVU',true),
+    ('CAAGUAZU','CAAGUAZU','SAN LORENZO',true),
+    ('CAAGUAZU','CAAGUAZU','SAN RAFAEL',true),
+    ('CAAGUAZU','CAAGUAZU','SAN ROQUE',true),
+    ('CAAGUAZU','CAAGUAZU','SANTA ISABEL',true),
+    ('CAAGUAZU','CAAGUAZU','TACURU',true),
+    ('CAAGUAZU','CAAGUAZU','TORO BLANCO',true),
+    ('CAAGUAZU','CAAGUAZU','VILLA MARGARITA',true),
+
+    -- CAAGUAZU / CARAYAO
+    ('CAAGUAZU','CARAYAO','CENTRO',true),
+    ('CAAGUAZU','CARAYAO','SAN FRANCISCO',true),
+    ('CAAGUAZU','CARAYAO','SAN JUAN DE LAS MERCEDES',true),
+
+    -- CAAGUAZU / CECILIO BAEZ
+    ('CAAGUAZU','CECILIO BAEZ','CAACUPE',true),
+    ('CAAGUAZU','CECILIO BAEZ','CORAZON DE JESUS',true),
+    ('CAAGUAZU','CECILIO BAEZ','FATIMA',true),
+    ('CAAGUAZU','CECILIO BAEZ','MARIA AUXILIADORA',true),
+    ('CAAGUAZU','CECILIO BAEZ','SAN JOSE',true),
+    ('CAAGUAZU','CECILIO BAEZ','SAN LUIS',true),
+    ('CAAGUAZU','CECILIO BAEZ','SAN MIGUEL',true),
+
+    -- CAAGUAZU / CNEL. OVIEDO
+    ('CAAGUAZU','CNEL. OVIEDO','12 DE JUNIO',true),
+    ('CAAGUAZU','CNEL. OVIEDO','1RO. DE MARZO',true),
+    ('CAAGUAZU','CNEL. OVIEDO','AZUCENA',true),
+    ('CAAGUAZU','CNEL. OVIEDO','BOQUERON',true),
+    ('CAAGUAZU','CNEL. OVIEDO','CAPITAN ROA',true),
+    ('CAAGUAZU','CNEL. OVIEDO','CENTRO',true),
+    ('CAAGUAZU','CNEL. OVIEDO','CERRITO RUGUA',true),
+    ('CAAGUAZU','CNEL. OVIEDO','COSTA ALEGRE',true),
+    ('CAAGUAZU','CNEL. OVIEDO','GRAL. BERNARDINO CABALLERO',true),
+    ('CAAGUAZU','CNEL. OVIEDO','JOSE ALFONSO GODOY',true),
+    ('CAAGUAZU','CNEL. OVIEDO','SAN ISIDRO',true),
+    ('CAAGUAZU','CNEL. OVIEDO','SAN MIGUEL',true),
+
+    -- CAAGUAZU / J. EULOGIO ESTIGARRIBIA
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','LA FORTUNA',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','MARIA AUXILIADORA',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','SAN BLAS',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','SAN FRANCISCO',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','SAN JORGE',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','SANTA CATALINA',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','SANTA LIBRADA',true),
+    ('CAAGUAZU','J. EULOGIO ESTIGARRIBIA','VIRGEN SERRANA',true),
+
+    -- CAAGUAZU / NUEVA LONDRES
+    ('CAAGUAZU','NUEVA LONDRES','ZONA URBANA',true),
+
+    -- CAAGUAZU / REPATRIACION
+    ('CAAGUAZU','REPATRIACION','CENTRO',true),
+    ('CAAGUAZU','REPATRIACION','SAN BLAS',true),
+    ('CAAGUAZU','REPATRIACION','SAN FRANCISCO',true),
+
+    -- CAAGUAZU / SAN JOSE DE LOS ARROYOS
+    ('CAAGUAZU','SAN JOSE DE LOS ARROYOS','SAN BLAS',true),
+    ('CAAGUAZU','SAN JOSE DE LOS ARROYOS','SAN JUAN',true),
+    ('CAAGUAZU','SAN JOSE DE LOS ARROYOS','SANTA RITA',true),
+    ('CAAGUAZU','SAN JOSE DE LOS ARROYOS','VIRGEN DEL CARMEN',true),
+
+    -- CAAZAPA / BUENA VISTA
+    ('CAAZAPA','BUENA VISTA','CORAZON DE JESUS',true),
+    ('CAAZAPA','BUENA VISTA','CRISTO REY',true),
+    ('CAAZAPA','BUENA VISTA','SAN ANTONIO',true),
+    ('CAAZAPA','BUENA VISTA','SAN ISIDRO',true),
+    ('CAAZAPA','BUENA VISTA','SAN LUIS',true),
+
+    -- CAAZAPA / GRAL. H. MORINIGO
+    ('CAAZAPA','GRAL. H. MORINIGO','SAN ANTONIO',true),
+    ('CAAZAPA','GRAL. H. MORINIGO','SAN JOSE',true),
+    ('CAAZAPA','GRAL. H. MORINIGO','SAN MARCOS',true),
+
+    -- CAAZAPA / SAN JUAN NEPOMUCENO
+    ('CAAZAPA','SAN JUAN NEPOMUCENO','CENTRAL',true),
+    ('CAAZAPA','SAN JUAN NEPOMUCENO','SAGRADO CORAZON',true),
+    ('CAAZAPA','SAN JUAN NEPOMUCENO','SAN AGUSTIN',true),
+    ('CAAZAPA','SAN JUAN NEPOMUCENO','SAN JOSE',true),
+    ('CAAZAPA','SAN JUAN NEPOMUCENO','SAN LUIS',true),
+    ('CAAZAPA','SAN JUAN NEPOMUCENO','SAN VICENTE',true),
+
+    -- CAAZAPA / TAVAI
+    ('CAAZAPA','TAVAI','CENTRO',true),
+    ('CAAZAPA','TAVAI','CORAZON DE JESUS',true),
+    ('CAAZAPA','TAVAI','SAN VALENTIN',true),
+    ('CAAZAPA','TAVAI','SANTA ROSA',true),
+
+    -- CAAZAPA / YEGROS
+    ('CAAZAPA','YEGROS','CAACUPE',true),
+    ('CAAZAPA','YEGROS','FATIMA',true),
+    ('CAAZAPA','YEGROS','SAN LUIS',true),
+    ('CAAZAPA','YEGROS','SAN SINFORIANO',true),
+
+    -- CAAZAPA / YUTY
+    ('CAAZAPA','YUTY','MARIA GORETTI',true),
+    ('CAAZAPA','YUTY','SAN LUIS',true),
+    ('CAAZAPA','YUTY','SANTA INES',true),
+    ('CAAZAPA','YUTY','SANTO DOMINGO',true),
+
+    -- CANINDEYU / ITANARA
+    ('CANINDEYU','ITANARA','ZONA URBANA',true),
+
+    -- CANINDEYU / SALTO DEL GUAIRA
+    ('CANINDEYU','SALTO DEL GUAIRA','DONDE NACE EL SOL',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','INDUSTRIAL',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','ITAIPU',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','PRIMAVERA',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','SAN FRANCISCO',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','SAN MIGUEL',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','SAN PEDRO',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','SANTA ROSA',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','SANTA TERESA',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','VILLA FLORIDA',true),
+    ('CANINDEYU','SALTO DEL GUAIRA','VILLA NUEVA',true),
+
+    -- CANINDEYU / SAN ISIDRO DEL CURUGUATY
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','CENTRO',true),
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','CERRO CORA',true),
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','CIUDAD INDUSTRIAL',true),
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','FATIMA',true),
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','MARIA AUXILIADORA',true),
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','SAN JOSE OBRERO',true),
+    ('CANINDEYU','SAN ISIDRO DEL CURUGUATY','SANTA MARIA',true),
+
+    -- CANINDEYU / YBYRAROBANA
+    ('CANINDEYU','YBYRAROBANA','SAN JOSE',true),
+
+    -- CANINDEYU / YPEJHU
+    ('CANINDEYU','YPEJHU','FATIMA',true),
+    ('CANINDEYU','YPEJHU','SAN ISIDRO',true),
+    ('CANINDEYU','YPEJHU','SAN ISIDRO LABRADOR',true),
+    ('CANINDEYU','YPEJHU','VIRGEN DEL ROSARIO',true),
+
+    -- CAPITAL / ASUNCION
+    ('CAPITAL','ASUNCION','BANCO SAN MIGUEL',true),
+    ('CAPITAL','ASUNCION','BARRIO OBRERO',true),
+    ('CAPITAL','ASUNCION','BAÑADO',true),
+    ('CAPITAL','ASUNCION','BELLA VISTA',true),
+    ('CAPITAL','ASUNCION','BERNARDINO CABALLERO',true),
+    ('CAPITAL','ASUNCION','BOTANICO ''A''',true),
+    ('CAPITAL','ASUNCION','BOTANICO ''B''',true),
+    ('CAPITAL','ASUNCION','CARLOS ANTONIO LOPEZ',true),
+    ('CAPITAL','ASUNCION','CATEDRAL',true),
+    ('CAPITAL','ASUNCION','CAÑADA DEL YBYRAI',true),
+    ('CAPITAL','ASUNCION','CIUDAD NUEVA',true),
+    ('CAPITAL','ASUNCION','DE LA RESIDENTA ''A''',true),
+    ('CAPITAL','ASUNCION','DE LA RESIDENTA ''B''',true),
+    ('CAPITAL','ASUNCION','DR. ROBERTO L. PETIT',true),
+    ('CAPITAL','ASUNCION','GENERAL DIAZ',true),
+    ('CAPITAL','ASUNCION','HIPODROMO',true),
+    ('CAPITAL','ASUNCION','ITA ENRAMADA ''A''',true),
+    ('CAPITAL','ASUNCION','ITA ENRAMADA ''B''',true),
+    ('CAPITAL','ASUNCION','ITA PYTA PUNTA',true),
+    ('CAPITAL','ASUNCION','JARA',true),
+    ('CAPITAL','ASUNCION','LA ENCARNACION',true),
+    ('CAPITAL','ASUNCION','LAS CARMELITAS',true),
+    ('CAPITAL','ASUNCION','LAS LOMAS',true),
+    ('CAPITAL','ASUNCION','LAS MERCEDES',true),
+    ('CAPITAL','ASUNCION','LOMA PYTA ''A''',true),
+    ('CAPITAL','ASUNCION','LOMA PYTA ''B''',true),
+    ('CAPITAL','ASUNCION','LOS LAURELES',true),
+    ('CAPITAL','ASUNCION','LUIS ALBERTO DE HERRERA',true),
+    ('CAPITAL','ASUNCION','MADAME LINCH',true),
+    ('CAPITAL','ASUNCION','MANORA',true),
+    ('CAPITAL','ASUNCION','MARISCAL ESTIGARRIBIA',true),
+    ('CAPITAL','ASUNCION','MARISCAL LOPEZ',true),
+    ('CAPITAL','ASUNCION','MBOCAYATY',true),
+    ('CAPITAL','ASUNCION','MBURICAO',true),
+    ('CAPITAL','ASUNCION','MBURUCUYA',true),
+    ('CAPITAL','ASUNCION','NAZARETH',true),
+    ('CAPITAL','ASUNCION','NTRA. SRA. DEL HUERTO',true),
+    ('CAPITAL','ASUNCION','PANAMBI RETA',true),
+    ('CAPITAL','ASUNCION','PANAMBI VERA',true),
+    ('CAPITAL','ASUNCION','PETTIROSSI',true),
+    ('CAPITAL','ASUNCION','PINOZA',true),
+    ('CAPITAL','ASUNCION','PIRIZAL',true),
+    ('CAPITAL','ASUNCION','RECOLETA',true),
+    ('CAPITAL','ASUNCION','REPUBLICANO ''A''',true),
+    ('CAPITAL','ASUNCION','REPUBLICANO ''B''',true),
+    ('CAPITAL','ASUNCION','RICARDO BRUGADA',true),
+    ('CAPITAL','ASUNCION','ROBERTO L. PETTIT',true),
+    ('CAPITAL','ASUNCION','RODRIGUEZ DE FRANCIA',true),
+    ('CAPITAL','ASUNCION','SAJONIA',true),
+    ('CAPITAL','ASUNCION','SALVADOR DEL MUNDO',true),
+    ('CAPITAL','ASUNCION','SAN ANTONIO',true),
+    ('CAPITAL','ASUNCION','SAN BLAS',true),
+    ('CAPITAL','ASUNCION','SAN CAYETANO',true),
+    ('CAPITAL','ASUNCION','SAN CRISTOBAL',true),
+    ('CAPITAL','ASUNCION','SAN FELIPE',true),
+    ('CAPITAL','ASUNCION','SAN JORGE',true),
+    ('CAPITAL','ASUNCION','SAN PEDRO Y SAN PABLO',true),
+    ('CAPITAL','ASUNCION','SAN RAFAEL',true),
+    ('CAPITAL','ASUNCION','SAN ROQUE',true),
+    ('CAPITAL','ASUNCION','SAN VICENTE',true),
+    ('CAPITAL','ASUNCION','SANTA ANA',true),
+    ('CAPITAL','ASUNCION','SANTA LIBRADA',true),
+    ('CAPITAL','ASUNCION','SANTA MARIA',true),
+    ('CAPITAL','ASUNCION','SANTA ROSA',true),
+    ('CAPITAL','ASUNCION','SANTISIMA TRINIDAD',true),
+    ('CAPITAL','ASUNCION','SANTO DOMINGO',true),
+    ('CAPITAL','ASUNCION','TABLADA NUEVA',true),
+    ('CAPITAL','ASUNCION','TACUMBU',true),
+    ('CAPITAL','ASUNCION','TEMBETARY',true),
+    ('CAPITAL','ASUNCION','TERMINAL',true),
+    ('CAPITAL','ASUNCION','VILLA AURELIA',true),
+    ('CAPITAL','ASUNCION','VILLA MORRA',true),
+    ('CAPITAL','ASUNCION','VIRGEN DE FATIMA',true),
+    ('CAPITAL','ASUNCION','VIRGEN DE LA ASUNCION',true),
+    ('CAPITAL','ASUNCION','VIRGEN DEL HUERTO',true),
+    ('CAPITAL','ASUNCION','VISTA ALEGRE',true),
+    ('CAPITAL','ASUNCION','YCUA SATI',true),
+    ('CAPITAL','ASUNCION','YTAY',true),
+    ('CAPITAL','ASUNCION','YUKYTY',true),
+    ('CAPITAL','ASUNCION','ZEBALLOS CUE',true),
+    ('CAPITAL','ASUNCION','ÑU GUAZU',true),
+
+    -- CENTRAL / AREGUA
+    ('CENTRAL','AREGUA','LAS MERCEDES',true),
+    ('CENTRAL','AREGUA','SAN MIGUEL',true),
+    ('CENTRAL','AREGUA','SAN ROQUE',true),
+    ('CENTRAL','AREGUA','SANTO DOMINGO',true),
+
+    -- CENTRAL / CAPIATA
+    ('CENTRAL','CAPIATA','ARATIRI',true),
+    ('CENTRAL','CAPIATA','ARRUA',true),
+    ('CENTRAL','CAPIATA','BARRIO A',true),
+    ('CENTRAL','CAPIATA','BARRIO B',true),
+    ('CENTRAL','CAPIATA','BARRIO C',true),
+    ('CENTRAL','CAPIATA','BARRIO D',true),
+    ('CENTRAL','CAPIATA','BARRIO E',true),
+    ('CENTRAL','CAPIATA','BARRIO F',true),
+    ('CENTRAL','CAPIATA','BARRIO G',true),
+    ('CENTRAL','CAPIATA','BARRIO H',true),
+    ('CENTRAL','CAPIATA','BARRIO I',true),
+    ('CENTRAL','CAPIATA','BARRIO J',true),
+    ('CENTRAL','CAPIATA','BARRIO K',true),
+    ('CENTRAL','CAPIATA','BARRIO L',true),
+    ('CENTRAL','CAPIATA','BARRIO M',true),
+    ('CENTRAL','CAPIATA','BARRIO N',true),
+    ('CENTRAL','CAPIATA','CANDELARIA',true),
+    ('CENTRAL','CAPIATA','CAPSA',true),
+    ('CENTRAL','CAPIATA','CARUMBE-CUA',true),
+    ('CENTRAL','CAPIATA','CERRITO',true),
+    ('CENTRAL','CAPIATA','LAURELTY',true),
+    ('CENTRAL','CAPIATA','POSTA YBYCUA',true),
+    ('CENTRAL','CAPIATA','PUERTA DEL SOL',true),
+    ('CENTRAL','CAPIATA','RETIRO',true),
+    ('CENTRAL','CAPIATA','ROBERTO L. PETIT',true),
+    ('CENTRAL','CAPIATA','SAN JORGE',true),
+    ('CENTRAL','CAPIATA','SAN LORENZO',true),
+    ('CENTRAL','CAPIATA','SAN MIGUEL',true),
+    ('CENTRAL','CAPIATA','SAN ROQUE',true),
+    ('CENTRAL','CAPIATA','SANTA RITA',true),
+    ('CENTRAL','CAPIATA','SANTISIMA CRUZ',true),
+    ('CENTRAL','CAPIATA','SANTO DOMINGO',true),
+    ('CENTRAL','CAPIATA','TORREMOLINOS',true),
+    ('CENTRAL','CAPIATA','VILLA MILITAR',true),
+    ('CENTRAL','CAPIATA','VIRGEN DEL PILAR',true),
+    ('CENTRAL','CAPIATA','ZONA MILITAR',true),
+
+    -- CENTRAL / FERNANDO DE LA MORA
+    ('CENTRAL','FERNANDO DE LA MORA','BERNARDINO CABALLERO',true),
+    ('CENTRAL','FERNANDO DE LA MORA','CIUDAD',true),
+    ('CENTRAL','FERNANDO DE LA MORA','COCUE GUAZU',true),
+    ('CENTRAL','FERNANDO DE LA MORA','DOMINGO SAVIO',true),
+    ('CENTRAL','FERNANDO DE LA MORA','ESTANZUELA',true),
+    ('CENTRAL','FERNANDO DE LA MORA','ITA CAAGUY',true),
+    ('CENTRAL','FERNANDO DE LA MORA','LAGUNA GRANDE',true),
+    ('CENTRAL','FERNANDO DE LA MORA','LAGUNA SATI',true),
+    ('CENTRAL','FERNANDO DE LA MORA','LAS RESIDENTAS',true),
+    ('CENTRAL','FERNANDO DE LA MORA','ORILLA DEL CAMPO GRANDE',true),
+    ('CENTRAL','FERNANDO DE LA MORA','PITIANTUTA',true),
+    ('CENTRAL','FERNANDO DE LA MORA','PROYECTO 16 LILIO',true),
+    ('CENTRAL','FERNANDO DE LA MORA','SAN JUAN',true),
+    ('CENTRAL','FERNANDO DE LA MORA','TRES BOCAS',true),
+    ('CENTRAL','FERNANDO DE LA MORA','VILLA OFELIA',true),
+
+    -- CENTRAL / GUARAMBARE
+    ('CENTRAL','GUARAMBARE','ALEGRE',true),
+    ('CENTRAL','GUARAMBARE','COLON',true),
+    ('CENTRAL','GUARAMBARE','FELSINA',true),
+    ('CENTRAL','GUARAMBARE','SAN MIGUEL',true),
+
+    -- CENTRAL / ITA
+    ('CENTRAL','ITA','CERRO CORA',true),
+    ('CENTRAL','ITA','SAN ANTONIO',true),
+    ('CENTRAL','ITA','SAN BLAS',true),
+    ('CENTRAL','ITA','SPORTIVO',true),
+
+    -- CENTRAL / ITAUGUA
+    ('CENTRAL','ITAUGUA','ALDAMA CAÑADA',true),
+    ('CENTRAL','ITAUGUA','BARRIO 1',true),
+    ('CENTRAL','ITAUGUA','BARRIO 2',true),
+    ('CENTRAL','ITAUGUA','BARRIO 3',true),
+    ('CENTRAL','ITAUGUA','BARRIO 4',true),
+    ('CENTRAL','ITAUGUA','BARRIO 5',true),
+    ('CENTRAL','ITAUGUA','BARRIO 6',true),
+    ('CENTRAL','ITAUGUA','BARRIO 7',true),
+    ('CENTRAL','ITAUGUA','GUAYAIBI-TY',true),
+    ('CENTRAL','ITAUGUA','GUAZU VIRA',true),
+    ('CENTRAL','ITAUGUA','JHUGUA POTI',true),
+    ('CENTRAL','ITAUGUA','MBOCAYATY DEL NORTE',true),
+    ('CENTRAL','ITAUGUA','MBOCAYATY DEL SUR',true),
+    ('CENTRAL','ITAUGUA','MBOI-Y',true),
+    ('CENTRAL','ITAUGUA','POTRERITO',true),
+    ('CENTRAL','ITAUGUA','VALLE CARE',true),
+
+    -- CENTRAL / J.AUGUSTO SALDIVAR
+    ('CENTRAL','J.AUGUSTO SALDIVAR','MARISCAL LOPEZ',true),
+    ('CENTRAL','J.AUGUSTO SALDIVAR','SAN MIGUEL',true),
+
+    -- CENTRAL / LAMBARE
+    ('CENTRAL','LAMBARE','CAÑADA SAN MIGUEL',true),
+    ('CENTRAL','LAMBARE','CENTRO URBANO',true),
+    ('CENTRAL','LAMBARE','CUATRO MOJONES',true),
+    ('CENTRAL','LAMBARE','FELICIDAD',true),
+    ('CENTRAL','LAMBARE','KENNEDY',true),
+    ('CENTRAL','LAMBARE','LA VICTORIA',true),
+    ('CENTRAL','LAMBARE','MARISCAL LOPEZ',true),
+    ('CENTRAL','LAMBARE','MBACHIO',true),
+    ('CENTRAL','LAMBARE','PALOMAR',true),
+    ('CENTRAL','LAMBARE','PANAMBI RETA',true),
+    ('CENTRAL','LAMBARE','PILAR',true),
+    ('CENTRAL','LAMBARE','PUERTO PABLA',true),
+    ('CENTRAL','LAMBARE','SAN ANTONIO',true),
+    ('CENTRAL','LAMBARE','SAN ISIDRO',true),
+    ('CENTRAL','LAMBARE','SAN RAFAEL',true),
+    ('CENTRAL','LAMBARE','SAN ROQUE GONZALEZ',true),
+    ('CENTRAL','LAMBARE','SANTA LUCIA',true),
+    ('CENTRAL','LAMBARE','SANTA LUISA',true),
+    ('CENTRAL','LAMBARE','SANTA ROSA',true),
+    ('CENTRAL','LAMBARE','SANTA ROSA I',true),
+    ('CENTRAL','LAMBARE','SANTO DOMINGO',true),
+    ('CENTRAL','LAMBARE','VALLE APUA',true),
+    ('CENTRAL','LAMBARE','VALLE YBATE',true),
+    ('CENTRAL','LAMBARE','VILLA CERRO CORA',true),
+    ('CENTRAL','LAMBARE','VILLA VIRGINIA',true),
+
+    -- CENTRAL / LIMPIO
+    ('CENTRAL','LIMPIO','8 DE DICIEMBRE',true),
+    ('CENTRAL','LIMPIO','AGUAPEY',true),
+    ('CENTRAL','LIMPIO','CICOMAR',true),
+    ('CENTRAL','LIMPIO','COL. JUAN DE SALAZAR',true),
+    ('CENTRAL','LIMPIO','ISLA ARANDA',true),
+    ('CENTRAL','LIMPIO','ISLA AVEIRO',true),
+    ('CENTRAL','LIMPIO','LIMPIO RUGUA',true),
+    ('CENTRAL','LIMPIO','MBAYUE',true),
+    ('CENTRAL','LIMPIO','MONTAÑA ALTA',true),
+    ('CENTRAL','LIMPIO','PIQUETE CUE',true),
+    ('CENTRAL','LIMPIO','RINCON DEL PEÑON',true),
+    ('CENTRAL','LIMPIO','SALADO',true),
+    ('CENTRAL','LIMPIO','SALADO-I',true),
+    ('CENTRAL','LIMPIO','SAN ANTONIO',true),
+    ('CENTRAL','LIMPIO','SAN FRANCISCO A',true),
+    ('CENTRAL','LIMPIO','SAN FRANCISCO B',true),
+    ('CENTRAL','LIMPIO','SAN JOSE',true),
+    ('CENTRAL','LIMPIO','SAN JUAN',true),
+    ('CENTRAL','LIMPIO','SAN PEDRO',true),
+    ('CENTRAL','LIMPIO','SAN RAMON II',true),
+    ('CENTRAL','LIMPIO','SAN SALVADOR',true),
+    ('CENTRAL','LIMPIO','SANTA LIBRADA',true),
+    ('CENTRAL','LIMPIO','SANTA LUCIA',true),
+
+    -- CENTRAL / LUQUE
+    ('CENTRAL','LUQUE','AEROPUERTO',true),
+    ('CENTRAL','LUQUE','BARRIO 1',true),
+    ('CENTRAL','LUQUE','BARRIO 2',true),
+    ('CENTRAL','LUQUE','BARRIO 3',true),
+    ('CENTRAL','LUQUE','BARRIO 4',true),
+    ('CENTRAL','LUQUE','BARRIO 5',true),
+    ('CENTRAL','LUQUE','BARRIO 6',true),
+    ('CENTRAL','LUQUE','BARRIO 7',true),
+    ('CENTRAL','LUQUE','BARRIO 8',true),
+    ('CENTRAL','LUQUE','BARRIO 9',true),
+    ('CENTRAL','LUQUE','BARRIO 10',true),
+    ('CENTRAL','LUQUE','BARRIO 11',true),
+    ('CENTRAL','LUQUE','BARRIO 12',true),
+    ('CENTRAL','LUQUE','BARRIO 13',true),
+    ('CENTRAL','LUQUE','BARRIO 14',true),
+    ('CENTRAL','LUQUE','BARRIO 15',true),
+    ('CENTRAL','LUQUE','BARRIO 16',true),
+    ('CENTRAL','LUQUE','BARRIO 17',true),
+    ('CENTRAL','LUQUE','BARRIO 18',true),
+    ('CENTRAL','LUQUE','BARRIO 19',true),
+    ('CENTRAL','LUQUE','BARRIO 20',true),
+    ('CENTRAL','LUQUE','BARRIO 21',true),
+    ('CENTRAL','LUQUE','BARRIO 22',true),
+    ('CENTRAL','LUQUE','BARRIO 23',true),
+    ('CENTRAL','LUQUE','BARRIO 24',true),
+    ('CENTRAL','LUQUE','BARRIO 25',true),
+    ('CENTRAL','LUQUE','BARRIO 26',true),
+    ('CENTRAL','LUQUE','BARRIO 27',true),
+    ('CENTRAL','LUQUE','BARRIO 28',true),
+    ('CENTRAL','LUQUE','BARRIO 29',true),
+    ('CENTRAL','LUQUE','BARRIO 30',true),
+    ('CENTRAL','LUQUE','BARRIO 31',true),
+    ('CENTRAL','LUQUE','BARRIO 32',true),
+    ('CENTRAL','LUQUE','CAMPO GRANDE',true),
+    ('CENTRAL','LUQUE','CAÑADA GARAY',true),
+    ('CENTRAL','LUQUE','CAÑADA SAN RAFAEL',true),
+    ('CENTRAL','LUQUE','CENTRO',true),
+    ('CENTRAL','LUQUE','COSTA SOSA',true),
+    ('CENTRAL','LUQUE','CUARTO BARRIO',true),
+    ('CENTRAL','LUQUE','ISLA BOGADO',true),
+    ('CENTRAL','LUQUE','JHUGUA DE SEDA',true),
+    ('CENTRAL','LUQUE','LAURELTY',true),
+    ('CENTRAL','LUQUE','LOMA MERLO',true),
+    ('CENTRAL','LUQUE','MACA-I',true),
+    ('CENTRAL','LUQUE','MARAMBURE',true),
+    ('CENTRAL','LUQUE','MORA CUE',true),
+    ('CENTRAL','LUQUE','PRIMER BARRIO',true),
+    ('CENTRAL','LUQUE','SEGUNDO BARRIO',true),
+    ('CENTRAL','LUQUE','TERCER BARRIO',true),
+    ('CENTRAL','LUQUE','YAGUARETE CORA',true),
+    ('CENTRAL','LUQUE','YCA A',true),
+    ('CENTRAL','LUQUE','YCUA CARANDAY',true),
+    ('CENTRAL','LUQUE','YCUA DURE',true),
+    ('CENTRAL','LUQUE','ZARATE ISLA',true),
+
+    -- CENTRAL / MARIANO ROQUE ALONSO
+    ('CENTRAL','MARIANO ROQUE ALONSO','ARECAYA',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','BANADO',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','CAAGUY-CUPE',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','CENTRAL',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','CONCORDIA',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','CORUMBA-CUE',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','DEFENSORES DEL CHACO',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','LA ASUNCION',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','MARIA AUXILIADORA',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','REMANSO',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','ROSA MISTICA',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','SAN BLAS',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','SAN JORGE',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','SAN LUIS',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','SAN RAMON',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','SURUBI-Y',true),
+    ('CENTRAL','MARIANO ROQUE ALONSO','VILLA MARGARITA',true),
+
+    -- CENTRAL / NUEVA ITALIA
+    ('CENTRAL','NUEVA ITALIA','SAN BLAS',true),
+    ('CENTRAL','NUEVA ITALIA','SAN FRANCISCO',true),
+    ('CENTRAL','NUEVA ITALIA','SAN PEDRO',true),
+    ('CENTRAL','NUEVA ITALIA','SANTA ROSA',true),
+
+    -- CENTRAL / SAN ANTONIO
+    ('CENTRAL','SAN ANTONIO','ACHUCARRO NORTE',true),
+    ('CENTRAL','SAN ANTONIO','ACHUCARRO SUR',true),
+    ('CENTRAL','SAN ANTONIO','ACOSTA NU',true),
+    ('CENTRAL','SAN ANTONIO','ANTIGUA IMAGEN 1',true),
+    ('CENTRAL','SAN ANTONIO','ANTIGUA IMAGEN 2',true),
+    ('CENTRAL','SAN ANTONIO','LAS GARZAS',true),
+    ('CENTRAL','SAN ANTONIO','LAS MERCEDES',true),
+    ('CENTRAL','SAN ANTONIO','MARIA AUXILIADORA',true),
+    ('CENTRAL','SAN ANTONIO','NARANJATY',true),
+    ('CENTRAL','SAN ANTONIO','PUEBLO',true),
+    ('CENTRAL','SAN ANTONIO','SAN BLAS',true),
+    ('CENTRAL','SAN ANTONIO','SAN FRANCISCO CENTRO',true),
+    ('CENTRAL','SAN ANTONIO','SAN FRANCISCO SUR',true),
+    ('CENTRAL','SAN ANTONIO','SAN JORGE',true),
+    ('CENTRAL','SAN ANTONIO','SAN ROQUE',true),
+
+    -- CENTRAL / VILLA ELISA
+    ('CENTRAL','VILLA ELISA','29 DE SETIEMBRE',true),
+    ('CENTRAL','VILLA ELISA','8 DE DICIEMBRE',true),
+    ('CENTRAL','VILLA ELISA','ARROYO SECO',true),
+    ('CENTRAL','VILLA ELISA','CENTRO',true),
+    ('CENTRAL','VILLA ELISA','GLORIA MARIA',true),
+    ('CENTRAL','VILLA ELISA','MBOCAYATY',true),
+    ('CENTRAL','VILLA ELISA','PICADA',true),
+    ('CENTRAL','VILLA ELISA','REMANSO',true),
+    ('CENTRAL','VILLA ELISA','ROSEDAL',true),
+    ('CENTRAL','VILLA ELISA','SAN JOSE',true),
+    ('CENTRAL','VILLA ELISA','SAN JUAN',true),
+    ('CENTRAL','VILLA ELISA','SOL DE AMERICA',true),
+    ('CENTRAL','VILLA ELISA','TRES BOCAS',true),
+    ('CENTRAL','VILLA ELISA','VILLA BONITA',true),
+    ('CENTRAL','VILLA ELISA','VILLA HERMOSA',true),
+    ('CENTRAL','VILLA ELISA','YPATI',true),
+
+    -- CENTRAL / VILLETA
+    ('CENTRAL','VILLETA','INMACULADA',true),
+    ('CENTRAL','VILLETA','MARIA AUXILIADORA',true),
+    ('CENTRAL','VILLETA','SAGRADO CORAZON',true),
+    ('CENTRAL','VILLETA','SAN ISIDRO',true),
+    ('CENTRAL','VILLETA','SAN MARTIN DE PORRES',true),
+    ('CENTRAL','VILLETA','VILLA CONAVI',true),
+
+    -- CENTRAL / YPACARAI
+    ('CENTRAL','YPACARAI','LA VICTORIA',true),
+    ('CENTRAL','YPACARAI','PALMA',true),
+    ('CENTRAL','YPACARAI','SAN BLAS',true),
+    ('CENTRAL','YPACARAI','SANTA ROSA',true),
+
+    -- CENTRAL / YPANE
+    ('CENTRAL','YPANE','CHACO-I',true),
+    ('CENTRAL','YPANE','DEL PILAR',true),
+    ('CENTRAL','YPANE','SAN ANTONIO',true),
+    ('CENTRAL','YPANE','SAN FRANCISCO',true),
+    ('CENTRAL','YPANE','SAN PEDRO',true),
+
+    -- CENTRAL / NEMBY
+    -- Nota: se usa NEMBY (sin Ñ) para que coincida con el nombre cargado en CIUDADES.
+    ('CENTRAL','NEMBY','CAAGUAZU',true),
+    ('CENTRAL','NEMBY','CANADITA',true),
+    ('CENTRAL','NEMBY','CAPILLA DEL MONTE',true),
+    ('CENTRAL','NEMBY','CENTRO',true),
+    ('CENTRAL','NEMBY','FRACCION SAN CELESTINO',true),
+    ('CENTRAL','NEMBY','MBOCAYATY',true),
+    ('CENTRAL','NEMBY','PAI NU',true),
+    ('CENTRAL','NEMBY','PIROY',true),
+    ('CENTRAL','NEMBY','RINCON',true),
+    ('CENTRAL','NEMBY','SALINAS',true),
+    ('CENTRAL','NEMBY','SAN CARLOS',true),
+    ('CENTRAL','NEMBY','SAN MIGUEL',true),
+    ('CENTRAL','NEMBY','SANTA LIBRADA',true),
+    ('CENTRAL','NEMBY','VILLA ANITA',true),
+    ('CENTRAL','NEMBY','VILLA DEL CARMEN',true),
+    ('CENTRAL','NEMBY','VISTA ALEGRE',true),
+
+    -- CONCEPCION / BELEN
+    ('CONCEPCION','BELEN','SALVADOR DEL MUNDO',true),
+    ('CONCEPCION','BELEN','SAN RAFAEL',true),
+    ('CONCEPCION','BELEN','SANTO DOMINGO',true),
+    ('CONCEPCION','BELEN','VIRGEN DE LA PAZ',true),
+
+    -- CONCEPCION / CONCEPCION
+    -- Nota: se elimina "(MUNICIPIO)" para que coincida con el nombre cargado en CIUDADES.
+    ('CONCEPCION','CONCEPCION','CENTRO',true),
+    ('CONCEPCION','CONCEPCION','DEL BAÑADO',true),
+    ('CONCEPCION','CONCEPCION','FATIMA',true),
+    ('CONCEPCION','CONCEPCION','FRACCION BERAUD',true),
+    ('CONCEPCION','CONCEPCION','INMACULADA',true),
+    ('CONCEPCION','CONCEPCION','ITACURUBI',true),
+    ('CONCEPCION','CONCEPCION','JARDIN DE EUROPA',true),
+    ('CONCEPCION','CONCEPCION','OBRERO',true),
+    ('CONCEPCION','CONCEPCION','PRIMAVERA',true),
+    ('CONCEPCION','CONCEPCION','SAN ANTONIO',true),
+    ('CONCEPCION','CONCEPCION','SAN FRANCISCO',true),
+    ('CONCEPCION','CONCEPCION','SAN JOSE OBRERO',true),
+    ('CONCEPCION','CONCEPCION','SAN LUIS',true),
+    ('CONCEPCION','CONCEPCION','SANTA MARIA',true),
+    ('CONCEPCION','CONCEPCION','SANTO DOMINGO DE GUZMAN',true),
+    ('CONCEPCION','CONCEPCION','SECTOR POLIDEPORTIVO',true),
+    ('CONCEPCION','CONCEPCION','VILLA ALTA',true),
+    ('CONCEPCION','CONCEPCION','VILLA ARMANDO',true),
+
+    -- CONCEPCION / HORQUETA
+    ('CONCEPCION','HORQUETA','FATIMA',true),
+    ('CONCEPCION','HORQUETA','INMACULADA',true),
+    ('CONCEPCION','HORQUETA','LAS PALMAS',true),
+    ('CONCEPCION','HORQUETA','SAN ANTONIO',true),
+    ('CONCEPCION','HORQUETA','SAN ROQUE',true),
+
+    -- CONCEPCION / LORETO
+    ('CONCEPCION','LORETO','CENTRO',true),
+    ('CONCEPCION','LORETO','FATIMA',true),
+    ('CONCEPCION','LORETO','SAN FRANCISCO',true),
+    ('CONCEPCION','LORETO','SANTO DOMINGO',true),
+
+    -- CONCEPCION / SARGENTO JOSE FELIX LOPEZ
+    ('CONCEPCION','SARGENTO JOSE FELIX LOPEZ','CENTRO',true),
+
+    -- CORDILLERA / 1RO.DE MARZO
+    ('CORDILLERA','1RO.DE MARZO','LIBERTAD',true),
+
+    -- CORDILLERA / ALTOS
+    ('CORDILLERA','ALTOS','CORAZON DE JESUS',true),
+    ('CORDILLERA','ALTOS','MARIA AUXILIADORA',true),
+    ('CORDILLERA','ALTOS','SAN BLAS',true),
+    ('CORDILLERA','ALTOS','VIRGEN DEL ROSARIO',true),
+
+    -- CORDILLERA / ARROYOS Y ESTEROS
+    ('CORDILLERA','ARROYOS Y ESTEROS','CENTRO',true),
+    ('CORDILLERA','ARROYOS Y ESTEROS','GENERAL AQUINO',true),
+
+    -- CORDILLERA / ATYRA
+    ('CORDILLERA','ATYRA','LAS MERCEDES',true),
+    ('CORDILLERA','ATYRA','MARIA AUXILIADORA',true),
+    ('CORDILLERA','ATYRA','SAN ANTONIO',true),
+    ('CORDILLERA','ATYRA','SAN BLAS',true),
+    ('CORDILLERA','ATYRA','VILLA CONAVI',true),
+
+    -- CORDILLERA / CAACUPE
+    ('CORDILLERA','CAACUPE','ALEGRE',true),
+    ('CORDILLERA','CAACUPE','BUENA VISTA',true),
+    ('CORDILLERA','CAACUPE','CENTRO',true),
+    ('CORDILLERA','CAACUPE','DANIEL ESCURRA',true),
+    ('CORDILLERA','CAACUPE','DEFENSORES DEL CHACO',true),
+    ('CORDILLERA','CAACUPE','GENERAL DIAZ',true),
+    ('CORDILLERA','CAACUPE','INDUSTRIAL',true),
+    ('CORDILLERA','CAACUPE','KENNEDY',true),
+    ('CORDILLERA','CAACUPE','LOMA',true),
+    ('CORDILLERA','CAACUPE','LOMA GUAZU',true),
+    ('CORDILLERA','CAACUPE','POZO DE LA VIRGEN',true),
+    ('CORDILLERA','CAACUPE','SAN BLAS',true),
+    ('CORDILLERA','CAACUPE','SAN CAYETANO',true),
+    ('CORDILLERA','CAACUPE','SAN MIGUEL',true),
+    ('CORDILLERA','CAACUPE','SAN PABLO',true),
+    ('CORDILLERA','CAACUPE','SANTA MARIA',true),
+    ('CORDILLERA','CAACUPE','YBOTY',true),
+    ('CORDILLERA','CAACUPE','YBU',true),
+
+    -- CORDILLERA / CARAGUATAY
+    ('CORDILLERA','CARAGUATAY','CENTRO',true),
+    ('CORDILLERA','CARAGUATAY','CRISTO REY',true),
+    ('CORDILLERA','CARAGUATAY','SAN JUAN',true),
+    ('CORDILLERA','CARAGUATAY','SAN MIGUEL',true),
+
+    -- CORDILLERA / EMBOSCADA
+    ('CORDILLERA','EMBOSCADA','CENTRO',true),
+
+    -- CORDILLERA / EUSEBIO AYALA
+    ('CORDILLERA','EUSEBIO AYALA','6 DE ENERO',true),
+    ('CORDILLERA','EUSEBIO AYALA','CARMENCITA',true),
+    ('CORDILLERA','EUSEBIO AYALA','GRAL. BERNARDINO CABALLERO',true),
+    ('CORDILLERA','EUSEBIO AYALA','INDUSTRIAL',true),
+    ('CORDILLERA','EUSEBIO AYALA','INMACULADA',true),
+    ('CORDILLERA','EUSEBIO AYALA','SAGRADO CORAZON DE JESUS',true),
+    ('CORDILLERA','EUSEBIO AYALA','SAN BLAS',true),
+    ('CORDILLERA','EUSEBIO AYALA','SAN JUAN BAUTISTA',true),
+    ('CORDILLERA','EUSEBIO AYALA','SAN RAFAEL',true),
+    ('CORDILLERA','EUSEBIO AYALA','SAN ROQUE',true),
+    ('CORDILLERA','EUSEBIO AYALA','SANTA ROSA',true),
+
+    -- CORDILLERA / ISLA PUCU
+    ('CORDILLERA','ISLA PUCU','CENTRO',true),
+    ('CORDILLERA','ISLA PUCU','MARIA AUXILIADORA',true),
+    ('CORDILLERA','ISLA PUCU','SAN ANTONIO',true),
+    ('CORDILLERA','ISLA PUCU','SAN FRANCISCO',true),
+    ('CORDILLERA','ISLA PUCU','SANTA LUCIA',true),
+
+    -- CORDILLERA / ITACURUBI DE LA CORDILLERA
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','3 DE MAYO',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','SAN ANTONIO',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','SAN BLAS',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','SAN CARLOS',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','SAN JOSE',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','SANTA LUCIA',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','SOL NACIENTE',true),
+    ('CORDILLERA','ITACURUBI DE LA CORDILLERA','VIRGEN DEL ROSARIO',true),
+
+    -- CORDILLERA / LOMA GRANDE
+    ('CORDILLERA','LOMA GRANDE','MARIA AUXILIADORA',true),
+    ('CORDILLERA','LOMA GRANDE','MARISCAL ESTIGARRIBIA',true),
+    ('CORDILLERA','LOMA GRANDE','SAN FRANCISCO',true),
+    ('CORDILLERA','LOMA GRANDE','SAN MIGUEL',true),
+
+    -- CORDILLERA / PIRIBEBUY
+    ('CORDILLERA','PIRIBEBUY','CENTRO',true),
+    ('CORDILLERA','PIRIBEBUY','MARIA AUXILIADORA',true),
+    ('CORDILLERA','PIRIBEBUY','SAN BLAS I',true),
+    ('CORDILLERA','PIRIBEBUY','SAN BLAS II',true),
+    ('CORDILLERA','PIRIBEBUY','SANTA ANA',true),
+    ('CORDILLERA','PIRIBEBUY','VIRGEN DEL ROSARIO',true),
+
+    -- CORDILLERA / SAN BERNARDINO
+    ('CORDILLERA','SAN BERNARDINO','BARRIO 5',true),
+    ('CORDILLERA','SAN BERNARDINO','BARRIO 6',true),
+    ('CORDILLERA','SAN BERNARDINO','CASCO HISTORICO',true),
+    ('CORDILLERA','SAN BERNARDINO','CRISTOBAL COLON',true),
+    ('CORDILLERA','SAN BERNARDINO','SANTA CLARA URBANIZACION',true),
+    ('CORDILLERA','SAN BERNARDINO','SANTA ROSALINA',true),
+
+    -- CORDILLERA / SAN JOSE OBRERO
+    ('CORDILLERA','SAN JOSE OBRERO','LIBERTAD',true),
+
+    -- CORDILLERA / SANTA ELENA
+    ('CORDILLERA','SANTA ELENA','CENTRO',true),
+    ('CORDILLERA','SANTA ELENA','MERCADO',true),
+
+    -- CORDILLERA / TOBATI
+    ('CORDILLERA','TOBATI','CENTRO',true),
+    ('CORDILLERA','TOBATI','INMACULADA CONCEPCION',true),
+    ('CORDILLERA','TOBATI','MARIA AUXILIADORA',true),
+    ('CORDILLERA','TOBATI','SAN ANTONIO',true),
+    ('CORDILLERA','TOBATI','SAN BLAS',true),
+    ('CORDILLERA','TOBATI','SAN FRANCISCO',true),
+    ('CORDILLERA','TOBATI','SAN JOSE',true),
+    ('CORDILLERA','TOBATI','SAN PEDRO',true),
+    ('CORDILLERA','TOBATI','SAN ROQUE',true),
+    ('CORDILLERA','TOBATI','SANTA LUCIA',true),
+    ('CORDILLERA','TOBATI','SANTA TERESITA',true),
+    ('CORDILLERA','TOBATI','VIRGEN DE FATIMA',true),
+    ('CORDILLERA','TOBATI','VIRGEN DE LOS REMEDIOS',true),
+
+    -- GUAIRA / DR. BOTREL
+    ('GUAIRA','DR. BOTREL','CENTRO',true),
+
+    -- GUAIRA / GRAL.EUGENIO A. GARAY
+    ('GUAIRA','GRAL.EUGENIO A. GARAY','CORAZON DE JESUS',true),
+    ('GUAIRA','GRAL.EUGENIO A. GARAY','KM 29',true),
+    ('GUAIRA','GRAL.EUGENIO A. GARAY','SAN ANTONIO',true),
+    ('GUAIRA','GRAL.EUGENIO A. GARAY','SAN BLAS',true),
+    ('GUAIRA','GRAL.EUGENIO A. GARAY','SAN ISIDRO',true),
+    ('GUAIRA','GRAL.EUGENIO A. GARAY','SAN PATRICIO',true),
+
+    -- GUAIRA / ITAPE
+    ('GUAIRA','ITAPE','CORAZON DE JESUS',true),
+    ('GUAIRA','ITAPE','DULCE NOMBRE',true),
+    ('GUAIRA','ITAPE','INMACULADA',true),
+
+    -- GUAIRA / ITURBE
+    ('GUAIRA','ITURBE','SAN ANTONIO',true),
+    ('GUAIRA','ITURBE','SAN FRANCISCO',true),
+    ('GUAIRA','ITURBE','SAN JUAN',true),
+    ('GUAIRA','ITURBE','SAN LUIS',true),
+    ('GUAIRA','ITURBE','SAN ROQUE',true),
+
+    -- GUAIRA / JOSE FASSARDI
+    ('GUAIRA','JOSE FASSARDI','CENTRO',true),
+
+    -- GUAIRA / MAURICIO JOSE TROCHE
+    ('GUAIRA','MAURICIO JOSE TROCHE','CENTRO',true),
+    ('GUAIRA','MAURICIO JOSE TROCHE','JESUS MISERICORDIOSO',true),
+    ('GUAIRA','MAURICIO JOSE TROCHE','LOMA CLAVEL',true),
+    ('GUAIRA','MAURICIO JOSE TROCHE','SAN BLAS',true),
+    ('GUAIRA','MAURICIO JOSE TROCHE','SAN MIGUEL',true),
+    ('GUAIRA','MAURICIO JOSE TROCHE','SANTA ROSA',true),
+    ('GUAIRA','MAURICIO JOSE TROCHE','VIRGEN DEL HUERTO',true),
+
+    -- GUAIRA / MBOCAYATY
+    ('GUAIRA','MBOCAYATY','MARIA AUXILIADORA',true),
+    ('GUAIRA','MBOCAYATY','SANTA LIBRADA',true),
+    ('GUAIRA','MBOCAYATY','VIRGEN DE LA ASUNCION',true),
+    ('GUAIRA','MBOCAYATY','VIRGEN DEL ROSARIO',true),
+
+    -- GUAIRA / NATALICIO TALAVERA
+    ('GUAIRA','NATALICIO TALAVERA','ESCUELA',true),
+    ('GUAIRA','NATALICIO TALAVERA','IGLESIA',true),
+    ('GUAIRA','NATALICIO TALAVERA','SAN PEDRO',true),
+    ('GUAIRA','NATALICIO TALAVERA','VIRGEN DEL ROSARIO',true),
+
+    -- GUAIRA / PASO YOBAY
+    ('GUAIRA','PASO YOBAY','8 DE DICIEMBRE',true),
+    ('GUAIRA','PASO YOBAY','CENTRO',true),
+    ('GUAIRA','PASO YOBAY','SAN COSME',true),
+
+    -- GUAIRA / VILLARRICA
+    ('GUAIRA','VILLARRICA','CENTRO',true),
+    ('GUAIRA','VILLARRICA','ESTACION',true),
+    ('GUAIRA','VILLARRICA','LOMAS VALENTINAS',true),
+    ('GUAIRA','VILLARRICA','SAN MIGUEL',true),
+    ('GUAIRA','VILLARRICA','SANTA LIBRADA',true),
+    ('GUAIRA','VILLARRICA','SANTA LUCIA',true),
+    ('GUAIRA','VILLARRICA','TUYUTI MI',true),
+    ('GUAIRA','VILLARRICA','YBAROTY',true),
+
+    -- GUAIRA / ÑUMI
+    ('GUAIRA','ÑUMI','ALEGRE',true),
+    ('GUAIRA','ÑUMI','ARROYITO',true),
+    ('GUAIRA','ÑUMI','CENTRAL',true),
+    ('GUAIRA','ÑUMI','COLEGIAL',true),
+    ('GUAIRA','ÑUMI','COSMOS',true),
+    ('GUAIRA','ÑUMI','CRUZ DEL SUR',true),
+    ('GUAIRA','ÑUMI','JUVENTUD',true),
+    ('GUAIRA','ÑUMI','LAGUNA',true),
+    ('GUAIRA','ÑUMI','TAJAMAR',true),
+
+    -- ITAPUA / BELLA VISTA
+    ('ITAPUA','BELLA VISTA','8 DE DICIEMBRE',true),
+    ('ITAPUA','BELLA VISTA','CENTRO',true),
+    ('ITAPUA','BELLA VISTA','CONAVI',true),
+    ('ITAPUA','BELLA VISTA','NIÑO JESUS',true),
+    ('ITAPUA','BELLA VISTA','OBRERO',true),
+    ('ITAPUA','BELLA VISTA','TISCHLER',true),
+
+    -- ITAPUA / CARMEN DEL PARANA
+    ('ITAPUA','CARMEN DEL PARANA','LOMA CLAVEL',true),
+    ('ITAPUA','CARMEN DEL PARANA','OBRERE',true),
+    ('ITAPUA','CARMEN DEL PARANA','SAN BLAS',true),
+    ('ITAPUA','CARMEN DEL PARANA','SAN ISIDRO',true),
+    ('ITAPUA','CARMEN DEL PARANA','SAN MIGUEL',true),
+    ('ITAPUA','CARMEN DEL PARANA','SAN ROQUE',true),
+
+    -- ITAPUA / CORONEL BOGADO
+    ('ITAPUA','CORONEL BOGADO','SAN BLAS',true),
+    ('ITAPUA','CORONEL BOGADO','SANTA CLARA',true),
+    ('ITAPUA','CORONEL BOGADO','SANTA LIBRADA',true),
+    ('ITAPUA','CORONEL BOGADO','SANTA ROSA',true),
+
+    -- ITAPUA / ENCARNACION
+    ('ITAPUA','ENCARNACION','BARRIL PASO',true),
+    ('ITAPUA','ENCARNACION','BOQUERON',true),
+    ('ITAPUA','ENCARNACION','BUENA VISTA',true),
+    ('ITAPUA','ENCARNACION','CAAGUY RORY',true),
+    ('ITAPUA','ENCARNACION','CARLOS ANTONIO LOPEZ',true),
+    ('ITAPUA','ENCARNACION','CATEDRAL',true),
+    ('ITAPUA','ENCARNACION','GENERAL CABALLERO',true),
+    ('ITAPUA','ENCARNACION','INMACULADA CONCEPCION',true),
+    ('ITAPUA','ENCARNACION','IPVU',true),
+    ('ITAPUA','ENCARNACION','JUAN LEON MALLORQUIN',true),
+    ('ITAPUA','ENCARNACION','KENNEDY',true),
+    ('ITAPUA','ENCARNACION','LA PAZ',true),
+    ('ITAPUA','ENCARNACION','LA VICTORIA',true),
+    ('ITAPUA','ENCARNACION','MARIA AUXILIADORA',true),
+    ('ITAPUA','ENCARNACION','MBOY CAE',true),
+    ('ITAPUA','ENCARNACION','NUEVA ESPERANZA',true),
+    ('ITAPUA','ENCARNACION','OBRERO',true),
+    ('ITAPUA','ENCARNACION','PACU CUA',true),
+    ('ITAPUA','ENCARNACION','PADRE BOLIK',true),
+    ('ITAPUA','ENCARNACION','POLI-Y',true),
+    ('ITAPUA','ENCARNACION','QUITERIA',true),
+    ('ITAPUA','ENCARNACION','SAN BLAS',true),
+    ('ITAPUA','ENCARNACION','SAN ISIDRO',true),
+    ('ITAPUA','ENCARNACION','SAN JOSE',true),
+    ('ITAPUA','ENCARNACION','SAN PEDRO',true),
+    ('ITAPUA','ENCARNACION','SAN ROQUE GONZALEZ',true),
+    ('ITAPUA','ENCARNACION','SANTA MARIA',true),
+    ('ITAPUA','ENCARNACION','SANTA ROSA',true),
+    ('ITAPUA','ENCARNACION','VILLA CANDIDA',true),
+
+    -- ITAPUA / FRAM
+    ('ITAPUA','FRAM','8 DE DICIEMBRE',true),
+    ('ITAPUA','FRAM','ITAPE',true),
+    ('ITAPUA','FRAM','OBRERO',true),
+    ('ITAPUA','FRAM','SAN ANTONIO',true),
+    ('ITAPUA','FRAM','SAN CAYETANO',true),
+    ('ITAPUA','FRAM','SAN CRISTOBAL',true),
+    ('ITAPUA','FRAM','SAN FRANCISCO',true),
+    ('ITAPUA','FRAM','SAN RAMON',true),
+
+    -- ITAPUA / GRAL. ARTIGAS
+    ('ITAPUA','GRAL. ARTIGAS','URBANO1',true),
+    ('ITAPUA','GRAL. ARTIGAS','URBANO3',true),
+    ('ITAPUA','GRAL. ARTIGAS','URBANO4',true),
+    ('ITAPUA','GRAL. ARTIGAS','URBANO2',true),
+
+    -- ITAPUA / GRAL. DELGADO
+    ('ITAPUA','GRAL. DELGADO','NORTE',true),
+    ('ITAPUA','GRAL. DELGADO','SAN ROQUE GONZALEZ',true),
+    ('ITAPUA','GRAL. DELGADO','VIRGEN DE CAACUPE',true),
+
+    -- ITAPUA / JULIO D. OTAÑO
+    ('ITAPUA','JULIO D. OTAÑO','8 DE DICIEMBRE',true),
+    ('ITAPUA','JULIO D. OTAÑO','DEFENSORES DEL CHACO',true),
+    ('ITAPUA','JULIO D. OTAÑO','REPUBLICANO',true),
+    ('ITAPUA','JULIO D. OTAÑO','UNIVERSITARIO',true),
+
+    -- ITAPUA / PIRAPO
+    ('ITAPUA','PIRAPO','CENTRO',true),
+    ('ITAPUA','PIRAPO','OBRERO',true),
+    ('ITAPUA','PIRAPO','SAN BLAS',true),
+    ('ITAPUA','PIRAPO','SAN FRANCISCO',true),
+    ('ITAPUA','PIRAPO','SAN MIGUEL',true),
+
+    -- ITAPUA / SAN COSME Y DAMIAN
+    ('ITAPUA','SAN COSME Y DAMIAN','CAACUPE',true),
+    ('ITAPUA','SAN COSME Y DAMIAN','CENTRO',true),
+    ('ITAPUA','SAN COSME Y DAMIAN','KAAGUY RORY',true),
+    ('ITAPUA','SAN COSME Y DAMIAN','NAINGUA',true),
+    ('ITAPUA','SAN COSME Y DAMIAN','RIVERA',true),
+    ('ITAPUA','SAN COSME Y DAMIAN','SAN MIGUEL',true),
+    ('ITAPUA','SAN COSME Y DAMIAN','VILLA PERMANENTE',true),
+
+    -- ITAPUA / SAN PEDRO DEL PARANA
+    ('ITAPUA','SAN PEDRO DEL PARANA','CENTRAL',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','FATIMA',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','SAN ANTONIO',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','SAN FRANCISCO',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','SAN JOSE',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','SAN MIGUEL',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','SANTA CATALINA',true),
+    ('ITAPUA','SAN PEDRO DEL PARANA','SANTA ROSA',true),
+
+    -- MISIONES / AYOLAS
+    ('MISIONES','AYOLAS','MARIA GRACIELA',true),
+    ('MISIONES','AYOLAS','NUCLEO 01',true),
+    ('MISIONES','AYOLAS','NUCLEO 02',true),
+    ('MISIONES','AYOLAS','SAN ANTONIO',true),
+    ('MISIONES','AYOLAS','SAN JOSE MI',true),
+    ('MISIONES','AYOLAS','SAN JOSE OBRERO',true),
+    ('MISIONES','AYOLAS','STA. ROSA DE LIMA',true),
+    ('MISIONES','AYOLAS','VILLA PERMANENTE',true),
+    ('MISIONES','AYOLAS','VILLA PERMANENTE 2',true),
+
+    -- MISIONES / SAN IGNACIO
+    ('MISIONES','SAN IGNACIO','LOMA CLAVEL',true),
+    ('MISIONES','SAN IGNACIO','LOURDES',true),
+    ('MISIONES','SAN IGNACIO','MARIA AUXILIADORA',true),
+    ('MISIONES','SAN IGNACIO','RESISTENCIA',true),
+    ('MISIONES','SAN IGNACIO','SAN FRANCISCO',true),
+    ('MISIONES','SAN IGNACIO','SAN JOSE',true),
+    ('MISIONES','SAN IGNACIO','SAN ROQUE',true),
+    ('MISIONES','SAN IGNACIO','SAN SALVADOR',true),
+    ('MISIONES','SAN IGNACIO','SAN VICENTE',true),
+    ('MISIONES','SAN IGNACIO','SANTO ANGEL',true),
+
+    -- MISIONES / SAN JUAN BAUTISTA
+    ('MISIONES','SAN JUAN BAUTISTA','BOQUERON',true),
+    ('MISIONES','SAN JUAN BAUTISTA','CENTRO',true),
+    ('MISIONES','SAN JUAN BAUTISTA','CONCEPCION',true),
+    ('MISIONES','SAN JUAN BAUTISTA','GENERAL CABALLERO',true),
+    ('MISIONES','SAN JUAN BAUTISTA','GENERAL DIAZ',true),
+    ('MISIONES','SAN JUAN BAUTISTA','NUESTRA SENORA DE LA ASUNCION',true),
+    ('MISIONES','SAN JUAN BAUTISTA','OBRERO',true),
+    ('MISIONES','SAN JUAN BAUTISTA','SAN ANTONIO',true),
+    ('MISIONES','SAN JUAN BAUTISTA','SAN FRANCISCO',true),
+    ('MISIONES','SAN JUAN BAUTISTA','SAN MIGUEL',true),
+    ('MISIONES','SAN JUAN BAUTISTA','SANTA MARIA DE LOURDES',true),
+    ('MISIONES','SAN JUAN BAUTISTA','SANTA ROSA DE LIMA',true),
+    ('MISIONES','SAN JUAN BAUTISTA','UNIVERSITARIO',true),
+
+    -- MISIONES / SAN MIGUEL
+    ('MISIONES','SAN MIGUEL','BARRIO 1',true),
+    ('MISIONES','SAN MIGUEL','BARRIO 2',true),
+    ('MISIONES','SAN MIGUEL','BARRIO 3',true),
+    ('MISIONES','SAN MIGUEL','BARRIO 4',true),
+
+    -- MISIONES / VILLA FLORIDA
+    ('MISIONES','VILLA FLORIDA','CENTRAL',true),
+    ('MISIONES','VILLA FLORIDA','MANGA ITA',true),
+    ('MISIONES','VILLA FLORIDA','MANGA YVYRA',true),
+    ('MISIONES','VILLA FLORIDA','SAN ISIDRO',true),
+    ('MISIONES','VILLA FLORIDA','SAN MIGUEL',true),
+
+    -- NEEMBUCU / GRAL.JOSE EDUVIGIS DIAZ
+    ('NEEMBUCU','GRAL.JOSE EDUVIGIS DIAZ','8 DE DICIEMBRE',true),
+    ('NEEMBUCU','GRAL.JOSE EDUVIGIS DIAZ','CENTRO',true),
+    ('NEEMBUCU','GRAL.JOSE EDUVIGIS DIAZ','SANTA LIBRADA',true),
+    ('NEEMBUCU','GRAL.JOSE EDUVIGIS DIAZ','SANTA LUCIA',true),
+
+    -- NEEMBUCU / HUMAITA
+    ('NEEMBUCU','HUMAITA','ACOSTA NU',true),
+    ('NEEMBUCU','HUMAITA','ARROYO JABON',true),
+    ('NEEMBUCU','HUMAITA','CHACO-I',true),
+    ('NEEMBUCU','HUMAITA','SAN FRANCISCO',true),
+
+    -- NEEMBUCU / PILAR
+    ('NEEMBUCU','PILAR','12 DE OCTUBRE',true),
+    ('NEEMBUCU','PILAR','8 DE DICIEMBRE',true),
+    ('NEEMBUCU','PILAR','CRUCECITA',true),
+    ('NEEMBUCU','PILAR','GRAL. E. DIAZ',true),
+    ('NEEMBUCU','PILAR','GUARANI',true),
+    ('NEEMBUCU','PILAR','LOMA CLAVEL',true),
+    ('NEEMBUCU','PILAR','OBRERO',true),
+    ('NEEMBUCU','PILAR','SAN ANTONIO',true),
+    ('NEEMBUCU','PILAR','SAN FRANCISCO',true),
+    ('NEEMBUCU','PILAR','SAN JOSE',true),
+    ('NEEMBUCU','PILAR','SAN LORENZO',true),
+    ('NEEMBUCU','PILAR','SAN MIGUEL',true),
+    ('NEEMBUCU','PILAR','VILLA PASO',true),
+    ('NEEMBUCU','PILAR','YTORORO',true),
+
+    -- PARAGUARI / ACAHAY
+    ('PARAGUARI','ACAHAY','15 DE AGOSTO',true),
+    ('PARAGUARI','ACAHAY','CENTRAL',true),
+    ('PARAGUARI','ACAHAY','MONSENOR BOGARIN',true),
+    ('PARAGUARI','ACAHAY','MONSENOR CARDENS',true),
+    ('PARAGUARI','ACAHAY','SAN ALFONSO',true),
+    ('PARAGUARI','ACAHAY','SAN BLAS',true),
+
+    -- PARAGUARI / CAAPUCU
+    ('PARAGUARI','CAAPUCU','CENTRAL',true),
+    ('PARAGUARI','CAAPUCU','ESPIRITU SANTO',true),
+    ('PARAGUARI','CAAPUCU','SAGRADO CORAZON DE JESUS',true),
+    ('PARAGUARI','CAAPUCU','SAN ROQUE',true),
+    ('PARAGUARI','CAAPUCU','SAN SALVADOR',true),
+    ('PARAGUARI','CAAPUCU','SANTA LIBRADA',true),
+
+    -- PARAGUARI / CABALLERO
+    ('PARAGUARI','CABALLERO','8 DE DICIEMBRE',true),
+    ('PARAGUARI','CABALLERO','MARIA AUXILIADORA',true),
+    ('PARAGUARI','CABALLERO','SAN JOSE',true),
+    ('PARAGUARI','CABALLERO','SAN LUIS',true),
+    ('PARAGUARI','CABALLERO','SANTA ROSA',true),
+    ('PARAGUARI','CABALLERO','VIRGEN DE FATIMA',true),
+
+    -- PARAGUARI / CARAPEGUA
+    ('PARAGUARI','CARAPEGUA','CENTRAL',true),
+    ('PARAGUARI','CARAPEGUA','MARIA AUXILIADORA',true),
+    ('PARAGUARI','CARAPEGUA','SAN BLAS',true),
+    ('PARAGUARI','CARAPEGUA','SAN FRANCISCO',true),
+    ('PARAGUARI','CARAPEGUA','SAN JOSE',true),
+    ('PARAGUARI','CARAPEGUA','SAN MIGUEL',true),
+    ('PARAGUARI','CARAPEGUA','SAN ROQUE',true),
+    ('PARAGUARI','CARAPEGUA','SANTO DOMINGO',true),
+    ('PARAGUARI','CARAPEGUA','VIRGEN DEL CARMEN',true),
+
+    -- PARAGUARI / LA COLMENA
+    ('PARAGUARI','LA COLMENA','SAN FRANCISCO',true),
+    ('PARAGUARI','LA COLMENA','SAN JOSE',true),
+    ('PARAGUARI','LA COLMENA','SANTA CATALINA',true),
+    ('PARAGUARI','LA COLMENA','VIRGEN DE FATIMA',true),
+    ('PARAGUARI','LA COLMENA','VIRGEN DEL CARMEN',true),
+
+    -- PARAGUARI / MBUYAPEY
+    ('PARAGUARI','MBUYAPEY','INMACULADA CONCEPCION',true),
+    ('PARAGUARI','MBUYAPEY','ITATI 2',true),
+    ('PARAGUARI','MBUYAPEY','MARIA AUXILIADORA',true),
+    ('PARAGUARI','MBUYAPEY','PERPETUO SOCORRO',true),
+    ('PARAGUARI','MBUYAPEY','SANTA TERESITA',true),
+    ('PARAGUARI','MBUYAPEY','VIRGEN DE FATIMA',true),
+    ('PARAGUARI','MBUYAPEY','VIRGEN DE ITATI',true),
+    ('PARAGUARI','MBUYAPEY','VIRGEN DE LOS DOLORES',true),
+    ('PARAGUARI','MBUYAPEY','VIRGEN DE LOURDES',true),
+    ('PARAGUARI','MBUYAPEY','VIRGEN DEL CARMEN',true),
+    ('PARAGUARI','MBUYAPEY','VIRGEN DEL ROSARIO',true),
+
+    -- PARAGUARI / PARAGUARI
+    ('PARAGUARI','PARAGUARI','BARRIO 1',true),
+    ('PARAGUARI','PARAGUARI','BARRIO 2',true),
+    ('PARAGUARI','PARAGUARI','BARRIO 3',true),
+
+    -- PARAGUARI / PIRAYU
+    ('PARAGUARI','PIRAYU','BARRIO1',true),
+    ('PARAGUARI','PIRAYU','BARRIO2',true),
+    ('PARAGUARI','PIRAYU','BARRIO3',true),
+    ('PARAGUARI','PIRAYU','BARRIO4',true),
+
+    -- PARAGUARI / QUIINDY
+    ('PARAGUARI','QUIINDY','GRAL. BERNARDINO CABALLERO',true),
+    ('PARAGUARI','QUIINDY','SAGRADA FAMILIA',true),
+    ('PARAGUARI','QUIINDY','SAGRADO CORAZON DE JESUS',true),
+    ('PARAGUARI','QUIINDY','SAN LORENZO',true),
+    ('PARAGUARI','QUIINDY','SANTA MARIA',true),
+
+    -- PARAGUARI / QUYQUYHO
+    ('PARAGUARI','QUYQUYHO','CENTRAL',true),
+    ('PARAGUARI','QUYQUYHO','SAN MIGUEL',true),
+    ('PARAGUARI','QUYQUYHO','SAN PEDRO Y SAN PABLO',true),
+
+    -- PARAGUARI / ROQUE GONZALEZ
+    ('PARAGUARI','ROQUE GONZALEZ','INMACULADA CONCEPCION',true),
+    ('PARAGUARI','ROQUE GONZALEZ','SAGRADO CORAZON DE JESUS',true),
+    ('PARAGUARI','ROQUE GONZALEZ','SAN VICENTE',true),
+    ('PARAGUARI','ROQUE GONZALEZ','VIRGEN DEL ROSARIO',true),
+
+    -- PARAGUARI / SAPUCAI
+    ('PARAGUARI','SAPUCAI','MBOCAYA',true),
+    ('PARAGUARI','SAPUCAI','PLANTA URBANA',true),
+    ('PARAGUARI','SAPUCAI','TIERRA NEGRA',true),
+
+    -- PARAGUARI / TEBICUARY MI
+    ('PARAGUARI','TEBICUARY MI','CENTRO',true),
+
+    -- PARAGUARI / YAGUARON
+    ('PARAGUARI','YAGUARON','SAN FRANCISCO',true),
+    ('PARAGUARI','YAGUARON','SAN JOSE',true),
+    ('PARAGUARI','YAGUARON','SAN MIGUEL',true),
+    ('PARAGUARI','YAGUARON','SAN ROQUE',true),
+    ('PARAGUARI','YAGUARON','SANTA LIBRADA',true),
+
+    -- PARAGUARI / YBYCUI
+    ('PARAGUARI','YBYCUI','SAN FRANCISCO',true),
+    ('PARAGUARI','YBYCUI','SAN JOSE',true),
+    ('PARAGUARI','YBYCUI','SANTA ROSA',true),
+    ('PARAGUARI','YBYCUI','SANTA TERESA',true),
+    ('PARAGUARI','YBYCUI','VIRGEN DE FATIMA',true),
+
+    -- PARAGUARI / YBYTYMI
+    ('PARAGUARI','YBYTYMI','FATIMA',true),
+    ('PARAGUARI','YBYTYMI','SAGRADO CORAZON DE JESUS',true),
+    ('PARAGUARI','YBYTYMI','SAN ROQUE',true),
+    ('PARAGUARI','YBYTYMI','VIRGEN DEL ROSARIO',true),
+
+    -- PTE. HAYES / JOSE FALCON
+    ('PTE. HAYES','JOSE FALCON','SANTA ROSA',true),
+
+    -- PTE. HAYES / NANAWA
+    ('PTE. HAYES','NANAWA','8 DE DICIEMBRE',true),
+    ('PTE. HAYES','NANAWA','CENTRAL',true),
+    ('PTE. HAYES','NANAWA','INDEPENDIENTE',true),
+    ('PTE. HAYES','NANAWA','ORIENTAL',true),
+    ('PTE. HAYES','NANAWA','QUINTA',true),
+    ('PTE. HAYES','NANAWA','SAN ANTONIO',true),
+    ('PTE. HAYES','NANAWA','SAN MIGUEL',true),
+    ('PTE. HAYES','NANAWA','VIRGEN DEL ROSARIO',true),
+
+    -- PTE. HAYES / VILLA HAYES
+    ('PTE. HAYES','VILLA HAYES','ALONSO',true),
+    ('PTE. HAYES','VILLA HAYES','CIUDAD NUEVA',true),
+    ('PTE. HAYES','VILLA HAYES','GOLONDRINA',true),
+    ('PTE. HAYES','VILLA HAYES','PADETE',true),
+
+    -- SAN PEDRO / ANTEQUERA
+    ('SAN PEDRO','ANTEQUERA','CURUZU CHICA',true),
+    ('SAN PEDRO','ANTEQUERA','SAN ROQUE GONZALEZ',true),
+    ('SAN PEDRO','ANTEQUERA','SANTO DOMINGO',true),
+    ('SAN PEDRO','ANTEQUERA','VIRGEN DE FATIMA',true),
+
+    -- SAN PEDRO / CHORE
+    ('SAN PEDRO','CHORE','SAN ROQUE GONZALEZ',true),
+    ('SAN PEDRO','CHORE','SAN VICENTE',true),
+    ('SAN PEDRO','CHORE','SANTA ANA',true),
+    ('SAN PEDRO','CHORE','SANTA LUCIA',true),
+    ('SAN PEDRO','CHORE','SANTISIMA TRINIDAD',true),
+
+    -- SAN PEDRO / GRAL. E.AQUINO
+    ('SAN PEDRO','GRAL. E.AQUINO','AEROPUERTO',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','CANADA',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','FATIMA',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','PROGRESO',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','SAN ANTONIO',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','SAN FRANCISCO',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','SAN JOSE',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','SAN PEDRO',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','SANTA ISABEL',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','SANTA LIBRADA',true),
+    ('SAN PEDRO','GRAL. E.AQUINO','VILLA NUEVA',true),
+
+    -- SAN PEDRO / ITACURUBI DEL ROSARIO
+    ('SAN PEDRO','ITACURUBI DEL ROSARIO','ZONA URBANA',true),
+
+    -- SAN PEDRO / LIMA
+    ('SAN PEDRO','LIMA','INMACULADA CONCEPCION',true),
+    ('SAN PEDRO','LIMA','SAN FRANCISCO',true),
+    ('SAN PEDRO','LIMA','SAN JOSE',true),
+
+    -- SAN PEDRO / SAN ESTANISLAO
+    -- Nota: se elimina "(SANTANI)" para que coincida con el nombre cargado en CIUDADES.
+    ('SAN PEDRO','SAN ESTANISLAO','CORONEL MONGELOS',true),
+    ('SAN PEDRO','SAN ESTANISLAO','DOS BOCAS',true),
+    ('SAN PEDRO','SAN ESTANISLAO','MONTE ALTO',true),
+    ('SAN PEDRO','SAN ESTANISLAO','SAN ANTONIO',true),
+    ('SAN PEDRO','SAN ESTANISLAO','SAN JOSE OBRERO',true),
+    ('SAN PEDRO','SAN ESTANISLAO','SANTA BARBARA',true),
+    ('SAN PEDRO','SAN ESTANISLAO','TAPIRACUAI',true),
+
+    -- SAN PEDRO / SAN PEDRO DE YCUAMANDYYU
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','INMACULADA CONCEPCION',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','MARIA AUXILIADORA',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','NTRA. SRA. DE LA ASUNCION',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','ROQUE GONZALEZ',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','SAN JOSE',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','SAN JUAN',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','SAN MIGUEL',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','SAN RAFAEL',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','SAN RAMON',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','SANTA ANA',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','VILLA REAL',true),
+    ('SAN PEDRO','SAN PEDRO DE YCUAMANDYYU','VIRGEN DE FATIMA',true),
+
+    -- SAN PEDRO / TACUATI
+    ('SAN PEDRO','TACUATI','AMAMBAY',true),
+    ('SAN PEDRO','TACUATI','MARIA AUXILIADORA',true),
+    ('SAN PEDRO','TACUATI','NTRA SRA DE LA ASUNCION',true),
+    ('SAN PEDRO','TACUATI','SAN PEDRO',true),
+    ('SAN PEDRO','TACUATI','SANTA ROSA',true),
+    ('SAN PEDRO','TACUATI','VIRGEN DEL CARMEN',true),
+
+    -- SAN PEDRO / UNION
+    ('SAN PEDRO','UNION','MARIA GORETTI',true),
+    ('SAN PEDRO','UNION','SAN JOSE',true),
+    ('SAN PEDRO','UNION','SAN ROQUE',true),
+    ('SAN PEDRO','UNION','SANTA CATALINA',true),
+
+    -- SAN PEDRO / VILLA DEL ROSARIO
+    ('SAN PEDRO','VILLA DEL ROSARIO','INMACULADA',true),
+    ('SAN PEDRO','VILLA DEL ROSARIO','PUERTO ROSARIO',true),
+    ('SAN PEDRO','VILLA DEL ROSARIO','SAN BLAS',true),
+    ('SAN PEDRO','VILLA DEL ROSARIO','SAN JOSE',true),
+    ('SAN PEDRO','VILLA DEL ROSARIO','SAN LUIS',true),
+    ('SAN PEDRO','VILLA DEL ROSARIO','SANTA MARIA GORETTI',true),
+    ('SAN PEDRO','VILLA DEL ROSARIO','SANTA TERESITA',true),
+
+    -- SAN PEDRO / YATAITY DEL NORTE
+    ('SAN PEDRO','YATAITY DEL NORTE','6 DE ENERO',true),
+    ('SAN PEDRO','YATAITY DEL NORTE','CENTRO',true),
+    ('SAN PEDRO','YATAITY DEL NORTE','SAGRADA FAMILIA',true),
+    ('SAN PEDRO','YATAITY DEL NORTE','SAN FRANCISCO',true),
+    ('SAN PEDRO','YATAITY DEL NORTE','SAN JOSE',true)
+)
+INSERT INTO public.distritos (id_ciudad, nombre, activo)
+SELECT c.id_ciudad, d.nombre, d.activo
+FROM cte_datos d
+JOIN cte_ciudad c
+  ON c.dep = d.dep
+ AND c.ciu = d.ciu
+ON CONFLICT (id_ciudad, nombre) DO NOTHING;
+
+
+
+-- =============================================================================
+-- TIPOS DE DOCUMENTO
+-- =============================================================================
+
+INSERT INTO tipos_documento (codigo, nombre, aplica_a, activo) VALUES
+('CI',        'CEDULA DE IDENTIDAD',                      'PERSONA', true),
+('DNI',       'DOCUMENTO NACIONAL DE IDENTIDAD',          'PERSONA', true),
+('CPF',       'CADASTRO DE PESSOAS FISICAS',              'PERSONA', true),
+('PASAPORTE', 'PASAPORTE',                                'PERSONA', true),
+('RUC',       'REGISTRO UNICO DEL CONTRIBUYENTE',         'AMBOS',   true),
+('CNPJ',      'CADASTRO NACIONAL DA PESSOA JURIDICA',     'EMPRESA', true),
+('CUIT',      'CLAVE UNICA DE IDENTIFICACION TRIBUTARIA', 'EMPRESA', true),
+('NIT',       'NUMERO DE IDENTIFICACION TRIBUTARIA',      'EMPRESA', true)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- =============================================================================
+-- MARCAS DE VEHICULOS
+-- =============================================================================
+
+INSERT INTO marcas (nombre, activo) VALUES
+('TOYOTA',        true),
+('NISSAN',        true),
+('ISUZU',         true),
+('HYUNDAI',       true),
+('KIA',           true),
+('MITSUBISHI',    true),
+('FORD',          true),
+('CHEVROLET',     true),
+('VOLKSWAGEN',    true),
+('SCANIA',        true),
+('VOLVO',         true),
+('MERCEDES-BENZ', true),
+('HINO',          true),
+('IVECO',         true)
+ON CONFLICT (nombre) DO NOTHING;
+
+-- =============================================================================
+-- MODELOS DE VEHÍCULOS
+-- =============================================================================
+
+INSERT INTO modelos (id_marca, nombre, activo)
+SELECT m.id_marca, v.nombre, true
+FROM public.marcas m
+JOIN (VALUES
+    -- TOYOTA
+    ('TOYOTA', 'HILUX'),
+    ('TOYOTA', 'HIACE'),
+    ('TOYOTA', 'COASTER'),
+    ('TOYOTA', 'LAND CRUISER'),
+
+    -- NISSAN
+    ('NISSAN', 'NAVARA'),
+    ('NISSAN', 'NP300'),
+    ('NISSAN', 'FRONTIER'),
+    ('NISSAN', 'URVAN'),
+
+    -- ISUZU
+    ('ISUZU', 'NKR'),
+    ('ISUZU', 'NPR'),
+    ('ISUZU', 'NQR'),
+    ('ISUZU', 'D-MAX'),
+
+    -- HYUNDAI
+    ('HYUNDAI', 'H100'),
+    ('HYUNDAI', 'H350'),
+    ('HYUNDAI', 'HD65'),
+    ('HYUNDAI', 'HD72'),
+
+    -- KIA
+    ('KIA', 'BONGO'),
+    ('KIA', 'K2700'),
+    ('KIA', 'K3000'),
+
+    -- MITSUBISHI
+    ('MITSUBISHI', 'L200'),
+    ('MITSUBISHI', 'CANTER'),
+
+    -- FORD
+    ('FORD', 'RANGER'),
+    ('FORD', 'TRANSIT'),
+
+    -- CHEVROLET
+    ('CHEVROLET', 'S10'),
+    ('CHEVROLET', 'NPR'),
+
+    -- VOLKSWAGEN
+    ('VOLKSWAGEN', 'AMAROK'),
+    ('VOLKSWAGEN', 'DELIVERY'),
+
+    -- MERCEDES-BENZ
+    ('MERCEDES-BENZ', 'SPRINTER'),
+    ('MERCEDES-BENZ', 'ATEGO'),
+
+    -- VOLVO
+    ('VOLVO', 'FH'),
+    ('VOLVO', 'FM'),
+
+    -- SCANIA
+    ('SCANIA', 'R420'),
+    ('SCANIA', 'G440'),
+
+    -- HINO
+    ('HINO', '300'),
+    ('HINO', '500'),
+
+    -- IVECO
+    ('IVECO', 'DAILY'),
+    ('IVECO', 'TECTOR')
+
+) AS v(marca, nombre)
+ON m.nombre = v.marca
+ON CONFLICT DO NOTHING;
+
+-- =============================================================================
+-- USUARIO INICIAL DEL SISTEMA
+--
+-- Nota:
+--   Usuario base para acceso inicial y tareas de administracion/desarrollo.
+--   El password_hash es un placeholder y debe ser reemplazado por un hash real
+--   generado desde la aplicacion.
+--   El INSERT es idempotente y se controla por email.
+-- =============================================================================
+
+INSERT INTO usuarios (
+    nombre,
+    apellido,
+    nombre_usuario,
+    email,
+    password_hash,
+    id_tipo_documento,
+    numero_documento,
+    fecha_nacimiento,
+    activo
+)
+SELECT
+    'JUAN',
+    'ELIAS',
+    'ELYRRAH',
+    'elyrrah.006@gmail.com',
+    'PLACE_HOLDER',
+    td.id_tipo_documento,
+    '6211195',
+    DATE '2004-12-06',
+    true
+FROM public.tipos_documento td
+WHERE td.codigo = 'CI'
+ON CONFLICT (email) DO NOTHING;
+
+COMMIT;
+
+-- =============================================================================
+-- FIN DEL SCRIPT 02_DATA
+-- =============================================================================

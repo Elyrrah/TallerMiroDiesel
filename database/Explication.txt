@@ -1,0 +1,243 @@
+========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ==========
+---------- ---------- ---------- ---------- ---------- -- TABLAS Y COLUMNAS DE LA BASE DE DATOS -- ---------- ---------- ---------- ---------- ----------
+========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ========== ==========
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- PAÍSES --- ---------- ---------- Define los países disponibles en el sistema ----------
+
+id_pais → bigint (PK)                            Identificador único del país
+nombre  → varchar(100)                           Nombre oficial del país
+iso2    → char(2)                                Abreviación de dos letras (PY, BR, AR)
+iso3    → char(3)                                Abreviación de tres letras (PRY, BRA, ARG)
+activo  → boolean                                Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- DEPARTAMENTOS ------- ---------- División administrativa principal del país  ----------
+
+id_departamento → bigint (PK)                    Identificador único del departamento
+id_pais         → bigint (FK)                    Llave identificadora del país al que pertenece
+nombre          → varchar(120)                   Nombre del departamento
+activo          → boolean                        Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- CIUDADES - ---------- ---------- División administrativa secundaria del país ----------
+
+id_ciudad       → bigint (PK)                    Identificador único de la ciudad
+id_departamento → bigint (FK)                    Llave identificadora del departamento al que pertenece
+nombre          → varchar(120)                   Nombre de la ciudad
+activo          → boolean                        Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- DISTRITOS  ---------- ---------- Subdivisión opcional dentro de una ciudad - ----------
+
+id_distrito  → bigint (PK)                       Identificador único del distrito
+id_ciudad    → bigint (FK)                       Llave identificadora de la ciudad a la que pertenece
+nombre       → varchar(120)                      Nombre del distrito
+activo       → boolean                           Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- CLIENTES - ---------- ---------- Tabla base de clientes --------- ---------- ----------
+
+id_cliente     → bigint (PK)                     Identificador único del cliente
+telefono       → varchar(30)                     Contacto principal
+email          → varchar(100)                    Contacto electrónico (opcional)
+direccion      → varchar(200)                    Dirección libre (opcional)
+id_ciudad      → bigint (FK, nullable)           Ciudad informada por el cliente (opcional)
+id_distrito    → bigint (FK, nullable)           Distrito informado por el cliente (opcional)
+activo         → boolean                         Permite deshabilitar sin borrar datos
+fecha_creacion → timestamp                       Fecha de registro del cliente
+
+Nota:
+- Un cliente puede tener ciudad o distrito, pero no ambos al mismo tiempo.
+Debido a que los clientes suelen decir uno a la hora de registrarlos
+- Esto permite registrar datos incompletos y corregirlos luego.
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- CLIENTES_PERSONA ---- ---------- Datos cuando el cliente es una persona ---- ----------
+
+id_cliente → bigint (PK y FK)                    Llave foránea del cliente
+nombre     → varchar(120)                        Nombre de la persona
+apellido   → varchar(120)                        Apellido de la persona
+apodo      → varchar(30)                         Nombre interno o apodo (opcional)
+activo     → boolean                             Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- CLIENTES_EMPRESA ---- ---------- Datos cuando el cliente es una empresa ---- ----------
+
+id_cliente      → bigint (PK y FK)               Llave foránea del cliente
+razon_social    → varchar(100)                   Razón social legal
+nombre_fantasia → varchar(50)                    Nombre comercial o corto (opcional)
+activo          → boolean                        Permite deshabilitar sin borrar datos
+
+Nota:
+- Un cliente no puede ser persona y empresa al mismo tiempo.
+- Esto se controla automáticamente por la base de datos.
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- TIPOS_DOCUMENTO ----- ---------- Tipos de documentos disponibles  ---------- ----------
+
+id_tipo_documento → bigint (PK)                  Identificador único del tipo de documento
+nombre            → varchar(50)                  Nombre del documento
+codigo            → varchar(20)                  Código corto (CI, RUC, etc.)
+aplica_a          → varchar(10)                  PERSONA, EMPRESA o AMBOS
+activo            → boolean                      Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- CLIENTE_DOCUMENTOS -- ---------- Documentos asociados a clientes  ---------- ----------
+
+id_cliente_documento → bigint (PK)               Identificador único del documento
+id_cliente           → bigint (FK)               Cliente al que pertenece
+id_tipo_documento    → bigint (FK)               Tipo de documento
+numero               → varchar(40)               Número del documento
+principal            → boolean                   Indica si es el documento principal
+activo               → boolean                   Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- MARCAS --- ---------- ---------- Marcas de vehículos - ---------- ---------- ----------
+
+id_marca → bigint (PK)                           Identificador único de la marca
+nombre   → varchar(50)                           Nombre de la marca
+activo   → boolean                               Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- MODELOS -- ---------- ---------- Modelos asociados a marcas ----- ---------- ----------
+
+id_modelo → bigint (PK)                          Identificador único del modelo
+id_marca  → bigint (FK)                          Marca a la que pertenece
+nombre    → varchar(50)                          Nombre del modelo
+activo    → boolean                              Permite deshabilitar sin borrar datos
+
+Nota:
+- El modelo siempre debe pertenecer a la marca seleccionada.
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- VEHÍCULOS  ---------- ---------- Vehículos ingresados al taller - ---------- ----------
+
+id_vehiculo   → bigint (PK)                      Identificador único del vehículo
+id_cliente    → bigint (FK)                      Cliente propietario
+placa         → varchar(20)                      Placa del vehículo
+id_marca      → bigint (FK)                      Marca del vehículo
+id_modelo     → bigint (FK, nullable)            Modelo del vehículo (opcional)
+anio          → smallint                         Año del vehículo
+tipo_vehiculo → varchar(20)                      Tipo (CAMIÓN, CAMIONETA, TRACTOR, etc.)
+observaciones → varchar(100)                     Notas adicionales
+activo        → boolean                          Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- COMPONENTES --------- ---------- Componentes traídos al taller -- ---------- ----------
+
+id_componente   → bigint (PK)                    Identificador único del componente
+id_cliente      → bigint (FK)                    Cliente propietario
+tipo_componente → varchar(50)                    Tipo del componente
+id_marca        → bigint (FK)                    Marca del componente
+id_modelo       → bigint (FK)                    Modelo del componente
+cantidad        → integer                        Cantidad entregada
+observaciones   → varchar(250)                   Observaciones (opcional)
+activo          → boolean                        Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- SERVICIOS  ---------- ---------- Servicios ofrecidos por el taller --------- ----------
+
+id_servicio    → bigint (PK)                     Identificador único del servicio
+codigo         → varchar(20)                     Código corto del servicio
+nombre         → varchar(120)                    Nombre del servicio
+descripcion    → varchar(250)                    Descripción detallada (opcional)
+precio_base    → numeric(14,0)                   Precio base en guaraníes
+activo         → boolean                         Permite deshabilitar sin borrar datos
+fecha_creacion → timestamp                       Fecha de alta del servicio
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- USUARIOS - ---------- ---------- Usuarios del sistema  ---------- ---------- ----------
+
+id_usuario        → bigint (PK)                  Identificador único del usuario
+nombre            → varchar(50)                  Nombre
+apellido          → varchar(50)                  Apellido
+nombre_usuario    → varchar(50)                  Nombre visible en la app
+email             → varchar(100)                 Email (login)
+password_hash     → varchar(255)                 Contraseña encriptada
+id_tipo_documento → bigint (FK)                  Tipo de documento
+numero_documento  → varchar(40)                  Número del documento
+fecha_nacimiento  → date                         Fecha de nacimiento
+activo            → boolean                      Permite deshabilitar sin borrar datos
+fecha_creacion    → timestamp                    Fecha de alta
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- ORDENES_TRABAJO ----- ---------- Orden principal del trabajo ---- ---------- ----------
+
+id_orden_trabajo      → bigint (PK)              Identificador único
+numero_orden          → varchar(30)              Número generado automáticamente (OT-YYYY-MM-001)
+id_usuario            → bigint (FK)              Usuario que registra la orden
+id_cliente            → bigint (FK)              Cliente
+tipo_ingreso          → varchar(12)              VEHICULO o COMPONENTE
+id_vehiculo           → bigint (FK, nullable)    Vehículo asociado (si aplica)
+id_componente         → bigint (FK, nullable)    Componente asociado (si aplica)
+fecha_ingreso         → timestamp                Fecha de ingreso
+problema_reportado    → text                     Problema informado por el cliente
+observaciones_ingreso → text                     Observaciones internas
+estado                → varchar(20)              Estado de la orden
+fecha_entrega         → timestamp                Fecha de entrega al cliente
+fecha_fin             → timestamp                Fecha de finalización del trabajo
+total_estimado        → numeric(14,0)            Total calculado automáticamente
+activo                → boolean                  Permite deshabilitar sin borrar datos
+fecha_creacion        → timestamp                Fecha de creación
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- ORDEN_TRABAJO_DETALLES --------- Detalles del trabajo realizado - ---------- ----------
+
+id_detalle       → bigint (PK)                   Identificador único del detalle
+id_orden_trabajo → bigint (FK)                   Orden a la que pertenece
+id_servicio      → bigint (FK)                   Servicio realizado
+descripcion      → text                          Descripción adicional (opcional)
+cantidad         → integer                       Cantidad del servicio
+precio_unitario  → numeric(14,0)                 Precio aplicado (se completa automáticamente)
+subtotal         → numeric(14,0) (calculado)     cantidad × precio_unitario
+observaciones    → text                          Observaciones del detalle
+garantia_meses   → smallint                      Meses de garantía (opcional)
+garantia_dias    → smallint                      Días de garantía (opcional)
+garantia_desde   → date                          Inicio de la garantía
+garantia_hasta   → date                          Fin de la garantía
+activo           → boolean                       Permite deshabilitar sin borrar datos
+fecha_creacion   → timestamp                     Fecha de registro
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- PLANES_PAGO --------- ---------- Planes de pago, como mensuales, semanales, etc -------
+
+id_plan_pago      → bigint (PK)                  Identificador único
+id_orden_trabajo  → bigint (FK)                  Orden asociada
+tipo_plan         → varchar(12)                  CONTADO, CUOTAS, etc.
+estado            → varchar(15)                  Estado del plan
+fecha_inicio      → date                         Inicio del plan
+fecha_vencimiento → date                         Fin del plan
+monto_cuota       → numeric(14,0)                Monto por cuota
+dia_pago          → smallint                     Día de pago (opcional)
+cantidad_cuotas   → smallint                     Cantidad total
+observaciones     → varchar(259)                 Observaciones
+activo            → boolean                      Permite deshabilitar sin borrar datos
+fecha_creacion    → timestamp                    Fecha de alta
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- PLANES_PAGO_EVENTOS - --------- Eventos del plan de pago -------- ---------- ----------
+
+id_evento        → bigint (PK)                   Identificador único
+id_plan_pago     → bigint (FK)                   Plan asociado
+fecha_evento     → timestamp                     Fecha del evento
+tipo_evento      → varchar(20)                   Tipo de evento
+fecha_compromiso → date                          Fecha comprometida
+monto_compromiso → numeric(14,0)                 Monto comprometido
+detalle          → varchar(259)                  Observaciones
+activo           → boolean                       Permite deshabilitar sin borrar datos
+
+---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ---------- ----------
+---------- ---------- PAGOS ---- ---------- ---------- Pagos realizados por los clientes --------- ----------
+
+id_pago          → bigint (PK)                   Identificador único
+id_usuario       → bigint (FK)                   Usuario que registra el pago
+id_orden_trabajo → bigint (FK)                   Orden asociada
+id_plan_pago     → bigint (FK, nullable)         Plan de pago (si aplica)
+fecha_pago       → timestamp                     Fecha del pago
+monto            → numeric(14,0)                 Monto abonado
+forma_pago       → varchar(20)                   EFECTIVO, TRANSFERENCIA, etc.
+referencia       → varchar(80)                   Referencia del pago
+observaciones    → varchar(259)                  Observaciones
+activo           → boolean                       Permite deshabilitar sin borrar datos
+fecha_creacion   → timestamp                     Fecha de registro
