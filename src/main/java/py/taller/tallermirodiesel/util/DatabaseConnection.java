@@ -33,8 +33,8 @@ public class DatabaseConnection {
 
             String url = p.getProperty("db.url");
             String user = p.getProperty("db.user");
-            String pass = p.getProperty("db.pass");
-
+            String pass = p.getProperty("db.pass"); 
+            
             return DriverManager.getConnection(url, user, pass);
 
         } catch (Exception e) {
