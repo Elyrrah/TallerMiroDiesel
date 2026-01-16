@@ -8,7 +8,18 @@
         <title>Países</title>
     </head>
     <body>
-        <h1>Países</h1>
+        <%
+            String titulo = (String) request.getAttribute("titulo");
+            if (titulo == null) titulo = "Países";
+        %>
+
+        <h1><%= titulo %></h1>
+
+        <p>
+            <a href="<%= request.getContextPath() %>/paises">Activos</a> |
+            <a href="<%= request.getContextPath() %>/paises?estado=inactivos">Inactivos</a> |
+            <a href="<%= request.getContextPath() %>/paises?estado=todos">Todos</a>
+        </p>
 
         <%
             List<Pais> paises = (List<Pais>) request.getAttribute("paises");

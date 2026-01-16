@@ -2,32 +2,31 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package py.taller.tallermirodiesel.util;
 
-import java.util.List;
-import py.taller.tallermirodiesel.dao.PaisDAO;
-import py.taller.tallermirodiesel.dao.PaisDAOImpl;
-import py.taller.tallermirodiesel.model.Pais;
+package py.taller.tallermirodiesel.util;
 
 /**
  *
  * @author elyrr
  */
 
+import py.taller.tallermirodiesel.dao.PaisDAO;
+import py.taller.tallermirodiesel.dao.PaisDAOImpl;
+
 public class TestPaisDAO {
 
     public static void main(String[] args) {
         PaisDAO dao = new PaisDAOImpl();
-        List<Pais> paises = dao.listarTodos();
 
-        System.out.println("Total paises: " + paises.size());
-        for (Pais p : paises) {
-            System.out.println(
-                    p.getIdPais() + " | " +
-                    p.getNombre() + " | " +
-                    p.getIso2() + " | " +
-                    p.getIso3() + " | activo=" + p.isActivo()
-            );
-        }
+        // CAMBIA este ID por uno que exista
+        Long idPrueba = 1L;
+
+        // 1) Desactivar (soft delete)
+        boolean desactivado = dao.desactivar(idPrueba);
+        System.out.println("Desactivado: " + desactivado);
+
+        // 2) Eliminar (DELETE físico) — NO EJECUTAR por ahora
+        // boolean eliminado = dao.eliminar(idPrueba);
+        // System.out.println("Eliminado: " + eliminado);
     }
 }

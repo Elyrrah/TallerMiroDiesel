@@ -27,10 +27,24 @@ public class PaisServlet extends HttpServlet {
             throws ServletException, IOException {
 
         PaisDAO dao = new PaisDAOImpl();
-        List<Pais> paises = dao.listarTodos();
+
+        String estado = request.getParameter("estado"); // activos | inactivos | todos
+        List<Pais> paises;
+
+        if ("inactivos".equalsIgnoreCase(estado)) {
+            paises = dao.listarInactivos();
+            request.setAttribute("titulo", "Países inactivos");
+        } else if ("todos".equalsIgnoreCase(estado)) {
+            paises = dao.listarTodos();
+            request.setAttribute("titulo", "Todos los países");
+        } else {
+            paises = dao.listarActivos();
+            request.setAttribute("titulo", "Países activos");
+        }
 
         request.setAttribute("paises", paises);
         request.getRequestDispatcher("/WEB-INF/views/paises.jsp")
                .forward(request, response);
     }
+
 }

@@ -35,6 +35,8 @@ public class DatabaseConnection {
             String user = p.getProperty("db.user");
             String pass = p.getProperty("db.pass"); 
             
+            Class.forName("org.postgresql.Driver");
+
             return DriverManager.getConnection(url, user, pass);
 
         } catch (Exception e) {
