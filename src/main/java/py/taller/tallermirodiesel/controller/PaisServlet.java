@@ -11,8 +11,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import py.taller.tallermirodiesel.dao.PaisDAO;
-import py.taller.tallermirodiesel.dao.PaisDAOImpl;
+import py.taller.tallermirodiesel.service.PaisService;
+import py.taller.tallermirodiesel.service.PaisServiceImpl;
 import py.taller.tallermirodiesel.model.Pais;
 
 /**
@@ -26,19 +26,19 @@ public class PaisServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        PaisDAO dao = new PaisDAOImpl();
+        PaisService service = new PaisServiceImpl();
 
         String estado = request.getParameter("estado"); // activos | inactivos | todos
         List<Pais> paises;
 
         if ("inactivos".equalsIgnoreCase(estado)) {
-            paises = dao.listarInactivos();
+            paises = service.listarInactivos();
             request.setAttribute("titulo", "Países inactivos");
         } else if ("todos".equalsIgnoreCase(estado)) {
-            paises = dao.listarTodos();
+            paises = service.listarTodos();
             request.setAttribute("titulo", "Todos los países");
         } else {
-            paises = dao.listarActivos();
+            paises = service.listarActivos();
             request.setAttribute("titulo", "Países activos");
         }
 
