@@ -2,18 +2,27 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Interface.java to edit this template
  */
-
 package py.taller.tallermirodiesel.service;
 
+import java.util.List;
 import java.util.Optional;
-import py.taller.tallermirodiesel.model.Pais;
 
 /**
  *
  * @author elyrr
  */
 
-public interface PaisService extends CrudService<Pais, Long> {
+public interface CrudService<T, ID> {
 
-    Optional<Pais> buscarPorIso2(String iso2);
+    List<T> listarActivos();
+
+    List<T> listarInactivos();
+
+    List<T> listarTodos();
+
+    Optional<T> buscarPorId(ID id);
+
+    boolean activar(ID id);
+
+    boolean desactivar(ID id);
 }
