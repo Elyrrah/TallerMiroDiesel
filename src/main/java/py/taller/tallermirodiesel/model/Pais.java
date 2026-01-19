@@ -4,11 +4,9 @@
  */
 package py.taller.tallermirodiesel.model;
 /**
- *
  * @author elyrr
  */
 public class Pais {
-    
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idPais;
     private String nombre;

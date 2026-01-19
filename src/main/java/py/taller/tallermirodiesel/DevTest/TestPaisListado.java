@@ -2,7 +2,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package py.taller.tallermirodiesel.util;
+package py.taller.tallermirodiesel.DevTest;
 
 /**
  *
@@ -10,7 +10,7 @@ package py.taller.tallermirodiesel.util;
  */
 
 import py.taller.tallermirodiesel.dao.PaisDAO;
-import py.taller.tallermirodiesel.dao.PaisDAOImpl;
+import py.taller.tallermirodiesel.dao.impl.PaisDAOImpl;
 import py.taller.tallermirodiesel.model.Pais;
 
 public class TestPaisListado {
