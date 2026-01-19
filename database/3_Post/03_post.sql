@@ -110,6 +110,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_modelos_marca_nombre_activo
 ON public.modelos (id_marca, nombre)
 WHERE activo = true;
 
+CREATE INDEX IF NOT EXISTS idx_usuarios_id_rol
+ON public.usuarios (id_rol);
+
+CREATE INDEX IF NOT EXISTS idx_roles_permisos_id_rol
+ON public.roles_permisos (id_rol);
+
 -- =============================================================================
 -- CHECK / UNIQUE CONSTRAINTS (IDEMPOTENTES)
 --

@@ -1897,16 +1897,32 @@ ON m.nombre = v.marca
 ON CONFLICT DO NOTHING;
 
 -- =============================================================================
+-- ROLES INICIALES
+-- =============================================================================
+INSERT INTO public.roles (codigo, nombre, descripcion, activo) VALUES
+('DESARROLLADOR', 'DESARROLLADOR', 'Acceso total al sistema', true),
+('ADMIN',         'ADMINISTRADOR', 'Administracion del taller', true),
+('OPERADOR',      'OPERADOR', 'Uso diario del sistema', true)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- =============================================================================
+-- PERMISOS
+-- =============================================================================
+INSERT INTO public.permisos (codigo, nombre, descripcion, activo) VALUES
+('ALL', 'Acceso total', 'Permiso comodin para acceso total', true)
+ON CONFLICT (codigo) DO NOTHING;
+
+-- =============================================================================
 -- USUARIO INICIAL DEL SISTEMA
 --
 -- Nota:
 --   Usuario base para acceso inicial y tareas de administracion/desarrollo.
 --   El password_hash es un placeholder y debe ser reemplazado por un hash real
 --   generado desde la aplicacion.
---   El INSERT es idempotente y se controla por email.
 -- =============================================================================
 
-INSERT INTO usuarios (
+INSERT INTO public.usuarios (
+    id_rol,
     nombre,
     apellido,
     nombre_usuario,
@@ -1918,6 +1934,7 @@ INSERT INTO usuarios (
     activo
 )
 SELECT
+    r.id_rol,
     'JUAN',
     'ELIAS',
     'ELYRRAH',
@@ -1928,6 +1945,7 @@ SELECT
     DATE '2004-12-06',
     true
 FROM public.tipos_documento td
+JOIN public.roles r ON r.codigo = 'DESARROLLADOR'
 WHERE td.codigo = 'CI'
 ON CONFLICT (email) DO NOTHING;
 
