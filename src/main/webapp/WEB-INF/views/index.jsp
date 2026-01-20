@@ -14,7 +14,8 @@
     <body>
         <h1>Taller Miro Diesel</h1>
         <p>Aplicación en desarrollo.</p>
-        <a href="${pageContext.request.contextPath}/paises?action=list">Países</a>
+        <a href="${pageContext.request.contextPath}/paises?action=list">Países</a> <br>
+        <a href="${pageContext.request.contextPath}/departamentos?action=list">Departamentos</a>
 
     </body>
 </html>

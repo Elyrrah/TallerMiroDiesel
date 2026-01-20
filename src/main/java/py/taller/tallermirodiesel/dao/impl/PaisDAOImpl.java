@@ -7,6 +7,7 @@ package py.taller.tallermirodiesel.dao.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +19,7 @@ import py.taller.tallermirodiesel.util.DatabaseConnection;
  */
 public class PaisDAOImpl implements PaisDAO {
     //  Mapear Pais
-    private Pais mapearPais(ResultSet rs) throws Exception {
+    private Pais mapearPais(ResultSet rs) throws SQLException {
         Pais p = new Pais();
         p.setIdPais(rs.getLong("id_pais"));
         p.setNombre(rs.getString("nombre"));
@@ -138,7 +139,7 @@ public class PaisDAOImpl implements PaisDAO {
         } catch (Exception e) {
             throw new RuntimeException("Error desactivando pais: " + e.getMessage(), e);
         }
-    }    
+    }
     
     //  Busca un Pais por su id
     @Override

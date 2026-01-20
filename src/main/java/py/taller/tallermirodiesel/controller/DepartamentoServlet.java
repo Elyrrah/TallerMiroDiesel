@@ -11,21 +11,27 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Optional;
-import py.taller.tallermirodiesel.model.Pais;
+import py.taller.tallermirodiesel.model.Departamento;
+import py.taller.tallermirodiesel.service.DepartamentoService;
+import py.taller.tallermirodiesel.service.impl.DepartamentoServiceImpl;
 import py.taller.tallermirodiesel.service.PaisService;
 import py.taller.tallermirodiesel.service.impl.PaisServiceImpl;
+
 /**
  * @author elyrr
  */
-@WebServlet("/paises")
-public class PaisServlet extends HttpServlet {
+@WebServlet("/departamentos")
+public class DepartamentoServlet extends HttpServlet {
 
+    private DepartamentoService departamentoService;
     private PaisService paisService;
 
     @Override
     public void init() {
+        this.departamentoService = new DepartamentoServiceImpl();
         this.paisService = new PaisServiceImpl();
     }
+
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
@@ -60,10 +66,11 @@ public class PaisServlet extends HttpServlet {
             switch (accion) {
                 case "crear" -> crear(req, resp);
                 case "actualizar" -> actualizar(req, resp);
-                default -> resp.sendRedirect(req.getContextPath() + "/paises?accion=listar");
+                default -> resp.sendRedirect(req.getContextPath() + "/departamentos?accion=listar");
             }
         } catch (IOException e) {
             req.setAttribute("error", e.getMessage());
+            req.setAttribute("paises", paisService.listarActivos());
 
             // Re-render del formulario correspondiente
             if ("actualizar".equals(accion)) {
@@ -76,14 +83,27 @@ public class PaisServlet extends HttpServlet {
 
     private void listar(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.setAttribute("paises", paisService.listarTodos());
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_listar.jsp").forward(req, resp);
-    }
 
+        // Si viene idPais, filtramos por país; si no, se lista todo.
+        Long idPais = parseLong(req.getParameter("idPais"));
+        req.setAttribute("paises", paisService.listarActivos());
+        req.setAttribute("idPaisSeleccionado", idPais);
+
+        if (idPais != null) {
+            req.setAttribute("departamentos", departamentoService.listarPorPais(idPais));
+        } else {
+            req.setAttribute("departamentos", departamentoService.listarTodos());
+        }
+
+        req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_listar.jsp").forward(req, resp);
+    } 
+    
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-        req.setAttribute("pais", new Pais());
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_form.jsp").forward(req, resp);
+        req.setAttribute("departamento", new Departamento());
+        req.setAttribute("paises", paisService.listarActivos());
+
+        req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_form.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp)
@@ -93,36 +113,36 @@ public class PaisServlet extends HttpServlet {
             throw new IllegalArgumentException("Id inválido.");
         }
 
-        Optional<Pais> pais = paisService.buscarPorId(id);
-        if (pais.isEmpty()) {
-            throw new IllegalArgumentException("No existe un país con id: " + id);
+        Optional<Departamento> departamento = departamentoService.buscarPorId(id);
+        if (departamento.isEmpty()) {
+            throw new IllegalArgumentException("No existe un departamento con id: " + id);
         }
 
-        req.setAttribute("pais", pais.get());
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_form.jsp").forward(req, resp);
+    req.setAttribute("departamento", departamento.get());
+    req.setAttribute("paises", paisService.listarActivos());
+    req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_form.jsp").forward(req, resp);
+
     }
 
     private void crear(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Pais p = new Pais();
-        p.setNombre(req.getParameter("nombre"));
-        p.setIso2(req.getParameter("iso2"));
-        p.setIso3(req.getParameter("iso3"));
-        p.setActivo(true);
+        Departamento d = new Departamento();
+        d.setIdPais(parseLong(req.getParameter("idPais")));
+        d.setNombre(req.getParameter("nombre"));
+        d.setActivo(true);
 
-        paisService.crear(p);
-        resp.sendRedirect(req.getContextPath() + "/paises?accion=listar");
+        departamentoService.crear(d);
+        resp.sendRedirect(req.getContextPath() + "/departamentos?accion=listar");
     }
 
     private void actualizar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        Pais p = new Pais();
-        p.setIdPais(parseLong(req.getParameter("idPais")));
-        p.setNombre(req.getParameter("nombre"));
-        p.setIso2(req.getParameter("iso2"));
-        p.setIso3(req.getParameter("iso3"));
-        p.setActivo("true".equals(req.getParameter("activo"))); // si usas checkbox/select
+        Departamento d = new Departamento();
+        d.setIdDepartamento(parseLong(req.getParameter("idDepartamento")));
+        d.setIdPais(parseLong(req.getParameter("idPais")));
+        d.setNombre(req.getParameter("nombre"));
+        d.setActivo("true".equals(req.getParameter("activo"))); // si usas checkbox/select
 
-        paisService.actualizar(p);
-        resp.sendRedirect(req.getContextPath() + "/paises?accion=listar");
+        departamentoService.actualizar(d);
+        resp.sendRedirect(req.getContextPath() + "/departamentos?accion=listar");
     }
 
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -131,9 +151,15 @@ public class PaisServlet extends HttpServlet {
             throw new IllegalArgumentException("Id inválido.");
         }
 
-        paisService.activar(id);
-        resp.sendRedirect(req.getContextPath() + "/paises?accion=listar");
+        departamentoService.activar(id);
+
+        Long idPais = parseLong(req.getParameter("idPais"));
+        String url = req.getContextPath() + "/departamentos?accion=listar";
+        if (idPais != null) url += "&idPais=" + idPais;
+
+        resp.sendRedirect(url);
     }
+
 
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
@@ -141,9 +167,15 @@ public class PaisServlet extends HttpServlet {
             throw new IllegalArgumentException("Id inválido.");
         }
 
-        paisService.desactivar(id);
-        resp.sendRedirect(req.getContextPath() + "/paises?accion=listar");
+        departamentoService.desactivar(id);
+
+        Long idPais = parseLong(req.getParameter("idPais"));
+        String url = req.getContextPath() + "/departamentos?accion=listar";
+        if (idPais != null) url += "&idPais=" + idPais;
+
+        resp.sendRedirect(url);
     }
+
 
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) return null;

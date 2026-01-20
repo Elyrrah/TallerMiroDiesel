@@ -118,8 +118,7 @@ public class PaisServiceImpl implements PaisService {
         }
 
         Pais pais = paisDAO.buscarPorId(id)
-                .orElseThrow(() ->
-                    new IllegalArgumentException("No existe un país con id: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("No existe un país con id: " + id));
 
         if (pais.isActivo()) {
             throw new IllegalStateException("El país ya se encuentra activo.");
@@ -149,6 +148,12 @@ public class PaisServiceImpl implements PaisService {
 
     @Override
     public Optional<Pais> buscarPorId(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("El id del país es obligatorio.");
+        }
+        if (id <= 0) {
+            throw new IllegalArgumentException("El id del país debe ser mayor a 0.");
+        }
         return paisDAO.buscarPorId(id);
     }
 
