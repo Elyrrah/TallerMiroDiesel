@@ -10,13 +10,10 @@ import py.taller.tallermirodiesel.dao.PaisDAO;
 import py.taller.tallermirodiesel.dao.impl.PaisDAOImpl;
 import py.taller.tallermirodiesel.model.Pais;
 import py.taller.tallermirodiesel.service.PaisService;
-
 /**
- *
  * @author elyrr
  */
 public class PaisServiceImpl implements PaisService {
-
     // DAO utilizado por el Service para acceder a la capa de persistencia.
     // El Service delega en el DAO todas las operaciones de acceso a datos.
     private final PaisDAO paisDAO;
@@ -26,7 +23,6 @@ public class PaisServiceImpl implements PaisService {
     public PaisServiceImpl() {
         this.paisDAO = new PaisDAOImpl();
     }
-
 
     //  Validaciones para Crear un Pais.
     @Override
@@ -52,7 +48,6 @@ public class PaisServiceImpl implements PaisService {
             throw new IllegalArgumentException("El ISO3 debe tener exactamente 3 caracteres (si se provee).");
         }
 
-        
         pais.setNombre(nombre);
         pais.setIso2(iso2);
         pais.setIso3(iso3);

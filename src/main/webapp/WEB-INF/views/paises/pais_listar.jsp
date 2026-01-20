@@ -1,3 +1,9 @@
+<%-- 
+    Document   : pais_listar
+    Created on : 19 ene. 2026, 11:19:57 a. m.
+    Author     : elyrr
+--%>
+
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 

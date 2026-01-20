@@ -19,17 +19,16 @@ import py.taller.tallermirodiesel.util.DatabaseConnection;
  */
 public class DepartamentoDAOImpl implements DepartamentoDAO{
     //  Mapear Departamento
-private Departamento mapearDepartamento(ResultSet rs) throws Exception {
-    Departamento d = new Departamento();
-    d.setIdDepartamento(rs.getLong("id_departamento"));
-    d.setIdPais(rs.getLong("id_pais"));
-    d.setNombre(rs.getString("nombre"));
-    d.setActivo(rs.getBoolean("activo"));
-    d.setNombrePais(rs.getString("nombre_pais"));
+    private Departamento mapearDepartamento(ResultSet rs) throws SQLException {
+        Departamento d = new Departamento();
+        d.setIdDepartamento(rs.getLong("id_departamento"));
+        d.setIdPais(rs.getLong("id_pais"));
+        d.setNombre(rs.getString("nombre"));
+        d.setActivo(rs.getBoolean("activo"));
+        d.setNombrePais(rs.getString("nombre_pais"));
 
-    return d;
-}
-
+        return d;
+    }
     
     //  Crea un nuevo Departamento
     @Override
@@ -44,7 +43,7 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             ps.setLong(1, departamento.getIdPais());
-            ps.setString(2, departamento.getNombre());
+            ps.setString(2, departamento.getNombre() == null ? null : departamento.getNombre().trim().toUpperCase());
             ps.setBoolean(3, departamento.isActivo());
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -64,9 +63,8 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
     public boolean actualizar(Departamento departamento) {
         String sql = """
                 UPDATE public.departamentos
-                SET 
-                     id_pais = ?,
-                     nombre = ?,
+                SET id_pais = ?,
+                    nombre = ?,
                     activo = ?
                 WHERE id_departamento = ?
                 """;
@@ -75,7 +73,7 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setLong(1, departamento.getIdPais());
-            ps.setString(2, departamento.getNombre());
+            ps.setString(2, departamento.getNombre() == null ? null : departamento.getNombre().trim().toUpperCase());
             ps.setBoolean(3, departamento.isActivo());
             ps.setLong(4, departamento.getIdDepartamento());
 
@@ -146,11 +144,7 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
     @Override
     public Optional<Departamento> buscarPorId(Long id) {
         String sql = """
-            SELECT d.id_departamento,
-                   d.id_pais,
-                   d.nombre,
-                   d.activo,
-                   p.nombre AS nombre_pais
+            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
             FROM public.departamentos d
             JOIN public.paises p ON p.id_pais = d.id_pais
             WHERE d.id_departamento = ?
@@ -173,21 +167,15 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
         }
     }
 
-
     //  Lista todos los Departamentos
     @Override
     public List<Departamento> listarTodos() {
     String sql = """
-        SELECT d.id_departamento,
-               d.id_pais,
-               d.nombre,
-               d.activo,
-               p.nombre AS nombre_pais
+        SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
         FROM public.departamentos d
         JOIN public.paises p ON p.id_pais = d.id_pais
         ORDER BY d.id_pais
-    """;
-
+        """;
 
         List<Departamento> lista = new ArrayList<>();
 
@@ -210,12 +198,11 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
     @Override
     public List<Departamento> listarActivos() {
         String sql = """
-                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo,
-                    p.nombre AS nombre_pais
-                FROM public.departamentos d
-                JOIN public.paises p ON p.id_pais = d.id_pais
-                WHERE d.activo = true
-                ORDER BY d.nombre
+            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+            FROM public.departamentos d
+            JOIN public.paises p ON p.id_pais = d.id_pais
+            WHERE d.activo = true
+            ORDER BY d.nombre
             """;
 
         List<Departamento> lista = new ArrayList<>();
@@ -239,11 +226,10 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
     @Override
     public List<Departamento> listarInactivos() {
         String sql = """
-                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo,
-                    p.nombre AS nombre_pais
-                FROM public.departamentos d
-                JOIN public.paises p ON p.id_pais = d.id_pais
-                WHERE d.id_departamento = ?
+            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+            FROM public.departamentos d
+            JOIN public.paises p ON p.id_pais = d.id_pais
+            WHERE d.id_departamento = ?
             """;
 
         List<Departamento> lista = new ArrayList<>();
@@ -263,20 +249,16 @@ private Departamento mapearDepartamento(ResultSet rs) throws Exception {
         }
     }
     
+    //  Lista todos los Departamentos de un Pais
     @Override
     public List<Departamento> listarPorPais(Long idPais) {
     String sql = """
-        SELECT d.id_departamento,
-               d.id_pais,
-               d.nombre,
-               d.activo,
-               p.nombre AS nombre_pais
+        SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
         FROM public.departamentos d
         JOIN public.paises p ON p.id_pais = d.id_pais
         WHERE d.id_pais = ?
         ORDER BY d.nombre
-    """;
-
+        """;
 
         List<Departamento> lista = new ArrayList<>();
 

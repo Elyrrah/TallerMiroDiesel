@@ -1,3 +1,9 @@
+<%-- 
+    Document   : pais_form
+    Created on : 19 ene. 2026, 10:01:12 a. m.
+    Author     : elyrr
+--%>
+
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
