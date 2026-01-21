@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package py.taller.tallermirodiesel.service.impl;
+
 import java.util.List;
 import java.util.Optional;
 import py.taller.tallermirodiesel.dao.DepartamentoDAO;
@@ -23,7 +24,6 @@ public class DepartamentoServiceImpl implements DepartamentoService {
     public DepartamentoServiceImpl() {
         this.departamentoDAO = new DepartamentoDAOImpl();
     }
-
     
     //  Validaciones para Crear un Departamento.
     @Override
