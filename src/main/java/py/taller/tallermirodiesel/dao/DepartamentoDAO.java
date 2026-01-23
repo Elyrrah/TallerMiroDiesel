@@ -6,10 +6,12 @@ package py.taller.tallermirodiesel.dao;
 
 import java.util.List;
 import py.taller.tallermirodiesel.model.Departamento;
+
 /**
  * @author elyrr
  */
 public interface DepartamentoDAO extends CatalogoCrudDAO<Departamento, Long> {
+    
     //  Lista todos los Departamento de un Pais
     List<Departamento> listarPorPais(Long idPais);
 }

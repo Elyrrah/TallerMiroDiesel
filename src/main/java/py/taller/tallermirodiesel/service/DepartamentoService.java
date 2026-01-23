@@ -6,10 +6,12 @@ package py.taller.tallermirodiesel.service;
 
 import java.util.List;
 import py.taller.tallermirodiesel.model.Departamento;
+
 /**
  * @author elyrr
  */
 public interface DepartamentoService extends CatalogoCrudService<Departamento, Long>{
+    
     //  Lista todos los Departamento por su Pais
     List<Departamento> listarPorPais(Long idPais);
 }

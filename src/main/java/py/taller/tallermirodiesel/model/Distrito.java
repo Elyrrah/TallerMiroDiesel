@@ -22,7 +22,7 @@ public class Distrito {
     public Distrito() {
     }
 
-    // Constructor principal
+    // Constructor con parámetros
     public Distrito(Long idDistrito, Long idCiudad, String nombre, boolean activo) {
         this.idDistrito = idDistrito;
         this.idCiudad = idCiudad;

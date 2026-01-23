@@ -14,10 +14,12 @@ import java.util.Optional;
 import py.taller.tallermirodiesel.dao.DepartamentoDAO;
 import py.taller.tallermirodiesel.model.Departamento;
 import py.taller.tallermirodiesel.util.DatabaseConnection;
+
 /**
  * @author elyrr
  */
 public class DepartamentoDAOImpl implements DepartamentoDAO{
+    
     //  Mapear Departamento
     private Departamento mapearDepartamento(ResultSet rs) throws SQLException {
         Departamento d = new Departamento();
@@ -25,8 +27,14 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
         d.setIdPais(rs.getLong("id_pais"));
         d.setNombre(rs.getString("nombre"));
         d.setActivo(rs.getBoolean("activo"));
-        d.setNombrePais(rs.getString("nombre_pais"));
 
+        // Nota: nombre_pais solo existe cuando el SELECT hace JOIN con paises
+        try {
+            d.setNombrePais(rs.getString("nombre_pais"));
+        } catch (SQLException ignore) {
+            d.setNombrePais(null);
+        }
+                
         return d;
     }
     
@@ -43,7 +51,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
              PreparedStatement ps = con.prepareStatement(sql)) {
             
             ps.setLong(1, departamento.getIdPais());
-            ps.setString(2, departamento.getNombre() == null ? null : departamento.getNombre().trim().toUpperCase());
+            ps.setString(2, departamento.getNombre());
             ps.setBoolean(3, departamento.isActivo());
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -73,7 +81,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setLong(1, departamento.getIdPais());
-            ps.setString(2, departamento.getNombre() == null ? null : departamento.getNombre().trim().toUpperCase());
+            ps.setString(2, departamento.getNombre());
             ps.setBoolean(3, departamento.isActivo());
             ps.setLong(4, departamento.getIdDepartamento());
 
@@ -167,15 +175,75 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
         }
     }
 
+    //  Busca un Departamento por su nombre
+    @Override
+    public Optional<Departamento> buscarPorNombre(String nombre) {
+        String sql = """
+            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+            FROM public.departamentos d
+            JOIN public.paises p ON p.id_pais = d.id_pais
+            WHERE UPPER(TRIM(d.nombre)) = UPPER(TRIM(?))
+            """;
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String nombreNorm = (nombre == null) ? null : nombre.trim();
+            ps.setString(1, nombreNorm);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapearDepartamento(rs));
+                }
+                return Optional.empty();
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error buscando departamento por nombre: " + e.getMessage(), e);
+        }
+    }
+
+    //  Busca Departamentos cuyo nombre coincida parcialmente
+    @Override
+    public List<Departamento> buscarPorNombreParcial(String filtro) {
+        String sql = """
+            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+            FROM public.departamentos d
+            JOIN public.paises p ON p.id_pais = d.id_pais
+            WHERE d.nombre ILIKE ?
+            ORDER BY p.nombre ASC, d.nombre ASC
+            """;
+
+        List<Departamento> lista = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String filtroNorm = (filtro == null) ? "" : filtro.trim();
+            ps.setString(1, "%" + filtroNorm + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearDepartamento(rs));
+                }
+            }
+
+            return lista;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error buscando departamento por nombre parcial: " + e.getMessage(), e);
+        }
+    }
+
     //  Lista todos los Departamentos
     @Override
     public List<Departamento> listarTodos() {
-    String sql = """
-        SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-        FROM public.departamentos d
-        JOIN public.paises p ON p.id_pais = d.id_pais
-        ORDER BY d.id_pais
-        """;
+        String sql = """
+            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+            FROM public.departamentos d
+            JOIN public.paises p ON p.id_pais = d.id_pais
+            ORDER BY d.nombre ASC
+            """;
 
         List<Departamento> lista = new ArrayList<>();
 
@@ -202,7 +270,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
             FROM public.departamentos d
             JOIN public.paises p ON p.id_pais = d.id_pais
             WHERE d.activo = true
-            ORDER BY d.nombre
+            ORDER BY d.nombre ASC
             """;
 
         List<Departamento> lista = new ArrayList<>();
@@ -229,7 +297,8 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
             SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
             FROM public.departamentos d
             JOIN public.paises p ON p.id_pais = d.id_pais
-            WHERE d.id_departamento = ?
+            WHERE d.activo = false
+            ORDER BY p.nombre ASC, d.nombre ASC
             """;
 
         List<Departamento> lista = new ArrayList<>();

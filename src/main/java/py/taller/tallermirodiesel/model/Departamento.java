@@ -3,6 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package py.taller.tallermirodiesel.model;
+
 /**
  * @author elyrr
  */
@@ -13,12 +14,22 @@ public class Departamento {
     private Long idPais;
     private String nombre;
     private boolean activo;
+
+    // Campo auxiliar para mostrar el nombre del Pais con JOIN
     private String nombrePais;
 
     // Constructor vacío
     public Departamento() {
     }
 
+    // Constructor con parámetros
+    public Departamento(Long idDepartamento, Long idPais, String nombre, boolean activo) {
+        this.idDepartamento = idDepartamento;
+        this.idPais = idPais;
+        this.nombre = nombre;
+        this.activo = activo;
+    }
+    
     // Getters y setters
     public Long getIdDepartamento() {
         return idDepartamento;
@@ -53,13 +64,5 @@ public class Departamento {
     }
     public void setNombrePais(String nombrePais) {
         this.nombrePais = nombrePais;
-    }
-    
- // Constructor con parámetros
-    public Departamento(Long idDepartamento, Long idPais, String nombre, boolean activo) {
-        this.idDepartamento = idDepartamento;
-        this.idPais = idPais;
-        this.nombre = nombre;
-        this.activo = activo;
     }
 }

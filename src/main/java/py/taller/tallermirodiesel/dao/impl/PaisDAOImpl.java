@@ -14,10 +14,12 @@ import java.util.Optional;
 import py.taller.tallermirodiesel.dao.PaisDAO;
 import py.taller.tallermirodiesel.model.Pais;
 import py.taller.tallermirodiesel.util.DatabaseConnection;
+
 /**
  * @author elyrr
  */
 public class PaisDAOImpl implements PaisDAO {
+    
     //  Mapear Pais
     private Pais mapearPais(ResultSet rs) throws SQLException {
         Pais p = new Pais();
@@ -26,8 +28,10 @@ public class PaisDAOImpl implements PaisDAO {
         p.setIso2(rs.getString("iso2"));
         p.setIso3(rs.getString("iso3"));
         p.setActivo(rs.getBoolean("activo"));
+        
         return p;
     }
+    
     //  Crea un nuevo Pais
     @Override
     public Long crear(Pais pais) {
@@ -41,8 +45,8 @@ public class PaisDAOImpl implements PaisDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, pais.getNombre());
-            ps.setString(2, pais.getIso2() == null ? null : pais.getIso2().trim().toUpperCase());
-            ps.setString(3, pais.getIso3() == null ? null : pais.getIso3().trim().toUpperCase());
+            ps.setString(2, pais.getIso2());
+            ps.setString(3, pais.getIso3());
             ps.setBoolean(4, pais.isActivo());
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -73,8 +77,8 @@ public class PaisDAOImpl implements PaisDAO {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, pais.getNombre());
-            ps.setString(2, pais.getIso2() == null ? null : pais.getIso2().trim().toUpperCase());
-            ps.setString(3, pais.getIso3() == null ? null : pais.getIso3().trim().toUpperCase());
+            ps.setString(2, pais.getIso2());
+            ps.setString(3, pais.getIso3());
             ps.setBoolean(4, pais.isActivo());
             ps.setLong(5, pais.getIdPais());
 
@@ -171,10 +175,10 @@ public class PaisDAOImpl implements PaisDAO {
     @Override
     public Optional<Pais> buscarPorIso2(String iso2) {
         String sql = """
-                SELECT id_pais, nombre, iso2, iso3, activo
-                FROM public.paises
-                WHERE iso2 = ?
-                """;
+            SELECT id_pais, nombre, iso2, iso3, activo
+            FROM public.paises
+            WHERE iso2 = ?
+            """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -194,14 +198,72 @@ public class PaisDAOImpl implements PaisDAO {
         }
     }
     
+    //  Busca un Pais por su nombre
+    @Override
+    public Optional<Pais> buscarPorNombre(String nombre) {
+        String sql = """
+                SELECT id_pais, nombre, iso2, iso3, activo
+                FROM public.paises
+                WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))
+                """;
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String nombreNorm = (nombre == null) ? null : nombre.trim();
+            ps.setString(1, nombreNorm);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapearPais(rs));
+                }
+                return Optional.empty();
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error buscando pais por nombre: " + e.getMessage(), e);
+        }
+    }
+    
+    //  Busca Paises cuyo nombre coincida parcialmente
+    @Override
+    public List<Pais> buscarPorNombreParcial(String filtro) {
+        String sql = """
+                SELECT id_pais, nombre, iso2, iso3, activo
+                FROM public.paises
+                WHERE nombre ILIKE ?
+                ORDER BY nombre ASC
+                """;
+
+        List<Pais> lista = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String filtroNorm = (filtro == null) ? "" : filtro.trim();
+            ps.setString(1, "%" + filtroNorm + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearPais(rs));
+                }
+            }
+
+            return lista;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error buscando pais por nombre parcial: " + e.getMessage(), e);
+        }
+    }
+    
     //  Lista todos los Paises
     @Override
     public List<Pais> listarTodos() {
         String sql = """
-                SELECT id_pais, nombre, iso2, iso3, activo
-                FROM public.paises
-                ORDER BY id_pais
-                """;
+            SELECT id_pais, nombre, iso2, iso3, activo
+            FROM public.paises
+            ORDER BY nombre ASC
+            """;
 
         List<Pais> lista = new ArrayList<>();
 
@@ -224,11 +286,11 @@ public class PaisDAOImpl implements PaisDAO {
     @Override
     public List<Pais> listarActivos() {
         String sql = """
-                SELECT id_pais, nombre, iso2, iso3, activo
-                FROM public.paises
-                WHERE activo = true
-                ORDER BY id_pais
-                """;
+            SELECT id_pais, nombre, iso2, iso3, activo
+            FROM public.paises
+            WHERE activo = true
+            ORDER BY nombre ASC
+            """;
 
         List<Pais> lista = new ArrayList<>();
 
@@ -251,11 +313,11 @@ public class PaisDAOImpl implements PaisDAO {
     @Override
     public List<Pais> listarInactivos() {
         String sql = """
-                SELECT id_pais, nombre, iso2, iso3, activo
-                FROM public.paises
-                WHERE activo = false
-                ORDER BY id_pais
-                """;
+            SELECT id_pais, nombre, iso2, iso3, activo
+            FROM public.paises
+            WHERE activo = false
+            ORDER BY nombre ASC
+            """;
 
         List<Pais> lista = new ArrayList<>();
 

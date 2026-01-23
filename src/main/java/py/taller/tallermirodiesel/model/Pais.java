@@ -3,10 +3,12 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package py.taller.tallermirodiesel.model;
+
 /**
  * @author elyrr
  */
 public class Pais {
+    
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idPais;
     private String nombre;
@@ -18,6 +20,15 @@ public class Pais {
     public Pais() {
     }
 
+    // Constructor con parámetros
+    public Pais(Long idPais, String nombre, String iso2, String iso3, boolean activo) {
+        this.idPais = idPais;
+        this.nombre = nombre;
+        this.iso2 = iso2;
+        this.iso3 = iso3;
+        this.activo = activo;
+    }
+    
     // Getters y setters
     public Long getIdPais() {
         return idPais;
@@ -51,15 +62,6 @@ public class Pais {
         return activo;
     }
     public void setActivo(boolean activo) {
-        this.activo = activo;
-    }
-
-    // Constructor con parámetros
-    public Pais(Long idPais, String nombre, String iso2, String iso3, boolean activo) {
-        this.idPais = idPais;
-        this.nombre = nombre;
-        this.iso2 = iso2;
-        this.iso3 = iso3;
         this.activo = activo;
     }
 }

@@ -175,6 +175,66 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    //  Busca un Distrito por su nombre
+    @Override
+    public Optional<Distrito> buscarPorNombre(String nombre) {
+        String sql = """
+            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
+            FROM public.distritos d
+            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
+            WHERE UPPER(TRIM(d.nombre)) = UPPER(TRIM(?))
+            """;
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String nombreNorm = (nombre == null) ? null : nombre.trim();
+            ps.setString(1, nombreNorm);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return Optional.of(mapearDistrito(rs));
+                }
+                return Optional.empty();
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error buscando distrito por nombre: " + e.getMessage(), e);
+        }
+    }
+
+    //  Busca Distritos cuyo nombre coincida parcialmente
+    @Override
+    public List<Distrito> buscarPorNombreParcial(String filtro) {
+        String sql = """
+            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
+            FROM public.distritos d
+            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
+            WHERE d.nombre ILIKE ?
+            ORDER BY c.nombre ASC, d.nombre ASC
+            """;
+
+        List<Distrito> lista = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            String filtroNorm = (filtro == null) ? "" : filtro.trim();
+            ps.setString(1, "%" + filtroNorm + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearDistrito(rs));
+                }
+            }
+
+            return lista;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error buscando distrito por nombre parcial: " + e.getMessage(), e);
+        }
+    }
+
     //  Lista todos los Distritos
     @Override
     public List<Distrito> listarTodos() {
@@ -182,7 +242,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
             FROM public.distritos d
             JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            ORDER BY c.nombre
+            ORDER BY d.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -210,7 +270,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             FROM public.distritos d
             JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
             WHERE d.activo = true
-            ORDER BY c.nombre
+            ORDER BY d.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -238,7 +298,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             FROM public.distritos d
             JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
             WHERE d.activo = false
-            ORDER BY c.nombre
+            ORDER BY c.nombre ASC, d.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();

@@ -6,10 +6,12 @@ package py.taller.tallermirodiesel.service;
 
 import java.util.Optional;
 import py.taller.tallermirodiesel.model.Pais;
+
 /**
  * @author elyrr
  */
 public interface PaisService extends CatalogoCrudService<Pais, Long> {
+    
     //  Busca un Pais por su ISO2
     Optional<Pais> buscarPorIso2(String iso2);
 }

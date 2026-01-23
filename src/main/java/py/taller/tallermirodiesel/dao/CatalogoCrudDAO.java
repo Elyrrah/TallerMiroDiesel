@@ -30,6 +30,12 @@ public interface CatalogoCrudDAO<T, ID> {
     //  Busca una instancia de la clase por su id
     Optional<T> buscarPorId(ID id);
     
+    //  Busca una instancia de la clase por su nombre
+    Optional<T> buscarPorNombre(String nombre);
+    
+    //  Busca instancias cuyo nombre coincida parcialmente
+    List<T> buscarPorNombreParcial(String filtro);
+    
     //  Lista todas las instancias de la clase
     List<T> listarTodos();
     
