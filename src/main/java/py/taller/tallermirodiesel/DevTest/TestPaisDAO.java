@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 
-package py.taller.tallermirodiesel.util;
+package py.taller.tallermirodiesel.DevTest;
 
 /**
  *
@@ -11,7 +11,7 @@ package py.taller.tallermirodiesel.util;
  */
 
 import py.taller.tallermirodiesel.dao.PaisDAO;
-import py.taller.tallermirodiesel.dao.PaisDAOImpl;
+import py.taller.tallermirodiesel.dao.impl.PaisDAOImpl;
 
 public class TestPaisDAO {
 
@@ -21,9 +21,9 @@ public class TestPaisDAO {
         // CAMBIA este ID por uno que exista
         Long idPrueba = 1L;
 
-        // 1) Desactivar (soft delete)
-        boolean desactivado = dao.desactivar(idPrueba);
-        System.out.println("Desactivado: " + desactivado);
+        // 1) Activar
+        boolean activado = dao.activar(idPrueba);
+        System.out.println("Desactivado: " + activado);
 
         // 2) Eliminar (DELETE físico) — NO EJECUTAR por ahora
         // boolean eliminado = dao.eliminar(idPrueba);

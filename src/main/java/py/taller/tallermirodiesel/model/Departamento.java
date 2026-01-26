@@ -7,29 +7,37 @@ package py.taller.tallermirodiesel.model;
 /**
  * @author elyrr
  */
-public class Pais {
+public class Departamento {
     
     // Inicializamos las columnas de la tabla como variables privadas
+    private Long idDepartamento;
     private Long idPais;
     private String nombre;
-    private String iso2;
-    private String iso3;
     private boolean activo;
 
+    // Campo auxiliar para mostrar el nombre del Pais con JOIN
+    private String nombrePais;
+
     // Constructor vacío
-    public Pais() {
+    public Departamento() {
     }
 
     // Constructor con parámetros
-    public Pais(Long idPais, String nombre, String iso2, String iso3, boolean activo) {
+    public Departamento(Long idDepartamento, Long idPais, String nombre, boolean activo) {
+        this.idDepartamento = idDepartamento;
         this.idPais = idPais;
         this.nombre = nombre;
-        this.iso2 = iso2;
-        this.iso3 = iso3;
         this.activo = activo;
     }
     
     // Getters y setters
+    public Long getIdDepartamento() {
+        return idDepartamento;
+    }
+    public void setIdDepartamento(Long idDepartamento) {
+        this.idDepartamento = idDepartamento;
+    }
+//
     public Long getIdPais() {
         return idPais;
     }
@@ -44,24 +52,17 @@ public class Pais {
         this.nombre = nombre;
     }
 //
-    public String getIso2() {
-        return iso2;
-    }
-    public void setIso2(String iso2) {
-        this.iso2 = iso2;
-    }
-//
-    public String getIso3() {
-        return iso3;
-    }
-    public void setIso3(String iso3) {
-        this.iso3 = iso3;
-    }
-//
     public boolean isActivo() {
         return activo;
     }
     public void setActivo(boolean activo) {
         this.activo = activo;
+    }
+//
+    public String getNombrePais() {
+        return nombrePais;
+    }
+    public void setNombrePais(String nombrePais) {
+        this.nombrePais = nombrePais;
     }
 }

@@ -4,14 +4,14 @@
  */
 package py.taller.tallermirodiesel.service;
 
-import java.util.Optional;
-import py.taller.tallermirodiesel.model.Pais;
+import java.util.List;
+import py.taller.tallermirodiesel.model.Departamento;
 
 /**
  * @author elyrr
  */
-public interface PaisService extends CatalogoCrudService<Pais, Long> {
+public interface DepartamentoService extends CatalogoCrudService<Departamento, Long>{
     
-    //  Busca un Pais por su ISO2
-    Optional<Pais> buscarPorIso2(String iso2);
+    //  Lista todos los Departamento por su Pais
+    List<Departamento> listarPorPais(Long idPais);
 }

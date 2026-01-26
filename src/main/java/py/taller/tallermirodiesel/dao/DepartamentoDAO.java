@@ -4,22 +4,14 @@
  */
 package py.taller.tallermirodiesel.dao;
 
+import java.util.List;
+import py.taller.tallermirodiesel.model.Departamento;
+
 /**
- *
  * @author elyrr
  */
-import java.util.List;
-import java.util.Optional;
-
-public interface CrudDAO<T, ID> {
-
-    List<T> listarTodos();
-
-    Optional<T> buscarPorId(ID id);
-
-    ID crear(T entidad);
-
-    boolean actualizar(T entidad);
-
-    boolean eliminar(ID id);
+public interface DepartamentoDAO extends CatalogoCrudDAO<Departamento, Long> {
+    
+    //  Lista todos los Departamento de un Pais
+    List<Departamento> listarPorPais(Long idPais);
 }

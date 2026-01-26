@@ -4,14 +4,14 @@
  */
 package py.taller.tallermirodiesel.dao;
 
-import java.util.Optional;
-import py.taller.tallermirodiesel.model.Pais;
+import java.util.List;
+import py.taller.tallermirodiesel.model.Distrito;
 
 /**
  * @author elyrr
  */
-public interface PaisDAO extends CatalogoCrudDAO<Pais, Long> {
+public interface DistritoDAO extends CatalogoCrudDAO <Distrito, Long>{
     
-    //  Busca un Pais por su ISO2
-    Optional<Pais> buscarPorIso2(String iso2);
+    //  Lista todos los Distritos de una Ciudad
+    List<Distrito> listarPorCiudad(Long idCiudad);
 }

@@ -5,24 +5,13 @@
 package py.taller.tallermirodiesel.service;
 
 import java.util.List;
-import java.util.Optional;
+import py.taller.tallermirodiesel.model.Distrito;
 
 /**
- *
  * @author elyrr
  */
+public interface DistritoService extends CatalogoCrudService<Distrito, Long> {
 
-public interface CrudService<T, ID> {
-
-    List<T> listarActivos();
-
-    List<T> listarInactivos();
-
-    List<T> listarTodos();
-
-    Optional<T> buscarPorId(ID id);
-
-    boolean activar(ID id);
-
-    boolean desactivar(ID id);
+    //  Lista todos los Distritos por su Ciudad
+    List<Distrito> listarPorCiudad(Long idCiudad);
 }

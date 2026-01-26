@@ -2,9 +2,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
-package py.taller.tallermirodiesel.util;
+package py.taller.tallermirodiesel.DevTest;
 
 import java.sql.Connection;
+import py.taller.tallermirodiesel.util.DatabaseConnection;
 
 /**
  *
