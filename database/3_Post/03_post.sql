@@ -16,9 +16,15 @@ BEGIN;
 -- =============================================================================
 -- ÍNDICES
 --
--- Objetivo:
---   Mejorar el rendimiento de búsquedas y filtros habituales sin
---   imponer restricciones de unicidad innecesarias.
+-- Nota (decisión actual):
+--   No se agregan más índices por ahora. Solo se conservan los índices ya
+--   definidos abajo (los que ya venías usando/planificando).
+--
+-- Nota sobre departamentos:
+--   Actualmente NO existe una restricción UNIQUE para (id_pais, nombre).
+--   Eso significa que se podría insertar dos veces un mismo departamento
+--   (ej: "ASUNCIÓN") dentro del mismo país si alguien lo hace manualmente.
+--   No se aplica constraint adicional por decisión actual.
 -- =============================================================================
 
 -- Optimiza búsquedas por nombre y apellido en clientes persona
@@ -79,8 +85,7 @@ ON public.planes_pago (id_orden_trabajo);
 CREATE INDEX IF NOT EXISTS idx_planes_pago_eventos_id_plan
 ON public.planes_pago_eventos (id_plan_pago);
 
--- PAGOS: se conserva el índice compuesto (plan + OT) y se elimina duplicidad de índices simples
--- (idx_pagos_id_ot / idx_pagos_id_usuario eliminados por redundantes en esta versión)
+-- PAGOS: índice por usuario para listados/reportes
 CREATE INDEX IF NOT EXISTS idx_pagos_id_usuario
 ON public.pagos (id_usuario);
 
@@ -104,24 +109,15 @@ ON public.cliente_documentos (id_cliente);
 CREATE INDEX IF NOT EXISTS idx_cliente_documentos_id_tipo_documento
 ON public.cliente_documentos (id_tipo_documento);
 
--- Evita duplicar modelos activos con el mismo nombre dentro de una misma marca,
--- garantizando consistencia del catálogo y evitando ambigüedades en selección de modelos
-CREATE UNIQUE INDEX IF NOT EXISTS ux_modelos_marca_nombre_activo
-ON public.modelos (id_marca, nombre)
-WHERE activo = true;
-
+-- USUARIOS: acelera listados y joins por rol asignado
 CREATE INDEX IF NOT EXISTS idx_usuarios_id_rol
 ON public.usuarios (id_rol);
 
-CREATE INDEX IF NOT EXISTS idx_roles_permisos_id_rol
-ON public.roles_permisos (id_rol);
-
+-- ROLES / PERMISOS:
+-- Nota: NO se crea idx_roles_permisos_id_rol porque la PK (id_rol, id_permiso)
+-- ya cubre búsquedas por id_rol como primer componente (índice implícito).
 -- =============================================================================
 -- CHECK / UNIQUE CONSTRAINTS (IDEMPOTENTES)
---
--- Objetivo:
---   Enforzar reglas de negocio que no pueden representarse únicamente
---   con claves foráneas o tipos de datos.
 -- =============================================================================
 
 -- Garantiza que una orden de trabajo esté asociada exclusivamente
@@ -140,21 +136,6 @@ BEGIN
             (tipo_ingreso = 'VEHICULO'   AND id_vehiculo   IS NOT NULL AND id_componente IS NULL) OR
             (tipo_ingreso = 'COMPONENTE' AND id_componente IS NOT NULL AND id_vehiculo   IS NULL)
         );
-    END IF;
-END $$;
-
--- Permite guardar ubicación como ciudad o distrito, pero no ambos simultáneamente
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_cliente_ciudad_distrito'
-          AND conrelid = 'public.clientes'::regclass
-    ) THEN
-        ALTER TABLE public.clientes
-        ADD CONSTRAINT check_cliente_ciudad_distrito
-        CHECK (NOT (id_ciudad IS NOT NULL AND id_distrito IS NOT NULL));
     END IF;
 END $$;
 
@@ -315,10 +296,6 @@ END $$;
 
 -- =============================================================================
 -- FUNCIONES
---
--- Objetivo:
---   Encapsular reglas de negocio complejas y reutilizables que serán
---   ejecutadas automáticamente por triggers.
 -- =============================================================================
 
 -- 1) Inicializa órdenes de trabajo asignando estado y número correlativo mensual
@@ -358,6 +335,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 2) Completa automáticamente el precio unitario del detalle
+-- Nota (decisión actual):
+--   Si el precio_unitario viene NULL o 0, se autocompleta con el precio_base.
+--   Esto fuerza que "0" no sea considerado un valor manual válido.
 CREATE OR REPLACE FUNCTION public.fn_ot_detalle_precio_auto()
 RETURNS trigger AS $$
 BEGIN
@@ -543,12 +523,47 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- 10) Completa automáticamente el distrito a partir de la localidad (si no fue provisto)
+--     y valida coherencia entre distrito y localidad cuando ambos existen.
+CREATE OR REPLACE FUNCTION public.fn_clientes_set_distrito_por_localidad()
+RETURNS trigger AS $$
+DECLARE
+    v_distrito_de_localidad bigint;
+BEGIN
+    -- Regla: al menos uno debe estar definido
+    IF NEW.id_distrito IS NULL AND NEW.id_localidad IS NULL THEN
+        RAISE EXCEPTION 'Debe especificar al menos distrito o localidad';
+    END IF;
+
+    -- Si hay localidad, obtener el distrito real de esa localidad
+    IF NEW.id_localidad IS NOT NULL THEN
+        SELECT l.id_distrito
+        INTO v_distrito_de_localidad
+        FROM public.localidades l
+        WHERE l.id_localidad = NEW.id_localidad;
+
+        IF v_distrito_de_localidad IS NULL THEN
+            RAISE EXCEPTION 'Localidad inválida: %', NEW.id_localidad;
+        END IF;
+
+        -- Si no viene distrito, autocompletar
+        IF NEW.id_distrito IS NULL THEN
+            NEW.id_distrito := v_distrito_de_localidad;
+        ELSE
+            -- Si vienen ambos, validar coherencia
+            IF NEW.id_distrito <> v_distrito_de_localidad THEN
+                RAISE EXCEPTION
+                    'La localidad % no pertenece al distrito %', NEW.id_localidad, NEW.id_distrito;
+            END IF;
+        END IF;
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- =============================================================================
 -- TRIGGERS
---
--- Objetivo:
---   Ejecutar automáticamente las funciones de negocio ante eventos
---   relevantes sobre las tablas.
 -- =============================================================================
 
 -- Asigna estado inicial y número correlativo al crear una orden de trabajo
@@ -611,6 +626,13 @@ DROP TRIGGER IF EXISTS trg_clientes_no_borrar_ot ON public.clientes;
 CREATE TRIGGER trg_clientes_no_borrar_ot
 BEFORE DELETE ON public.clientes
 FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_no_borrar_ot();
+
+-- Autocompleta distrito cuando se selecciona localidad en el cliente
+-- y valida consistencia entre distrito y localidad cuando ambos existen
+DROP TRIGGER IF EXISTS trg_clientes_set_distrito_por_localidad ON public.clientes;
+CREATE TRIGGER trg_clientes_set_distrito_por_localidad
+BEFORE INSERT OR UPDATE OF id_localidad, id_distrito ON public.clientes
+FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_set_distrito_por_localidad();
 
 COMMIT;
 
