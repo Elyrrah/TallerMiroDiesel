@@ -1,4 +1,4 @@
-/*
+/* 
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
  * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
@@ -20,7 +20,7 @@ import py.taller.tallermirodiesel.service.impl.PaisServiceImpl;
 /**
  * @author elyrr
  */
-@WebServlet("/departamentos")
+@WebServlet(name = "DepartamentoServlet", urlPatterns = {"/departamentos"})
 // Bloque: Mapeo del servlet (todas las acciones de Departamento entran por /departamentos).
 public class DepartamentoServlet extends HttpServlet {
 
@@ -44,24 +44,26 @@ public class DepartamentoServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        String accion = req.getParameter("accion");
+        // AJUSTE: ahora usamos "action" (igual que PaisServlet).
+        String accion = req.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) accion = "listar";
+        // AJUSTE: ahora el default es "list" (igual que PaisServlet).
+        if (accion == null || accion.isBlank()) accion = "list";
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (accion) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
-                case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
+                case "new" -> mostrarFormularioNuevo(req, resp);          // antes: "nuevo"
+                case "edit" -> mostrarFormularioEditar(req, resp);        // antes: "editar"
+                case "activate" -> activar(req, resp);                    // antes: "activar"
+                case "deactivate" -> desactivar(req, resp);               // antes: "desactivar"
+                case "search" -> buscar(req, resp);                       // antes: "buscar"
+                case "list" -> listar(req, resp);                         // antes: "listar"
                 default -> listar(req, resp);
             }
 
-        } catch (ServletException | IOException e) {
+        } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
             listar(req, resp);
         }
@@ -75,18 +77,20 @@ public class DepartamentoServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        String accion = req.getParameter("accion");
+        // AJUSTE: ahora usamos "action" también en POST.
+        String accion = req.getParameter("action");
 
         // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) accion = "guardar";
+        // AJUSTE: ahora el default es "save" (igual que PaisServlet).
+        if (accion == null || accion.isBlank()) accion = "save";
 
         // 3. Router de acciones POST.
         try {
             switch (accion) {
-                case "guardar" -> guardar(req, resp);
-                default -> resp.sendRedirect(req.getContextPath() + "/departamentos?accion=listar");
+                case "save" -> guardar(req, resp); // antes: "guardar"
+                default -> resp.sendRedirect(req.getContextPath() + "/departamentos?action=list");
             }
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
 
             // 4. Avisa en caso de error.
             req.setAttribute("error", e.getMessage());
@@ -94,13 +98,18 @@ public class DepartamentoServlet extends HttpServlet {
             // 5. Repone datos auxiliares necesarios para re-render del formulario (combo de países).
             req.setAttribute("paises", paisService.listarActivos());
 
-            // 6. Re-render del formulario correspondiente.
+            // 5.1 AJUSTE: rehidratar objeto Departamento para no perder lo que el usuario escribió.
+            Departamento d = new Departamento();
             Long idDepartamento = parseLong(req.getParameter("idDepartamento"));
-            if (idDepartamento != null) {
-                mostrarFormularioEditar(req, resp);
-            } else {
-                mostrarFormularioNuevo(req, resp);
-            }
+            d.setIdDepartamento(idDepartamento);
+            d.setIdPais(parseLong(req.getParameter("idPais")));
+            d.setNombre(req.getParameter("nombre"));
+            d.setActivo("true".equals(req.getParameter("activo")));
+
+            req.setAttribute("departamento", d);
+
+            // 6. Re-render del formulario correspondiente.
+            req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_form.jsp").forward(req, resp);
         }
     }
 
@@ -244,7 +253,8 @@ public class DepartamentoServlet extends HttpServlet {
 
         // 4. Reconstruye la URL preservando el filtro por país si venía en la petición.
         Long idPais = parseLong(req.getParameter("idPais"));
-        String url = req.getContextPath() + "/departamentos?accion=listar";
+        // AJUSTE: action=list
+        String url = req.getContextPath() + "/departamentos?action=list";
         if (idPais != null) url += "&idPais=" + idPais;
 
         // 5. Preserva filtro de texto si venía en la petición.
@@ -271,7 +281,8 @@ public class DepartamentoServlet extends HttpServlet {
 
         // 4. Reconstruye la URL preservando el filtro por país si venía en la petición.
         Long idPais = parseLong(req.getParameter("idPais"));
-        String url = req.getContextPath() + "/departamentos?accion=listar";
+        // AJUSTE: action=list
+        String url = req.getContextPath() + "/departamentos?action=list";
         if (idPais != null) url += "&idPais=" + idPais;
 
         // 5. Preserva filtro de texto si venía en la petición.
@@ -309,7 +320,8 @@ public class DepartamentoServlet extends HttpServlet {
 
         // 4. Redirige al listado (si venía con filtro por país, lo preserva).
         Long idPaisFiltro = parseLong(req.getParameter("idPaisFiltro"));
-        String url = req.getContextPath() + "/departamentos?accion=listar";
+        // AJUSTE: action=list
+        String url = req.getContextPath() + "/departamentos?action=list";
         if (idPaisFiltro != null) url += "&idPais=" + idPaisFiltro;
 
         resp.sendRedirect(url);

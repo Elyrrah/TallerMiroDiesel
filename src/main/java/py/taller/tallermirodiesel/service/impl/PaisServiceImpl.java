@@ -27,12 +27,12 @@ public class PaisServiceImpl implements PaisService {
     //  VALIDACIONES PARA CREAR UN PAÍS.
     @Override
     public Long crear(Pais pais) {
-        
-        // 1. Verificamos que los campos estén completos correctamente.
+
+        // 1. Verificamos que el objeto pais no sea null.
         if (pais == null) {
-            throw new IllegalArgumentException("El id_país no puede estar vacío.");
+            throw new IllegalArgumentException("El país no puede ser null.");
         }
-        
+
         // 2. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
         String nombre = pais.getNombre() == null ? null : pais.getNombre().trim().toUpperCase();
         String iso2 = pais.getIso2() == null ? null : pais.getIso2().trim().toUpperCase();
@@ -52,7 +52,7 @@ public class PaisServiceImpl implements PaisService {
             throw new IllegalArgumentException("El ISO3 debe tener exactamente 3 caracteres (si se provee).");
         }
 
-        // 4. Cargamos el objeto con los datos.
+        // 4. Cargamos el objeto con los datos normalizados.
         pais.setNombre(nombre);
         pais.setIso2(iso2);
         pais.setIso3(iso3);
@@ -65,7 +65,7 @@ public class PaisServiceImpl implements PaisService {
         // 6. Le pedimos a la base de datos que guarde el país.
         return paisDAO.crear(pais);
     }
-    
+
     
     //  VALIDACIONES PARA ACTUALIZAR UN PAÍS.
     @Override
@@ -195,16 +195,17 @@ public class PaisServiceImpl implements PaisService {
     // BUSCA PAISES POR NOMBRE PARCIAL.
     @Override
     public List<Pais> buscarPorNombreParcial(String filtro) {
-        
-        // 1. Verificamos que los campos estén completos correctamente.
-        if (filtro == null) {
-            throw new IllegalArgumentException("El filtro no puede ser null.");
+
+        // 1. Si el filtro es null o vacío, devolvemos lista vacía
+        // (evitamos ILIKE '%%' que devuelve todo)
+        if (filtro == null || filtro.isBlank()) {
+            return List.of();
         }
-        
-        // 2. Quitamos espacios vacíos.
+
+        // 2. Quitamos espacios vacíos
         String filtroNorm = filtro.trim();
-        
-        // 3. Devuelve la lista filtrada.
+
+        // 3. Devuelve la lista filtrada
         return paisDAO.buscarPorNombreParcial(filtroNorm);
     }
 
@@ -212,13 +213,19 @@ public class PaisServiceImpl implements PaisService {
     //  VALIDACIONES PARA BUSCAR POR ISO2.
     @Override
     public Optional<Pais> buscarPorIso2(String iso2) {
-        
-        // 1. Limpiamos y preparamos el texto antes de buscar
-        String iso2Norm = (iso2 == null) ? null : iso2.trim().toUpperCase();
-        
-        // 2. Devuelve el pais buscado.
+
+        // 1. Validamos entrada: si es null o vacío, no consultamos a la base
+        if (iso2 == null || iso2.isBlank()) {
+            return Optional.empty();
+        }
+
+        // 2. Normalizamos el valor
+        String iso2Norm = iso2.trim().toUpperCase();
+
+        // 3. Devuelve el país buscado
         return paisDAO.buscarPorIso2(iso2Norm);
     }
+
 
     // VALIDACIONES PARA LISTAR TODOS LOS PAISES.
     @Override

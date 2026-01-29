@@ -7,42 +7,51 @@ package py.taller.tallermirodiesel.model;
 /**
  * @author elyrr
  */
-public class Distrito {
-    
+public class Localidad {
+
     // Inicializamos las columnas de la tabla como variables privadas
+    private Long idLocalidad;
     private Long idDistrito;
-    private Long idDepartamento;
     private String nombre;
     private boolean activo;
-    
-    // Campo auxiliar para mostrar el nombre del Departamento con JOIN
-    private String nombreDepartamento;
+
+    // Campo auxiliar para mostrar el nombre del distrito con JOIN
+    private String nombreDistrito;
 
     // Constructor vacío
-    public Distrito() {
+    public Localidad() {
     }
-    
+
     // Constructor con parámetros
-    public Distrito(Long idDistrito, Long idDepartamento, String nombre, boolean activo) {
+    public Localidad(Long idLocalidad, Long idDistrito, String nombre, boolean activo) {
+        this.idLocalidad = idLocalidad;
         this.idDistrito = idDistrito;
-        this.idDepartamento = idDepartamento;
         this.nombre = nombre;
         this.activo = activo;
     }
-    
+
+    // Constructor EXTENDIDO (útil para listados con JOIN)
+    public Localidad(Long idLocalidad, Long idDistrito, String nombre, boolean activo, String nombreDistrito) {
+        this.idLocalidad = idLocalidad;
+        this.idDistrito = idDistrito;
+        this.nombre = nombre;
+        this.activo = activo;
+        this.nombreDistrito = nombreDistrito;
+    }
+
     // Getters y setters
+    public Long getIdLocalidad() {
+        return idLocalidad;
+    }
+    public void setIdLocalidad(Long idLocalidad) {
+        this.idLocalidad = idLocalidad;
+    }
+//
     public Long getIdDistrito() {
         return idDistrito;
     }
     public void setIdDistrito(Long idDistrito) {
         this.idDistrito = idDistrito;
-    }
-//
-    public Long getIdDepartamento() {
-        return idDepartamento;
-    }
-    public void setIdDepartamento(Long idDepartamento) {
-        this.idDepartamento = idDepartamento;
     }
 //
     public String getNombre() {
@@ -59,10 +68,10 @@ public class Distrito {
         this.activo = activo;
     }
 //
-    public String getNombreDepartamento() {
-        return nombreDepartamento;
+    public String getNombreDistrito() {
+        return nombreDistrito;
     }
-    public void setNombreDepartamento(String nombreDepartamento) {
-        this.nombreDepartamento = nombreDepartamento;
+    public void setNombreDistrito(String nombreDistrito) {
+        this.nombreDistrito = nombreDistrito;
     }
 }

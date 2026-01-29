@@ -1,6 +1,6 @@
 <%-- 
     Document   : departamento_form
-    Created on : 20 ene. 2026, 11:25:16 a. m.
+    Created on : 20 ene. 2026, 11:25:16 a. m.
     Author     : elyrr
 --%>
 
@@ -32,7 +32,8 @@
 </c:if>
 
 <form method="post" action="${pageContext.request.contextPath}/departamentos">
-    <input type="hidden" name="accion" value="${accionForm}" />
+    <!-- AJUSTE: ahora usamos action=save (igual que PaisServlet) -->
+    <input type="hidden" name="action" value="save" />
 
     <c:if test="${esEdicion}">
         <input type="hidden" name="idDepartamento" value="${departamento.idDepartamento}" />
@@ -76,7 +77,7 @@
     </button>
 
     <a style="margin-left: 10px;"
-       href="${pageContext.request.contextPath}/departamentos?accion=listar">
+       href="${pageContext.request.contextPath}/departamentos?action=list">
         Volver
     </a>
 </form>

@@ -30,7 +30,8 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         
         // 1. Verificamos que los campos estén completos correctamente.
         if (departamento == null) {
-            throw new IllegalArgumentException("El id_departamento no puede estar vacío.");
+            // AJUSTE: mensaje correcto (antes decía id_departamento)
+            throw new IllegalArgumentException("El departamento no puede ser null.");
         }
 
         if (departamento.getIdPais() == null) {
@@ -51,6 +52,15 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         
         // 4. Cargamos el objeto con los datos.
         departamento.setNombre(nombre);
+
+        // 4.1 VALIDACIÓN: no permitir duplicados (mismo nombre dentro del mismo país).
+        // Nota: se compara contra la lista del país para no bloquear nombres repetidos en otros países.
+        List<Departamento> existentesEnPais = departamentoDAO.listarPorPais(departamento.getIdPais());
+        boolean existeDuplicado = existentesEnPais.stream()
+                .anyMatch(d -> d.getNombre() != null && d.getNombre().trim().equalsIgnoreCase(nombre));
+        if (existeDuplicado) {
+            throw new IllegalArgumentException("Ya existe un departamento con el nombre: " + nombre + " para el país seleccionado.");
+        }
 
         // 5. Le pedimos a la base de datos que guarde el departamento.
         return departamentoDAO.crear(departamento);
@@ -94,7 +104,20 @@ public class DepartamentoServiceImpl implements DepartamentoService {
 
         // 5. Verificar que el departamento a actualizar exista en el sistema.
         Optional<Departamento> existente = departamentoDAO.buscarPorId(departamento.getIdDepartamento());
-        if (existente.isEmpty()) {throw new IllegalArgumentException("No existe un departamento con id: " + departamento.getIdDepartamento());
+        if (existente.isEmpty()) {
+            // AJUSTE: formateo (antes estaba todo pegado)
+            throw new IllegalArgumentException("No existe un departamento con id: " + departamento.getIdDepartamento());
+        }
+
+        // 6. VALIDACIÓN: no permitir duplicados (mismo nombre dentro del mismo país), excluyendo el propio id.
+        List<Departamento> existentesEnPais = departamentoDAO.listarPorPais(departamento.getIdPais());
+        boolean existeDuplicado = existentesEnPais.stream()
+                .anyMatch(d -> d.getNombre() != null
+                        && d.getNombre().trim().equalsIgnoreCase(nombre)
+                        && d.getIdDepartamento() != null
+                        && !d.getIdDepartamento().equals(departamento.getIdDepartamento()));
+        if (existeDuplicado) {
+            throw new IllegalArgumentException("Ya existe otro departamento con el nombre: " + nombre + " para el país seleccionado.");
         }
 
         // 7. Le pedimos a la base de datos que actualice el departamento.
@@ -115,7 +138,8 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         }
         
         // 2. Verificamos que el departamento exista.
-        Departamento departamento = departamentoDAO.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("No existe un departamento con id: " + id));
+        Departamento departamento = departamentoDAO.buscarPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("No existe un departamento con id: " + id));
 
         // 3. Si ya está activo, no hacemos nada.
         if (departamento.isActivo()) {
@@ -141,7 +165,8 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         }
 
         // 2. Verificamos que el departamento exista.
-        Departamento departamento = departamentoDAO.buscarPorId(id).orElseThrow(() -> new IllegalArgumentException("No existe un departamento con id: " + id));
+        Departamento departamento = departamentoDAO.buscarPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("No existe un departamento con id: " + id));
 
         // 3. Si ya está Inactivo, no hacemos nada.
         if (!departamento.isActivo()) {
@@ -193,8 +218,9 @@ public class DepartamentoServiceImpl implements DepartamentoService {
     public List<Departamento> buscarPorNombreParcial(String filtro) {
         
         // 1. Verificamos que los campos estén completos correctamente.
-        if (filtro == null) {
-            throw new IllegalArgumentException("El filtro no puede ser null.");
+        // AJUSTE: también valida blank, y devuelve lista vacía para mantener regla consistente.
+        if (filtro == null || filtro.isBlank()) {
+            return List.of();
         }
         
         // 2. Quitamos espacios vacíos.

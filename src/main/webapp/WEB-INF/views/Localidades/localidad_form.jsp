@@ -1,6 +1,6 @@
 <%-- 
     Document   : distrito_form
-    Created on : 21 ene. 2026, 11:18:13 a. m.
+    Created on : 21 ene. 2026, 4:01:25 p. m.
     Author     : elyrr
 --%>
 
@@ -10,12 +10,17 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Formulario Distrito</title>
     </head>
     <body>
 
-        <h1>Formulario Distrito</h1>
+        <h1>
+            <c:choose>
+                <c:when test="${not empty distrito.idDistrito}">Editar Distrito</c:when>
+                <c:otherwise>Nuevo Distrito</c:otherwise>
+            </c:choose>
+        </h1>
 
         <c:if test="${not empty error}">
             <div style="color: red;">
@@ -26,39 +31,32 @@
         <form method="post" action="${pageContext.request.contextPath}/distritos">
             <input type="hidden" name="accion" value="guardar"/>
 
-            <%-- idDistrito (solo para editar) --%>
-            <c:if test="${not empty distrito.idDistrito}">
-                <input type="hidden" name="idDistrito" value="${distrito.idDistrito}"/>
-            </c:if>
+            <%-- Si existe, se manda para actualizar --%>
+            <input type="hidden" name="idDistrito" value="${distrito.idDistrito}"/>
 
-            <div>
-                <label>Departamento:</label>
-                <select name="idDepartamento" required>
+            <p>
+                <label>Ciudad:</label>
+                <select name="idCiudad" required>
                     <option value="">-- Seleccione --</option>
-                    <c:forEach var="d" items="${departamentos}">
-                        <option value="${d.idDepartamento}"
-                                <c:if test="${not empty distrito.idDepartamento and distrito.idDepartamento == d.idDepartamento}">
-                                    selected
-                                </c:if>>
-                            ${d.nombre}
+                    <c:forEach var="c" items="${ciudades}">
+                        <option value="${c.idCiudad}"
+                                <c:if test="${not empty distrito.idCiudad and distrito.idCiudad == c.idCiudad}">selected</c:if>>
+                            ${c.nombre}
                         </option>
                     </c:forEach>
                 </select>
-            </div>
+            </p>
 
-            <div>
+            <p>
                 <label>Nombre:</label>
                 <input type="text" name="nombre" value="${distrito.nombre}" required/>
-            </div>
+            </p>
 
-            <div>
+            <p>
                 <label>Activo:</label>
-                <%-- Toggle activo/inactivo (checkbox) --%>
                 <input type="checkbox" name="activo"
-                       <c:if test="${distrito.activo}">checked</c:if> />
-            </div>
-
-            <br/>
+                       <c:if test="${empty distrito.idDistrito or distrito.activo}">checked</c:if> />
+            </p>
 
             <button type="submit">Guardar</button>
             <a href="${pageContext.request.contextPath}/distritos?accion=listar">Cancelar</a>
