@@ -28,12 +28,8 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
         d.setNombre(rs.getString("nombre"));
         d.setActivo(rs.getBoolean("activo"));
 
-        // Nota: nombre_pais solo existe cuando el SELECT hace JOIN con paises
-        try {
-            d.setNombrePais(rs.getString("nombre_pais"));
-        } catch (SQLException ignore) {
-            d.setNombrePais(null);
-        }
+        // nombre_pais viene del JOIN (AS nombre_pais)
+        d.setNombrePais(rs.getString("nombre_pais"));
                 
         return d;
     }
@@ -178,6 +174,12 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
     //  Busca un Departamento por su nombre
     @Override
     public Optional<Departamento> buscarPorNombre(String nombre) {
+
+        // Validación: si viene null o vacío, no consultamos a la base (evita comparar con NULL)
+        if (nombre == null || nombre.isBlank()) {
+            return Optional.empty();
+        }
+
         String sql = """
             SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
             FROM public.departamentos d
@@ -188,7 +190,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            String nombreNorm = (nombre == null) ? null : nombre.trim();
+            String nombreNorm = nombre.trim();
             ps.setString(1, nombreNorm);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -206,6 +208,12 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
     //  Busca Departamentos cuyo nombre coincida parcialmente
     @Override
     public List<Departamento> buscarPorNombreParcial(String filtro) {
+
+        // Validación: si viene null o vacío, devolvemos lista vacía (evita ILIKE '%%')
+        if (filtro == null || filtro.isBlank()) {
+            return List.of();
+        }
+
         String sql = """
             SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
             FROM public.departamentos d
@@ -219,7 +227,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            String filtroNorm = (filtro == null) ? "" : filtro.trim();
+            String filtroNorm = filtro.trim();
             ps.setString(1, "%" + filtroNorm + "%");
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -242,7 +250,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
             SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
             FROM public.departamentos d
             JOIN public.paises p ON p.id_pais = d.id_pais
-            ORDER BY d.nombre ASC
+            ORDER BY p.nombre ASC, d.nombre ASC
             """;
 
         List<Departamento> lista = new ArrayList<>();
@@ -270,7 +278,7 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
             FROM public.departamentos d
             JOIN public.paises p ON p.id_pais = d.id_pais
             WHERE d.activo = true
-            ORDER BY d.nombre ASC
+            ORDER BY p.nombre ASC, d.nombre ASC
             """;
 
         List<Departamento> lista = new ArrayList<>();
@@ -321,12 +329,18 @@ public class DepartamentoDAOImpl implements DepartamentoDAO{
     //  Lista todos los Departamentos de un Pais
     @Override
     public List<Departamento> listarPorPais(Long idPais) {
-    String sql = """
+
+        // Validación: evita NullPointerException por unboxing en ps.setLong(...)
+        if (idPais == null) {
+            return List.of();
+        }
+
+        String sql = """
         SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
         FROM public.departamentos d
         JOIN public.paises p ON p.id_pais = d.id_pais
         WHERE d.id_pais = ?
-        ORDER BY d.nombre
+        ORDER BY p.nombre ASC, d.nombre ASC
         """;
 
         List<Departamento> lista = new ArrayList<>();

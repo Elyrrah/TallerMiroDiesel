@@ -5,13 +5,13 @@
 package py.taller.tallermirodiesel.service;
 
 import java.util.List;
-import py.taller.tallermirodiesel.model.Ciudad;
+import py.taller.tallermirodiesel.model.Localidad;
 
 /**
  * @author elyrr
  */
-public interface CiudadService extends CatalogoCrudService<Ciudad, Long>{
-    
-    //  Lista todas las Ciudades de un Departamento
-    List<Ciudad> listarPorDepartamento(Long idDepartamento);
+public interface LocalidadService extends CatalogoCrudService<Localidad, Long> {
+
+    //  Lista todas las Localidades por su Distrito
+    List<Localidad> listarPorDistrito(Long idDistrito);
 }

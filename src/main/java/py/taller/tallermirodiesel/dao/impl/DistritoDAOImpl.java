@@ -11,46 +11,46 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import py.taller.tallermirodiesel.dao.DistritoDAO;
 import py.taller.tallermirodiesel.model.Distrito;
 import py.taller.tallermirodiesel.util.DatabaseConnection;
+import py.taller.tallermirodiesel.dao.DistritoDAO;
 
 /**
  * @author elyrr
  */
 public class DistritoDAOImpl implements DistritoDAO {
-
+    
     //  Mapear Distrito
     private Distrito mapearDistrito(ResultSet rs) throws SQLException {
         Distrito d = new Distrito();
-        d.setIdDistrito(rs.getLong("id_distrito"));
-        d.setIdCiudad(rs.getLong("id_ciudad"));
+        d.setIdDistrito(rs.getLong("id_distrito")); // FIX: antes decía id_ciudad
+        d.setIdDepartamento(rs.getLong("id_departamento"));
         d.setNombre(rs.getString("nombre"));
         d.setActivo(rs.getBoolean("activo"));
 
-        // Nota: nombre_ciudad solo existe cuando el SELECT hace JOIN con ciudades
+        // Nota: nombre_departamento solo existe cuando el SELECT hace JOIN con departamentos
         try {
-            d.setNombreCiudad(rs.getString("nombre_ciudad"));
+            d.setNombreDepartamento(rs.getString("nombre_departamento"));
         } catch (SQLException ignore) {
-            d.setNombreCiudad(null);
+            d.setNombreDepartamento(null);
         }
 
         return d;
     }
-
+    
     //  Crea un nuevo Distrito
     @Override
     public Long crear(Distrito distrito) {
         String sql = """
-                INSERT INTO public.distritos (id_ciudad, nombre, activo)
+                INSERT INTO public.distritos (id_departamento, nombre, activo)
                 VALUES (?, ?, ?)
                 RETURNING id_distrito
                 """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setLong(1, distrito.getIdCiudad());
+            
+            ps.setLong(1, distrito.getIdDepartamento());
             ps.setString(2, distrito.getNombre());
             ps.setBoolean(3, distrito.isActivo());
 
@@ -71,7 +71,7 @@ public class DistritoDAOImpl implements DistritoDAO {
     public boolean actualizar(Distrito distrito) {
         String sql = """
                 UPDATE public.distritos
-                SET id_ciudad = ?,
+                SET id_departamento = ?,
                     nombre = ?,
                     activo = ?
                 WHERE id_distrito = ?
@@ -80,7 +80,7 @@ public class DistritoDAOImpl implements DistritoDAO {
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setLong(1, distrito.getIdCiudad());
+            ps.setLong(1, distrito.getIdDepartamento());
             ps.setString(2, distrito.getNombre());
             ps.setBoolean(3, distrito.isActivo());
             ps.setLong(4, distrito.getIdDistrito());
@@ -106,9 +106,9 @@ public class DistritoDAOImpl implements DistritoDAO {
         } catch (Exception e) {
             throw new RuntimeException("Error eliminando distrito: " + e.getMessage(), e);
         }
-    }
+    }    
 
-    //  Activa un Distrito
+    //  Activa un distrito
     @Override
     public boolean activar(Long id) {
         String sql = """
@@ -152,10 +152,10 @@ public class DistritoDAOImpl implements DistritoDAO {
     @Override
     public Optional<Distrito> buscarPorId(Long id) {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            WHERE d.id_distrito = ?
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            WHERE di.id_distrito = ?
             """;
 
         try (Connection con = DatabaseConnection.getConexion();
@@ -179,10 +179,10 @@ public class DistritoDAOImpl implements DistritoDAO {
     @Override
     public Optional<Distrito> buscarPorNombre(String nombre) {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            WHERE UPPER(TRIM(d.nombre)) = UPPER(TRIM(?))
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            WHERE UPPER(TRIM(di.nombre)) = UPPER(TRIM(?))
             """;
 
         try (Connection con = DatabaseConnection.getConexion();
@@ -207,11 +207,11 @@ public class DistritoDAOImpl implements DistritoDAO {
     @Override
     public List<Distrito> buscarPorNombreParcial(String filtro) {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            WHERE d.nombre ILIKE ?
-            ORDER BY c.nombre ASC, d.nombre ASC
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            WHERE di.nombre ILIKE ?
+            ORDER BY dp.nombre ASC, di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -239,10 +239,10 @@ public class DistritoDAOImpl implements DistritoDAO {
     @Override
     public List<Distrito> listarTodos() {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            ORDER BY d.nombre ASC
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            ORDER BY dp.nombre ASC, di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -254,7 +254,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             while (rs.next()) {
                 lista.add(mapearDistrito(rs));
             }
-
+            
             return lista;
 
         } catch (Exception e) {
@@ -266,11 +266,11 @@ public class DistritoDAOImpl implements DistritoDAO {
     @Override
     public List<Distrito> listarActivos() {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            WHERE d.activo = true
-            ORDER BY d.nombre ASC
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            WHERE di.activo = true
+            ORDER BY dp.nombre ASC, di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -282,7 +282,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             while (rs.next()) {
                 lista.add(mapearDistrito(rs));
             }
-
+            
             return lista;
 
         } catch (Exception e) {
@@ -294,11 +294,11 @@ public class DistritoDAOImpl implements DistritoDAO {
     @Override
     public List<Distrito> listarInactivos() {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            WHERE d.activo = false
-            ORDER BY c.nombre ASC, d.nombre ASC
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            WHERE di.activo = false
+            ORDER BY dp.nombre ASC, di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -310,42 +310,41 @@ public class DistritoDAOImpl implements DistritoDAO {
             while (rs.next()) {
                 lista.add(mapearDistrito(rs));
             }
-
             return lista;
 
         } catch (Exception e) {
             throw new RuntimeException("Error listando distritos inactivos: " + e.getMessage(), e);
         }
     }
-
-    //  Lista todos los Distritos de una Ciudad
+    
+    
+    //  Lista todos los Distritos de un Departamento
     @Override
-    public List<Distrito> listarPorCiudad(Long idCiudad) {
+    public List<Distrito> listarPorDepartamento(Long idDepartamento) {
         String sql = """
-            SELECT d.id_distrito, d.id_ciudad, d.nombre, d.activo, c.nombre AS nombre_ciudad
-            FROM public.distritos d
-            JOIN public.ciudades c ON c.id_ciudad = d.id_ciudad
-            WHERE d.id_ciudad = ?
-            ORDER BY d.nombre
-            """;
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
+            WHERE di.id_departamento = ?
+            ORDER BY di.nombre
+                """;
 
         List<Distrito> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setLong(1, idCiudad);
+            ps.setLong(1, idDepartamento);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(mapearDistrito(rs));
                 }
             }
-
             return lista;
 
         } catch (Exception e) {
-            throw new RuntimeException("Error listando distritos por ciudad: " + e.getMessage(), e);
+            throw new RuntimeException("Error listando distritos por departamento: " + e.getMessage(), e);
         }
     }
 }

@@ -10,8 +10,8 @@ import py.taller.tallermirodiesel.model.Distrito;
 /**
  * @author elyrr
  */
-public interface DistritoDAO extends CatalogoCrudDAO <Distrito, Long>{
+public interface DistritoDAO extends CatalogoCrudDAO<Distrito, Long> {
     
-    //  Lista todos los Distritos de una Ciudad
-    List<Distrito> listarPorCiudad(Long idCiudad);
+    //  Lista todos los Distritos de un Departamento
+    List<Distrito> listarPorDepartamento(Long idDepartamento);
 }

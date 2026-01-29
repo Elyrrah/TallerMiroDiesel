@@ -1,6 +1,6 @@
 <%-- 
     Document   : pais_form
-    Created on : 19 ene. 2026, 10:01:12 a. m.
+    Created on : 19 ene. 2026, 10:01:12 a. m.
     Author     : elyrr
 --%>
 
@@ -32,8 +32,7 @@
 
 <form method="post" action="${pageContext.request.contextPath}/paises">
 
-    <input type="hidden" name="action"
-           value="${esEdicion ? 'update' : 'create'}" />
+    <input type="hidden" name="action" value="save" />
 
     <c:if test="${esEdicion}">
         <input type="hidden" name="idPais" value="${pais.idPais}" />

@@ -1,6 +1,6 @@
 <%-- 
     Document   : distrito_listar
-    Created on : 21 ene. 2026, 4:01:11 p. m.
+    Created on : 21 ene. 2026, 11:18:30 a. m.
     Author     : elyrr
 --%>
 
@@ -10,88 +10,154 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta charset="UTF-8">
         <title>Distritos</title>
+
+        <style>
+            /* Buscador simple */
+            .buscador {
+                margin: 10px 0 15px 0;
+            }
+            .buscador input[type="text"], .buscador select {
+                padding: 6px;
+            }
+            .buscador input[type="text"] {
+                width: 260px;
+            }
+            .buscador button, .buscador a {
+                padding: 6px 10px;
+                margin-left: 6px;
+            }
+
+            /* Toggle tipo switch (link) */
+            .switch {
+                display: inline-block;
+                width: 46px;
+                height: 24px;
+                border-radius: 999px;
+                position: relative;
+                vertical-align: middle;
+                text-decoration: none;
+                border: 1px solid #999;
+                background: #ddd;
+            }
+            .switch::after {
+                content: "";
+                position: absolute;
+                top: 3px;
+                left: 3px;
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                background: #fff;
+                border: 1px solid #999;
+                transition: left 0.15s ease-in-out;
+            }
+            .switch.on {
+                background: #4CAF50;
+                border-color: #3E8E41;
+            }
+            .switch.on::after {
+                left: 24px;
+            }
+            .switch.off {
+                background: #e74c3c;
+                border-color: #c0392b;
+            }
+
+            /* Opcional: cursor de mano */
+            .switch:hover {
+                filter: brightness(0.95);
+            }
+
+            /* Circulito cuando está apagado */
+            .switch.off::after {
+                border-color: #c0392b;
+            }
+        </style>
     </head>
     <body>
 
-        <h1>Distritos</h1>
+        <p>
+            <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
+        </p>
+
+        <h2>Catálogo de Distritos</h2>
 
         <c:if test="${not empty error}">
-            <div style="color: red;">
+            <div style="color:red; margin-bottom:10px;">
                 ${error}
             </div>
         </c:if>
 
         <p>
-            <a href="${pageContext.request.contextPath}/distritos?accion=nuevo">Nuevo Distrito</a>
+            <a href="${pageContext.request.contextPath}/distritos?accion=nuevo">
+                Nuevo Distrito
+            </a>
         </p>
-        <c:if test="${not empty q}">
-            <p>Resultados para: <b>${q}</b></p>
-        </c:if>
 
-        <%-- Filtro por Ciudad + Búsqueda por nombre (opcional) --%>
-        <form method="get" action="${pageContext.request.contextPath}/distritos">
+        <!-- Buscador / filtro -->
+        <form class="buscador" method="get" action="${pageContext.request.contextPath}/distritos">
             <input type="hidden" name="accion" value="listar"/>
 
-            <label>Ciudad:</label>
-            <select name="idCiudad">
+            <label>Departamento:</label>
+            <select name="idDepartamento">
                 <option value="">-- Todos --</option>
-                <c:forEach var="c" items="${ciudades}">
-                    <option value="${c.idCiudad}"
-                            <c:if test="${not empty idCiudad and idCiudad == c.idCiudad}">selected</c:if>>
-                        ${c.nombre}
+                <c:forEach var="d" items="${departamentos}">
+                    <option value="${d.idDepartamento}"
+                            <c:if test="${not empty idDepartamento and idDepartamento == d.idDepartamento}">selected</c:if>>
+                        ${d.nombre}
                     </option>
                 </c:forEach>
             </select>
 
             <label>Buscar:</label>
-            <input type="text" name="q" value="${q}" placeholder="Nombre del distrito"/>
+            <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
 
             <button type="submit">Filtrar</button>
             <a href="${pageContext.request.contextPath}/distritos?accion=listar">Limpiar</a>
         </form>
 
-        <br/>
-
         <table border="1" cellpadding="6" cellspacing="0">
             <thead>
                 <tr>
                     <th>ID</th>
-                    <th>Ciudad</th>
+                    <th>Departamento</th>
                     <th>Nombre</th>
-                    <th>Activo</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
 
-                <c:if test="${empty listaDistritos}">
+                <c:if test="${empty lista}">
                     <tr>
-                        <td colspan="5">No hay distritos registrados.</td>
+                        <td colspan="4">No hay distritos registrados.</td>
                     </tr>
                 </c:if>
 
-                <c:forEach var="d" items="${listaDistritos}">
+                <c:forEach var="di" items="${lista}">
                     <tr>
-                        <td>${d.idDistrito}</td>
-                        <td>${d.nombreCiudad}</td>
-                        <td>${d.nombre}</td>
+                        <td>${di.idDistrito}</td>
+                        <td>${di.nombreDepartamento}</td>
+                        <td>${di.nombre}</td>
                         <td>
-                            <c:choose>
-                                <c:when test="${d.activo}">SI</c:when>
-                                <c:otherwise>NO</c:otherwise>
-                            </c:choose>
-                        </td>
-                        <td>
-                            <a href="${pageContext.request.contextPath}/distritos?accion=editar&id=${d.idDistrito}">Editar</a>
+                            <a href="${pageContext.request.contextPath}/distritos?accion=editar&id=${di.idDistrito}">
+                                Editar
+                            </a>
 
+                            <!-- Toggle activar/desactivar (preserva filtros) -->
                             <c:choose>
-                                <c:when test="${d.activo}">
-                                    | <a href="${pageContext.request.contextPath}/distritos?accion=desactivar&id=${d.idDistrito}">Desactivar</a>
+                                <c:when test="${di.activo}">
+                                    | <a class="switch on"
+                                         title="Desactivar"
+                                         href="${pageContext.request.contextPath}/distritos?accion=desactivar&id=${di.idDistrito}&idDepartamento=${idDepartamento}&filtro=${filtro}">
+                                      </a>
                                 </c:when>
                                 <c:otherwise>
-                                    | <a href="${pageContext.request.contextPath}/distritos?accion=activar&id=${d.idDistrito}">Activar</a>
+                                    | <a class="switch off"
+                                         title="Activar"
+                                         href="${pageContext.request.contextPath}/distritos?accion=activar&id=${di.idDistrito}&idDepartamento=${idDepartamento}&filtro=${filtro}">
+                                      </a>
                                 </c:otherwise>
                             </c:choose>
                         </td>

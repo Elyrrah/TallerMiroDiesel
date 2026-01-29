@@ -11,7 +11,7 @@ import py.taller.tallermirodiesel.model.Distrito;
  * @author elyrr
  */
 public interface DistritoService extends CatalogoCrudService<Distrito, Long> {
-
-    //  Lista todos los Distritos por su Ciudad
-    List<Distrito> listarPorCiudad(Long idCiudad);
+    
+    //  Lista todos los Distritos de un Departamento
+    List<Distrito> listarPorDepartamento(Long idDepartamento);
 }
