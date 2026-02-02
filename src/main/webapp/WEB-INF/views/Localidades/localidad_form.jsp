@@ -1,6 +1,6 @@
 <%-- 
-    Document   : distrito_form
-    Created on : 21 ene. 2026, 4:01:25 p. m.
+    Document   : localidad_form
+    Created on : 21 ene. 2026, 4:01:25 p. m.
     Author     : elyrr
 --%>
 
@@ -11,14 +11,14 @@
 <html>
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <title>Formulario Distrito</title>
+        <title>Formulario Localidad</title>
     </head>
     <body>
 
         <h1>
             <c:choose>
-                <c:when test="${not empty distrito.idDistrito}">Editar Distrito</c:when>
-                <c:otherwise>Nuevo Distrito</c:otherwise>
+                <c:when test="${not empty localidad.idLocalidad}">Editar Localidad</c:when>
+                <c:otherwise>Nueva Localidad</c:otherwise>
             </c:choose>
         </h1>
 
@@ -28,19 +28,19 @@
             </div>
         </c:if>
 
-        <form method="post" action="${pageContext.request.contextPath}/distritos">
+        <form method="post" action="${pageContext.request.contextPath}/localidades">
             <input type="hidden" name="accion" value="guardar"/>
 
             <%-- Si existe, se manda para actualizar --%>
-            <input type="hidden" name="idDistrito" value="${distrito.idDistrito}"/>
+            <input type="hidden" name="idLocalidad" value="${localidad.idLocalidad}"/>
 
             <p>
-                <label>Ciudad:</label>
-                <select name="idCiudad" required>
+                <label>Distrito:</label>
+                <select name="idDistrito" required>
                     <option value="">-- Seleccione --</option>
                     <c:forEach var="c" items="${ciudades}">
                         <option value="${c.idCiudad}"
-                                <c:if test="${not empty distrito.idCiudad and distrito.idCiudad == c.idCiudad}">selected</c:if>>
+                                <c:if test="${not empty localidad.idDistrito and localidad.idDistrito == c.idCiudad}">selected</c:if>>
                             ${c.nombre}
                         </option>
                     </c:forEach>
@@ -49,18 +49,22 @@
 
             <p>
                 <label>Nombre:</label>
-                <input type="text" name="nombre" value="${distrito.nombre}" required/>
+                <input type="text" name="nombre" value="${localidad.nombre}" required/>
             </p>
 
             <p>
                 <label>Activo:</label>
                 <input type="checkbox" name="activo"
-                       <c:if test="${empty distrito.idDistrito or distrito.activo}">checked</c:if> />
+                       <c:if test="${empty localidad.idLocalidad or localidad.activo}">checked</c:if> />
             </p>
 
             <button type="submit">Guardar</button>
-            <a href="${pageContext.request.contextPath}/distritos?accion=listar">Cancelar</a>
+            <a href="${pageContext.request.contextPath}/localidades?accion=listar">Cancelar</a>
         </form>
+
+        <p style="margin-top:15px;">
+            <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
+        </p>
 
     </body>
 </html>
