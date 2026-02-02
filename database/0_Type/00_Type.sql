@@ -1,11 +1,31 @@
 -- =============================================================================
 -- 00_Type.sql
 -- Tipos ENUM para la base de datos del Taller Miro Diesel
--- (Nombres alineados con 01_SCHEMA.sql)
 -- =============================================================================
 
 -- =============================================================================
--- Tipo de aplicación del documento
+-- CLIENTES: FUENTE DE REFERENCIA DEL CLIENTE
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'fuente_referencia_cliente_enum'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.fuente_referencia_cliente_enum AS ENUM (
+            'RECOMENDACION',
+            'MECANICO_CLIENTE'
+        );
+    END IF;
+END $$;
+
+
+-- =============================================================================
+-- TIPO DE APLICACION DEL DOCUMENTO
 -- =============================================================================
 
 DO $$
@@ -20,6 +40,27 @@ BEGIN
         CREATE TYPE public.tipo_documento_aplica_enum AS ENUM (
             'PERSONA',
             'EMPRESA',
+            'AMBOS'
+        );
+    END IF;
+END $$;
+
+-- =============================================================================
+-- COMPONENTE TIPO
+-- =============================================================================
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'tipo_componente_enum'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.tipo_componente_enum AS ENUM (
+            'PICO_INYECTOR',
+            'BOMBA_INYECTORA',
             'AMBOS'
         );
     END IF;

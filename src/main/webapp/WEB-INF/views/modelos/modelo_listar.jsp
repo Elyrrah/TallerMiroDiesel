@@ -1,6 +1,6 @@
 <%-- 
     Document   : modelo_listar
-    Created on : 26 ene. 2026, 2:30:23 p. m.
+    Created on : 26 ene. 2026, 2:30:23 p. m.
     Author     : elyrr
 --%>
 
@@ -12,8 +12,57 @@
 <head>
     <meta charset="UTF-8">
     <title>Modelos</title>
+
+    <style>
+        /* Toggle tipo switch (link) */
+        .switch {
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+            border-radius: 999px;
+            position: relative;
+            vertical-align: middle;
+            text-decoration: none;
+            border: 1px solid #999;
+            background: #ddd;
+        }
+        .switch::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid #999;
+            transition: left 0.15s ease-in-out;
+        }
+        .switch.on {
+            background: #4CAF50;
+            border-color: #3E8E41;
+        }
+        .switch.on::after {
+            left: 24px;
+        }
+        .switch.off {
+            background: #e74c3c;
+            border-color: #c0392b;
+        }
+        .switch:hover {
+            filter: brightness(0.95);
+        }
+        .switch.off::after {
+            border-color: #c0392b;
+        }
+    </style>
 </head>
 <body>
+
+<!-- Volver a la página principal -->
+<p>
+    <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
+</p>
 
 <h2>Catálogo de Modelos</h2>
 
@@ -35,7 +84,6 @@
             <th>ID</th>
             <th>Marca</th>
             <th>Nombre</th>
-            <th>Activo</th>
             <th>Acciones</th>
         </tr>
     </thead>
@@ -45,21 +93,23 @@
                 <td>${m.idModelo}</td>
                 <td>${m.nombreMarca}</td>
                 <td>${m.nombre}</td>
-                <td>${m.activo}</td>
                 <td>
                     <a href="${pageContext.request.contextPath}/modelos?accion=editar&id=${m.idModelo}">
                         Editar
                     </a>
 
+                    <!-- Toggle activar/desactivar -->
                     <c:choose>
                         <c:when test="${m.activo}">
-                            | <a href="${pageContext.request.contextPath}/modelos?accion=desactivar&id=${m.idModelo}">
-                                Desactivar
+                            | <a class="switch on"
+                                 title="Desactivar"
+                                 href="${pageContext.request.contextPath}/modelos?accion=desactivar&id=${m.idModelo}">
                               </a>
                         </c:when>
                         <c:otherwise>
-                            | <a href="${pageContext.request.contextPath}/modelos?accion=activar&id=${m.idModelo}">
-                                Activar
+                            | <a class="switch off"
+                                 title="Activar"
+                                 href="${pageContext.request.contextPath}/modelos?accion=activar&id=${m.idModelo}">
                               </a>
                         </c:otherwise>
                     </c:choose>
@@ -68,10 +118,6 @@
         </c:forEach>
     </tbody>
 </table>
-
-<p style="margin-top:15px;">
-    <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
-</p>
 
 </body>
 </html>

@@ -20,7 +20,7 @@ import py.taller.tallermirodiesel.service.impl.ServicioServiceImpl;
 /**
  * @author elyrr
  */
-@WebServlet("/servicios")
+@WebServlet(name = "ServicioServlet", urlPatterns = {"/servicios"})
 // Bloque: Mapeo del servlet (todas las acciones de Servicio entran por /servicios).
 public class ServicioServlet extends HttpServlet {
 
@@ -40,23 +40,25 @@ public class ServicioServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        String accion = req.getParameter("accion");
+        // AJUSTE: ahora usamos "action" en lugar de "accion" para unificar en todo el proyecto.
+        String accion = req.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) accion = "listar";
+        // AJUSTE: ahora el default es "list" en lugar de "listar".
+        if (accion == null || accion.isBlank()) accion = "list";
 
         // 3. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (accion) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
-                case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
+                case "new" -> mostrarFormularioNuevo(req, resp);        // antes: "nuevo"
+                case "edit" -> mostrarFormularioEditar(req, resp);      // antes: "editar"
+                case "activate" -> activar(req, resp);                  // antes: "activar"
+                case "deactivate" -> desactivar(req, resp);             // antes: "desactivar"
+                case "search" -> buscar(req, resp);                     // antes: "buscar"
+                case "list" -> listar(req, resp);                       // antes: "listar"
                 default -> listar(req, resp);
             }
-        } catch (ServletException | IOException e) {
+        } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
             listar(req, resp);
         }
@@ -69,30 +71,42 @@ public class ServicioServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        String accion = req.getParameter("accion");
+        // AJUSTE: ahora usamos "action" también en POST.
+        String accion = req.getParameter("action");
 
         // 2. Si no viene acción, se define un default para evitar nulls.
-        if (accion == null || accion.isBlank()) accion = "listar";
+        // AJUSTE: ahora el default para POST será "save".
+        if (accion == null || accion.isBlank()) accion = "save";
 
         // 3. Router de acciones POST.
         try {
             switch (accion) {
-                case "guardar" -> guardar(req, resp);
-                default -> resp.sendRedirect(req.getContextPath() + "/servicios?accion=listar");
+                case "save" -> guardar(req, resp); // antes: "guardar"
+                default -> resp.sendRedirect(req.getContextPath() + "/servicios?action=list");
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
 
             // 4. Avisa en caso de error.
             req.setAttribute("error", e.getMessage());
 
-            // 5. Re-render del formulario correspondiente.
-            // Nota: "guardar" sirve tanto para crear como para actualizar, diferenciamos por idServicio.
+            // 5. Rehidratar el objeto para no perder los datos ingresados
+            Servicio servicio = new Servicio();
             Long idServicio = parseLong(req.getParameter("idServicio"));
-            if (idServicio != null) {
-                mostrarFormularioEditar(req, resp);
-            } else {
-                mostrarFormularioNuevo(req, resp);
-            }
+            servicio.setIdServicio(idServicio);
+
+            servicio.setCodigo(req.getParameter("codigo"));
+            servicio.setNombre(req.getParameter("nombre"));
+            servicio.setDescripcion(req.getParameter("descripcion"));
+            servicio.setPrecioBase(parseBigDecimal(req.getParameter("precioBase")));
+
+            // Nota: En edición tomamos el "activo"; en creación queda true por lógica del servlet/service.
+            servicio.setActivo("true".equals(req.getParameter("activo")));
+
+            req.setAttribute("servicio", servicio);
+
+            // 6. Re-render del formulario correspondiente.
+            // AJUSTE: Como ahora todo pasa por "save" (crear/actualizar por idServicio), volvemos al mismo form.
+            req.getRequestDispatcher("/WEB-INF/views/servicios/servicio_form.jsp").forward(req, resp);
         }
     }
 
@@ -190,7 +204,8 @@ public class ServicioServlet extends HttpServlet {
         servicioService.activar(id);
 
         // 4. Redirige al listado tras la operación.
-        resp.sendRedirect(req.getContextPath() + "/servicios?accion=listar");
+        // AJUSTE: ahora usamos action=list
+        resp.sendRedirect(req.getContextPath() + "/servicios?action=list");
     }
 
     // DESACTIVAR.
@@ -208,7 +223,8 @@ public class ServicioServlet extends HttpServlet {
         servicioService.desactivar(id);
 
         // 4. Redirige al listado tras la operación.
-        resp.sendRedirect(req.getContextPath() + "/servicios?accion=listar");
+        // AJUSTE: ahora usamos action=list
+        resp.sendRedirect(req.getContextPath() + "/servicios?action=list");
     }
 
     // ========== ========== ========== 
@@ -237,7 +253,8 @@ public class ServicioServlet extends HttpServlet {
             servicioService.actualizar(servicio);
         }
 
-        resp.sendRedirect(req.getContextPath() + "/servicios?accion=listar");
+        // AJUSTE: ahora usamos action=list
+        resp.sendRedirect(req.getContextPath() + "/servicios?action=list");
     }
 
     // ========== ========== ========== 

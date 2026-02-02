@@ -37,70 +37,74 @@ public class ModeloServlet extends HttpServlet {
     // Service utilizado para cargar marcas (combo en formulario y filtro en listado).
     private final MarcaService marcaService = new MarcaServiceImpl();
 
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     // MANEJO DE GET (VISTAS / ACCIONES DE NAVEGACIÓN).
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        String accion = request.getParameter("accion");
+        // AJUSTE: ahora usamos "action" en lugar de "accion" para unificar en todo el proyecto.
+        String accion = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
+        // AJUSTE: ahora el default es "list" en lugar de "listar".
         if (accion == null || accion.isBlank()) {
-            accion = "listar";
+            accion = "list";
         }
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (accion) {
-                case "nuevo" -> mostrarFormularioNuevo(request, response);
-                case "editar" -> mostrarFormularioEditar(request, response);
-                case "activar" -> activar(request, response);
-                case "desactivar" -> desactivar(request, response);
-                case "buscar" -> buscar(request, response);
-                case "listar" -> listar(request, response);
+                case "new" -> mostrarFormularioNuevo(request, response);        // antes: "nuevo"
+                case "edit" -> mostrarFormularioEditar(request, response);      // antes: "editar"
+                case "activate" -> activar(request, response);                  // antes: "activar"
+                case "deactivate" -> desactivar(request, response);             // antes: "desactivar"
+                case "search" -> buscar(request, response);                     // antes: "buscar"
+                case "list" -> listar(request, response);                       // antes: "listar"
                 default -> listar(request, response);
             }
 
         // 5. Manejo simple de errores: setear mensaje y volver al listado
-        } catch (ServletException | IOException e) {
+        } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
             listar(request, response);
         }
     }
 
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     // MANEJO DE POST (ACCIONES QUE MODIFICAN DATOS).
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        String accion = request.getParameter("accion");
+        // AJUSTE: ahora usamos "action" también en POST.
+        String accion = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
+        // AJUSTE: ahora el default para POST será "save".
         if (accion == null || accion.isBlank()) {
-            accion = "guardar";
+            accion = "save";
         }
 
         // 3. Router de acciones POST.
         try {
             switch (accion) {
-                case "guardar" -> guardar(request, response);
-                default -> guardar(request, response);
+                case "save" -> guardar(request, response); // antes: "guardar"
+                default -> response.sendRedirect(request.getContextPath() + "/modelos?action=list");
             }
 
         // 4. Si falla guardar, devolvemos al formulario con el error y los valores cargados
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
             reenviarFormularioConDatos(request, response);
         }
     }
 
-    // ========== ========== ==========
+    // ========== ========== ========== 
     // BLOQUE DE ACCIONES GET
-    // ========== ========== ==========
+    // ========== ========== ========== 
 
     // LISTAR (con filtro por marca y búsqueda por nombre).
     private void listar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -208,7 +212,8 @@ public class ModeloServlet extends HttpServlet {
         modeloService.activar(id);
 
         // 3. Reconstruye la URL preservando filtros si venían en la petición.
-        String url = request.getContextPath() + "/modelos?accion=listar";
+        // AJUSTE: ahora usamos action=list
+        String url = request.getContextPath() + "/modelos?action=list";
 
         Long idMarca = parseLongNullable(request.getParameter("idMarca"));
         if (idMarca != null) url += "&idMarca=" + idMarca;
@@ -233,7 +238,8 @@ public class ModeloServlet extends HttpServlet {
         modeloService.desactivar(id);
 
         // 3. Reconstruye la URL preservando filtros si venían en la petición.
-        String url = request.getContextPath() + "/modelos?accion=listar";
+        // AJUSTE: ahora usamos action=list
+        String url = request.getContextPath() + "/modelos?action=list";
 
         Long idMarca = parseLongNullable(request.getParameter("idMarca"));
         if (idMarca != null) url += "&idMarca=" + idMarca;
@@ -248,9 +254,9 @@ public class ModeloServlet extends HttpServlet {
         response.sendRedirect(url);
     }
 
-    // ========== ========== ==========
+    // ========== ========== ========== 
     // BLOQUE DE ACCIONES POST
-    // ========== ========== ==========
+    // ========== ========== ========== 
 
     // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -276,7 +282,8 @@ public class ModeloServlet extends HttpServlet {
         }
 
         // 4. Redirige al listado preservando filtros.
-        String url = request.getContextPath() + "/modelos?accion=listar";
+        // AJUSTE: ahora usamos action=list
+        String url = request.getContextPath() + "/modelos?action=list";
 
         Long idMarcaFiltro = parseLongNullable(request.getParameter("idMarcaFiltro"));
         if (idMarcaFiltro != null) url += "&idMarca=" + idMarcaFiltro;
@@ -290,9 +297,9 @@ public class ModeloServlet extends HttpServlet {
         response.sendRedirect(url);
     }
 
-    // ========== ========== ==========
+    // ========== ========== ========== 
     // BLOQUE DE ACCIONES UTILES
-    // ========== ========== ==========
+    // ========== ========== ========== 
 
     // CARGAR MARCAS (COMBO/FILTRO).
     private void cargarMarcas(HttpServletRequest request) {

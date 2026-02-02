@@ -15,16 +15,6 @@ BEGIN;
 
 -- =============================================================================
 -- ÍNDICES
---
--- Nota (decisión actual):
---   No se agregan más índices por ahora. Solo se conservan los índices ya
---   definidos abajo (los que ya venías usando/planificando).
---
--- Nota sobre departamentos:
---   Actualmente NO existe una restricción UNIQUE para (id_pais, nombre).
---   Eso significa que se podría insertar dos veces un mismo departamento
---   (ej: "ASUNCIÓN") dentro del mismo país si alguien lo hace manualmente.
---   No se aplica constraint adicional por decisión actual.
 -- =============================================================================
 
 -- Optimiza búsquedas por nombre y apellido en clientes persona
@@ -89,11 +79,6 @@ ON public.planes_pago_eventos (id_plan_pago);
 CREATE INDEX IF NOT EXISTS idx_pagos_id_usuario
 ON public.pagos (id_usuario);
 
--- Un solo documento principal activo por cliente
-CREATE UNIQUE INDEX IF NOT EXISTS ux_cliente_documentos_principal_por_cliente
-ON public.cliente_documentos (id_cliente)
-WHERE principal = true AND activo = true;
-
 -- Evita duplicar documentos activos por tipo + número dentro del mismo cliente
 CREATE UNIQUE INDEX IF NOT EXISTS ux_cliente_documentos_cliente_tipo_numero_activo
 ON public.cliente_documentos (id_cliente, id_tipo_documento, numero)
@@ -112,6 +97,14 @@ ON public.cliente_documentos (id_tipo_documento);
 -- USUARIOS: acelera listados y joins por rol asignado
 CREATE INDEX IF NOT EXISTS idx_usuarios_id_rol
 ON public.usuarios (id_rol);
+
+-- limpieza por seguridad si existió versión anterior en post
+DROP TRIGGER IF EXISTS trg_clientes_set_distrito_por_localidad ON public.clientes;
+DROP FUNCTION IF EXISTS public.fn_clientes_set_distrito_por_localidad();
+
+DROP TRIGGER IF EXISTS trg_clientes_persona_no_empresa ON public.clientes_persona;
+DROP TRIGGER IF EXISTS trg_clientes_empresa_no_persona ON public.clientes_empresa;
+DROP FUNCTION IF EXISTS public.fn_clientes_evitar_doble_tipo();
 
 -- =============================================================================
 -- CHECK / UNIQUE CONSTRAINTS (IDEMPOTENTES)
@@ -152,19 +145,7 @@ BEGIN
 END $$;
 
 -- Evita precios unitarios negativos en los detalles de orden
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_precio_unitario_no_negativo'
-          AND conrelid = 'public.orden_trabajo_detalles'::regclass
-    ) THEN
-        ALTER TABLE public.orden_trabajo_detalles
-        ADD CONSTRAINT check_precio_unitario_no_negativo
-        CHECK (precio_unitario IS NULL OR precio_unitario >= 0);
-    END IF;
-END $$;
+-- (SE ELIMINA DEL POST: YA SE AGREGA EN EL SCHEMA COMO CONSTRAINT)
 
 -- Asegura que la cantidad de trabajos o servicios sea siempre mayor a cero
 DO $$
@@ -290,40 +271,6 @@ BEGIN
         CHECK (monto_cuota >= 0);
     END IF;
 END $$;
-
--- Actualiza todos los id's para seguir del máximo ingresado
-DO $$
-DECLARE
-    r record;
-    seq_name text;
-    max_id bigint;
-BEGIN
-    -- Recorre todas las columnas que tienen una sequence asociada (SERIAL / IDENTITY)
-    FOR r IN
-        SELECT
-            n.nspname  AS schema_name,
-            c.relname  AS table_name,
-            a.attname  AS column_name
-        FROM pg_class c
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        JOIN pg_attribute a ON a.attrelid = c.oid
-        WHERE n.nspname = 'public'
-          AND c.relkind = 'r'              -- tablas reales
-          AND a.attnum > 0
-          AND NOT a.attisdropped
-          AND pg_get_serial_sequence(format('%I.%I', n.nspname, c.relname), a.attname) IS NOT NULL
-    LOOP
-        seq_name := pg_get_serial_sequence(format('%I.%I', r.schema_name, r.table_name), r.column_name);
-
-        -- MAX(col) de la tabla (si está vacía, usa 0)
-        EXECUTE format('SELECT COALESCE(MAX(%I), 0) FROM %I.%I', r.column_name, r.schema_name, r.table_name)
-        INTO max_id;
-
-        -- Ajusta la secuencia a MAX+1
-        EXECUTE format('SELECT setval(%L, %s, false)', seq_name, (max_id + 1));
-    END LOOP;
-END $$;
-
 
 -- =============================================================================
 -- FUNCIONES
@@ -470,27 +417,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 7) Impide que un cliente sea persona y empresa simultáneamente
-CREATE OR REPLACE FUNCTION public.fn_clientes_evitar_doble_tipo()
-RETURNS trigger AS $$
-BEGIN
-    IF TG_TABLE_NAME = 'clientes_persona' THEN
-        IF EXISTS (SELECT 1 FROM public.clientes_empresa WHERE id_cliente = NEW.id_cliente) THEN
-            RAISE EXCEPTION 'El cliente % ya está registrado como EMPRESA', NEW.id_cliente;
-        END IF;
-    END IF;
-
-    IF TG_TABLE_NAME = 'clientes_empresa' THEN
-        IF EXISTS (SELECT 1 FROM public.clientes_persona WHERE id_cliente = NEW.id_cliente) THEN
-            RAISE EXCEPTION 'El cliente % ya está registrado como PERSONA', NEW.id_cliente;
-        END IF;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 8) Calcula automáticamente las fechas de garantía al finalizar la orden
+-- 7) Calcula automáticamente las fechas de garantía al finalizar la orden
 CREATE OR REPLACE FUNCTION public.fn_ot_detalles_calcular_garantia_al_terminar()
 RETURNS trigger AS $$
 DECLARE
@@ -537,7 +464,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 9) Impide borrar clientes que tengan OT abiertas
+-- 8) Impide borrar clientes que tengan OT abiertas
 CREATE OR REPLACE FUNCTION public.fn_clientes_no_borrar_ot()
 RETURNS trigger AS $$
 BEGIN
@@ -554,116 +481,74 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 10) Completa automáticamente el distrito a partir de la localidad (si no fue provisto)
---     y valida coherencia entre distrito y localidad cuando ambos existen.
-CREATE OR REPLACE FUNCTION public.fn_clientes_set_distrito_por_localidad()
-RETURNS trigger AS $$
-DECLARE
-    v_distrito_de_localidad bigint;
-BEGIN
-    -- Regla: al menos uno debe estar definido
-    IF NEW.id_distrito IS NULL AND NEW.id_localidad IS NULL THEN
-        RAISE EXCEPTION 'Debe especificar al menos distrito o localidad';
-    END IF;
-
-    -- Si hay localidad, obtener el distrito real de esa localidad
-    IF NEW.id_localidad IS NOT NULL THEN
-        SELECT l.id_distrito
-        INTO v_distrito_de_localidad
-        FROM public.localidades l
-        WHERE l.id_localidad = NEW.id_localidad;
-
-        IF v_distrito_de_localidad IS NULL THEN
-            RAISE EXCEPTION 'Localidad inválida: %', NEW.id_localidad;
-        END IF;
-
-        -- Si no viene distrito, autocompletar
-        IF NEW.id_distrito IS NULL THEN
-            NEW.id_distrito := v_distrito_de_localidad;
-        ELSE
-            -- Si vienen ambos, validar coherencia
-            IF NEW.id_distrito <> v_distrito_de_localidad THEN
-                RAISE EXCEPTION
-                    'La localidad % no pertenece al distrito %', NEW.id_localidad, NEW.id_distrito;
-            END IF;
-        END IF;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- =============================================================================
 -- TRIGGERS
 -- =============================================================================
 
 -- Asigna estado inicial y número correlativo al crear una orden de trabajo
 DROP TRIGGER IF EXISTS trg_ordenes_trabajo_inicio ON public.ordenes_trabajo;
-CREATE TRIGGER trg_ordenes_trabajo_inicio
+DROP TRIGGER IF EXISTS trg_ot_01_inicio ON public.ordenes_trabajo;
+
+CREATE TRIGGER trg_ot_01_inicio
 BEFORE INSERT ON public.ordenes_trabajo
 FOR EACH ROW EXECUTE FUNCTION public.fn_ordenes_trabajo_inicio();
 
 -- Completa el precio unitario del detalle antes de guardar el registro
 DROP TRIGGER IF EXISTS trg_ot_detalle_precio_auto ON public.orden_trabajo_detalles;
-CREATE TRIGGER trg_ot_detalle_precio_auto
+DROP TRIGGER IF EXISTS trg_otd_01_precio_auto ON public.orden_trabajo_detalles;
+
+CREATE TRIGGER trg_otd_01_precio_auto
 BEFORE INSERT OR UPDATE ON public.orden_trabajo_detalles
 FOR EACH ROW EXECUTE FUNCTION public.fn_ot_detalle_precio_auto();
 
 -- Recalcula el total estimado de la orden ante cualquier cambio en los detalles
 DROP TRIGGER IF EXISTS trg_ot_detalle_actualizar_total ON public.orden_trabajo_detalles;
-CREATE TRIGGER trg_ot_detalle_actualizar_total
+DROP TRIGGER IF EXISTS trg_otd_02_actualizar_total ON public.orden_trabajo_detalles;
+
+CREATE TRIGGER trg_otd_02_actualizar_total
 AFTER INSERT OR UPDATE OR DELETE ON public.orden_trabajo_detalles
 FOR EACH ROW EXECUTE FUNCTION public.fn_ot_actualizar_total_cabecera();
 
 -- Actualiza o limpia la fecha de finalización según el estado de la orden
 DROP TRIGGER IF EXISTS trg_ordenes_trabajo_fechas ON public.ordenes_trabajo;
-CREATE TRIGGER trg_ordenes_trabajo_fechas
+DROP TRIGGER IF EXISTS trg_ot_10_fechas_estado ON public.ordenes_trabajo;
+
+CREATE TRIGGER trg_ot_10_fechas_estado
 BEFORE UPDATE OF estado ON public.ordenes_trabajo
 FOR EACH ROW EXECUTE FUNCTION public.fn_ordenes_trabajo_fechas_estado();
 
 -- Valida que el modelo seleccionado pertenezca a la marca del vehículo
 DROP TRIGGER IF EXISTS trg_vehiculos_validar_modelo_marca ON public.vehiculos;
-CREATE TRIGGER trg_vehiculos_validar_modelo_marca
+DROP TRIGGER IF EXISTS trg_veh_01_validar_modelo_marca ON public.vehiculos;
+
+CREATE TRIGGER trg_veh_01_validar_modelo_marca
 BEFORE INSERT OR UPDATE OF id_marca, id_modelo ON public.vehiculos
 FOR EACH ROW EXECUTE FUNCTION public.fn_vehiculos_validar_modelo_marca();
 
 -- Valida que el modelo seleccionado pertenezca a la marca del componente
 DROP TRIGGER IF EXISTS trg_componentes_validar_modelo_marca ON public.componentes;
-CREATE TRIGGER trg_componentes_validar_modelo_marca
+DROP TRIGGER IF EXISTS trg_comp_01_validar_modelo_marca ON public.componentes;
+
+CREATE TRIGGER trg_comp_01_validar_modelo_marca
 BEFORE INSERT OR UPDATE OF id_marca, id_modelo
 ON public.componentes
 FOR EACH ROW EXECUTE FUNCTION public.fn_componentes_validar_modelo_marca();
 
--- Evita registrar un cliente persona si ya existe como empresa
-DROP TRIGGER IF EXISTS trg_clientes_persona_no_empresa ON public.clientes_persona;
-CREATE TRIGGER trg_clientes_persona_no_empresa
-BEFORE INSERT OR UPDATE OF id_cliente ON public.clientes_persona
-FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_evitar_doble_tipo();
-
--- Evita registrar un cliente empresa si ya existe como persona
-DROP TRIGGER IF EXISTS trg_clientes_empresa_no_persona ON public.clientes_empresa;
-CREATE TRIGGER trg_clientes_empresa_no_persona
-BEFORE INSERT OR UPDATE OF id_cliente ON public.clientes_empresa
-FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_evitar_doble_tipo();
-
 -- Calcula automáticamente la garantía de los trabajos al finalizar la orden
 DROP TRIGGER IF EXISTS trg_ot_calcular_garantia ON public.ordenes_trabajo;
-CREATE TRIGGER trg_ot_calcular_garantia
+DROP TRIGGER IF EXISTS trg_ot_20_calcular_garantia ON public.ordenes_trabajo;
+
+CREATE TRIGGER trg_ot_20_calcular_garantia
 BEFORE UPDATE OF estado ON public.ordenes_trabajo
 FOR EACH ROW EXECUTE FUNCTION public.fn_ot_detalles_calcular_garantia_al_terminar();
 
 -- Trigger preventivo de borrado de cliente
 DROP TRIGGER IF EXISTS trg_clientes_no_borrar_ot ON public.clientes;
-CREATE TRIGGER trg_clientes_no_borrar_ot
+DROP TRIGGER IF EXISTS trg_cli_01_no_borrar_ot ON public.clientes;
+
+CREATE TRIGGER trg_cli_01_no_borrar_ot
 BEFORE DELETE ON public.clientes
 FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_no_borrar_ot();
-
--- Autocompleta distrito cuando se selecciona localidad en el cliente
--- y valida consistencia entre distrito y localidad cuando ambos existen
-DROP TRIGGER IF EXISTS trg_clientes_set_distrito_por_localidad ON public.clientes;
-CREATE TRIGGER trg_clientes_set_distrito_por_localidad
-BEFORE INSERT OR UPDATE OF id_localidad, id_distrito ON public.clientes
-FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_set_distrito_por_localidad();
 
 COMMIT;
 

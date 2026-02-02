@@ -1,6 +1,6 @@
 <%-- 
     Document   : servicio_listar
-    Created on : 27 ene. 2026, 10:47:50 a. m.
+    Created on : 27 ene. 2026, 10:47:50 a. m.
     Author     : elyrr
 --%>
 
@@ -13,8 +13,89 @@
 <head>
     <meta charset="UTF-8">
     <title>Servicios</title>
+
+    <style>
+        /* Buscador simple */
+        .buscador {
+            margin: 10px 0 15px 0;
+        }
+        .buscador input[type="text"] {
+            padding: 6px;
+            width: 260px;
+        }
+        .buscador button, .buscador a {
+            padding: 6px 10px;
+            margin-left: 6px;
+        }
+
+        /* Toggle tipo switch (link) */
+        .switch {
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+            border-radius: 999px;
+            position: relative;
+            vertical-align: middle;
+            text-decoration: none;
+            border: 1px solid #999;
+            background: #ddd;
+        }
+        .switch::after {
+            content: "";
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #fff;
+            border: 1px solid #999;
+            transition: left 0.15s ease-in-out;
+        }
+        .switch.on {
+            background: #4CAF50;
+            border-color: #3E8E41;
+        }
+        .switch.on::after {
+            left: 24px;
+        }
+        .switch.off {
+            background: #e74c3c;
+            border-color: #c0392b
+        }
+
+        /* Opcional: cursor de mano */
+        .switch:hover {
+            filter: brightness(0.95);
+        }
+        
+        /* Circulito cuando está apagado */
+        .switch.off::after {
+            border-color: #c0392b;
+        }
+
+        /* Precio: símbolo fijo a la izquierda, monto alineado a la derecha */
+        .precio {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-width: 130px;
+        }
+        .precio .simbolo {
+            margin-right: 6px;
+        }
+        .precio .monto {
+            text-align: right;
+            flex: 1;
+        }
+    </style>
 </head>
 <body>
+
+<!-- Volver a la página principal -->
+<p>
+    <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
+</p>
 
 <h2>Catálogo de Servicios</h2>
 
@@ -29,6 +110,15 @@
         Nuevo Servicio
     </a>
 </p>
+
+<!-- Buscador / filtro -->
+<form class="buscador" method="get" action="${pageContext.request.contextPath}/servicios">
+    <input type="hidden" name="accion" value="listar" />
+    <label>Buscar:</label>
+    <input type="text" name="q" value="${q}" placeholder="Código o nombre..." />
+    <button type="submit">Filtrar</button>
+    <a href="${pageContext.request.contextPath}/servicios?accion=listar">Limpiar</a>
+</form>
 
 <table border="1" cellpadding="6" cellspacing="0">
     <thead>
@@ -49,25 +139,33 @@
                 <td>${s.nombre}</td>
 
                 <td>
-                    ₲ <fmt:formatNumber value="${s.precioBase}" pattern="#,##0" />
+                    <div class="precio">
+                        <span class="simbolo">₲</span>
+                        <span class="monto">
+                            <fmt:formatNumber value="${s.precioBase}" pattern="#,##0" />
+                        </span>
+                    </div>
                 </td>
 
-
                 <td>${s.activo}</td>
+
                 <td>
                     <a href="${pageContext.request.contextPath}/servicios?accion=editar&id=${s.idServicio}">
                         Editar
                     </a>
 
+                    <!-- Toggle activar/desactivar (switch) -->
                     <c:choose>
                         <c:when test="${s.activo}">
-                            | <a href="${pageContext.request.contextPath}/servicios?accion=desactivar&id=${s.idServicio}">
-                                Desactivar
+                            | <a class="switch on"
+                                 title="Desactivar"
+                                 href="${pageContext.request.contextPath}/servicios?accion=desactivar&id=${s.idServicio}&q=${q}">
                               </a>
                         </c:when>
                         <c:otherwise>
-                            | <a href="${pageContext.request.contextPath}/servicios?accion=activar&id=${s.idServicio}">
-                                Activar
+                            | <a class="switch off"
+                                 title="Activar"
+                                 href="${pageContext.request.contextPath}/servicios?accion=activar&id=${s.idServicio}&q=${q}">
                               </a>
                         </c:otherwise>
                     </c:choose>
@@ -76,10 +174,6 @@
         </c:forEach>
     </tbody>
 </table>
-
-<p style="margin-top:15px;">
-    <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
-</p>    
 
 </body>
 </html>

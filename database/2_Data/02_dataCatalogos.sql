@@ -48,49 +48,35 @@ INSERT INTO public.modelos (id_marca, nombre)
 SELECT m.id_marca, v.modelo
 FROM (
     VALUES
-        -- =====================
         -- SCANIA
-        -- =====================
         ('SCANIA', '112'),
         ('SCANIA', '113'),
 
-        -- =====================
         -- TOYOTA
-        -- =====================
         ('TOYOTA', 'VITZ'),
         ('TOYOTA', 'HILUX'),
         ('TOYOTA', 'COROLLA'),
         ('TOYOTA', 'LAND CRUISER'),
 
-        -- =====================
         -- NISSAN
-        -- =====================
         ('NISSAN', 'PATROL'),
         ('NISSAN', 'NAVARA'),
         ('NISSAN', 'FRONTIER'),
 
-        -- =====================
         -- CHEVROLET
-        -- =====================
         ('CHEVROLET', 'ASTRA'),
         ('CHEVROLET', 'S10'),
 
-        -- =====================
         -- MITSUBISHI
-        -- =====================
         ('MITSUBISHI', 'MONTERO'),
         ('MITSUBISHI', 'L200'),
         ('MITSUBISHI', 'PAJERO'),
 
-        -- =====================
         -- FIAT
-        -- =====================
         ('FIAT', 'STRADA'),
         ('FIAT', 'TORO'),
 
-        -- =====================
         -- MAZDA
-        -- =====================
         ('MAZDA', 'BT-50')
 ) AS v(marca, modelo)
 JOIN public.marcas m
@@ -215,6 +201,22 @@ JOIN public.permisos p
  AND p.codigo NOT LIKE 'SISTEMA.USUARIO.%'
 WHERE r.codigo = 'OPERADOR'
 ON CONFLICT (id_rol, id_permiso) DO NOTHING;
+
+
+-- =============================================================================
+-- INSERCIÓN DE SERVICIOS (orden alfabético por nombre)
+-- =============================================================================
+
+INSERT INTO public.servicios (codigo, nombre, descripcion, precio_base) VALUES
+('ADAPT-BI', 'ADAPTACION DE BOMBA INYECTORA', NULL, 5000000),
+('CAMB-BI',  'CAMBIO DE BOMBA INYECTORA',     NULL, 3500000),
+('CAMB-PI',  'CAMBIO DE PICO INYECTOR',       NULL, 180000),
+('MANT-BI',  'MANTENIMIENTO DE BOMBA INYECTORA', NULL, 800000),
+('MANT-BP',  'MANTENIMIENTO DE BOMBA Y PICO', NULL, 2000000),
+('MANT-PI',  'MANTENIMIENTO DE PICO INYECTOR', NULL, 50000),
+('REPA-BI',  'REPARACION DE BOMBA INYECTORA', NULL, 4000000),
+('REPA-BP',  'REPARACION DE BOMBA Y PICO',    NULL, 4000000);
+
 
 -- =============================================================================
 -- USUARIO INICIAL DEL SISTEMA

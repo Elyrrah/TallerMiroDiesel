@@ -20,7 +20,7 @@ import py.taller.tallermirodiesel.service.impl.TipoDocumentoServiceImpl;
 /**
  * @author elyrr
  */
-@WebServlet("/tipos-documento")
+@WebServlet(name = "TipoDocumentoServlet", urlPatterns = {"/tipos-documento"})
 // Bloque: Mapeo del servlet (todas las acciones de TipoDocumento entran por /tipos-documento).
 public class TipoDocumentoServlet extends HttpServlet {
 
@@ -33,54 +33,58 @@ public class TipoDocumentoServlet extends HttpServlet {
         this.tipoDocumentoService = new TipoDocumentoServiceImpl();
     }
 
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     // MANEJO DE GET (VISTAS / ACCIONES DE NAVEGACIÓN).
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        String accion = req.getParameter("accion");
+        // AJUSTE: ahora usamos "action" en lugar de "accion" para unificar en todo el proyecto.
+        String accion = req.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) accion = "listar";
+        // AJUSTE: ahora el default es "list" en lugar de "listar".
+        if (accion == null || accion.isBlank()) accion = "list";
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (accion) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
-                case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
+                case "new" -> mostrarFormularioNuevo(req, resp);        // antes: "nuevo"
+                case "edit" -> mostrarFormularioEditar(req, resp);      // antes: "editar"
+                case "activate" -> activar(req, resp);                  // antes: "activar"
+                case "deactivate" -> desactivar(req, resp);             // antes: "desactivar"
+                case "search" -> buscar(req, resp);                     // antes: "buscar"
+                case "list" -> listar(req, resp);                       // antes: "listar"
                 default -> listar(req, resp);
             }
-        } catch (ServletException | IOException e) {
+        } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
             listar(req, resp);
         }
     }
 
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     // MANEJO DE POST (ACCIONES QUE MODIFICAN DATOS).
-    // ========== ========== ========== ========== ==========
+    // ========== ========== ========== ========== ========== 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
         // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        String accion = req.getParameter("accion");
+        // AJUSTE: ahora usamos "action" también en POST.
+        String accion = req.getParameter("action");
 
         // 2. Si no viene acción, se define un default para evitar nulls.
-        if (accion == null || accion.isBlank()) accion = "listar";
+        // AJUSTE: ahora el default para POST será "save".
+        if (accion == null || accion.isBlank()) accion = "save";
 
         // 3. Router de acciones POST.
         try {
             switch (accion) {
-                case "guardar" -> guardar(req, resp);
-                default -> resp.sendRedirect(req.getContextPath() + "/tipos-documento?accion=listar");
+                case "save" -> guardar(req, resp); // antes: "guardar"
+                default -> resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
             }
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
 
             // 4. Avisa en caso de error.
             req.setAttribute("error", e.getMessage());
@@ -111,9 +115,9 @@ public class TipoDocumentoServlet extends HttpServlet {
         }
     }
 
-    // ========== ========== ==========
+    // ========== ========== ========== 
     // BLOQUE DE ACCIONES GET
-    // ========== ========== ==========
+    // ========== ========== ========== 
 
     // LISTADO.
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -215,7 +219,8 @@ public class TipoDocumentoServlet extends HttpServlet {
         tipoDocumentoService.activar(id);
 
         // 4. Redirige al listado tras la operación.
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?accion=listar");
+        // AJUSTE: ahora usamos action=list
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
     }
 
     // DESACTIVAR.
@@ -233,12 +238,13 @@ public class TipoDocumentoServlet extends HttpServlet {
         tipoDocumentoService.desactivar(id);
 
         // 4. Redirige al listado tras la operación.
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?accion=listar");
+        // AJUSTE: ahora usamos action=list
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
     }
 
-    // ========== ========== ==========
+    // ========== ========== ========== 
     // BLOQUE DE ACCIONES POST
-    // ========== ========== ==========
+    // ========== ========== ========== 
 
     // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -265,12 +271,13 @@ public class TipoDocumentoServlet extends HttpServlet {
             tipoDocumentoService.actualizar(td);
         }
 
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?accion=listar");
+        // AJUSTE: ahora usamos action=list
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
     }
 
-    // ========== ========== ==========
+    // ========== ========== ========== 
     // BLOQUE DE ACCIONES UTILES
-    // ========== ========== ==========
+    // ========== ========== ========== 
 
     // PARSEO
     private Long parseLong(String value) {
