@@ -10,113 +10,46 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <meta charset="UTF-8">
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
         <title>Localidades</title>
-
-        <style>
-            /* Buscador simple */
-            .buscador {
-                margin: 10px 0 15px 0;
-            }
-            .buscador input[type="text"], .buscador select {
-                padding: 6px;
-            }
-            .buscador input[type="text"] {
-                width: 260px;
-            }
-            .buscador button, .buscador a {
-                padding: 6px 10px;
-                margin-left: 6px;
-            }
-
-            /* Toggle tipo switch (link) */
-            .switch {
-                display: inline-block;
-                width: 46px;
-                height: 24px;
-                border-radius: 999px;
-                position: relative;
-                vertical-align: middle;
-                text-decoration: none;
-                border: 1px solid #999;
-                background: #ddd;
-            }
-            .switch::after {
-                content: "";
-                position: absolute;
-                top: 3px;
-                left: 3px;
-                width: 18px;
-                height: 18px;
-                border-radius: 50%;
-                background: #fff;
-                border: 1px solid #999;
-                transition: left 0.15s ease-in-out;
-            }
-            .switch.on {
-                background: #4CAF50;
-                border-color: #3E8E41;
-            }
-            .switch.on::after {
-                left: 24px;
-            }
-            .switch.off {
-                background: #e74c3c;
-                border-color: #c0392b;
-            }
-
-            /* Opcional: cursor de mano */
-            .switch:hover {
-                filter: brightness(0.95);
-            }
-
-            /* Circulito cuando está apagado */
-            .switch.off::after {
-                border-color: #c0392b;
-            }
-        </style>
     </head>
     <body>
 
-        <p>
-            <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
-        </p>
-
-        <h2>Catálogo de Localidades</h2>
+        <h1>Localidades</h1>
 
         <c:if test="${not empty error}">
-            <div style="color:red; margin-bottom:10px;">
+            <div style="color: red;">
                 ${error}
             </div>
         </c:if>
 
         <p>
-            <a href="${pageContext.request.contextPath}/localidades?accion=nuevo">
-                Nueva Localidad
-            </a>
+            <a href="${pageContext.request.contextPath}/localidades?accion=nuevo">Nueva Localidad</a>
         </p>
 
-        <!-- Buscador / filtro -->
-        <form class="buscador" method="get" action="${pageContext.request.contextPath}/localidades">
+        <%-- Filtro por Distrito + búsqueda por nombre --%>
+        <form method="get" action="${pageContext.request.contextPath}/localidades">
             <input type="hidden" name="accion" value="listar"/>
 
             <label>Distrito:</label>
             <select name="idDistrito">
                 <option value="">-- Todos --</option>
-                <c:forEach var="di" items="${distritos}">
-                    <option value="${di.idDistrito}"
-                            <c:if test="${not empty idDistrito and idDistrito == di.idDistrito}">selected</c:if>>
-                        ${di.nombre}
+                <c:forEach var="d" items="${distritos}">
+                    <option value="${d.idDistrito}"
+                            <c:if test="${not empty idDistrito and idDistrito == d.idDistrito}">selected</c:if>>
+                        ${d.nombre}
                     </option>
                 </c:forEach>
             </select>
 
             <label>Buscar:</label>
-            <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
+            <input type="text" name="filtro" value="${filtro}" placeholder="Nombre de la localidad"/>
 
             <button type="submit">Filtrar</button>
             <a href="${pageContext.request.contextPath}/localidades?accion=listar">Limpiar</a>
         </form>
+
+        <br/>
 
         <table border="1" cellpadding="6" cellspacing="0">
             <thead>
@@ -124,6 +57,7 @@
                     <th>ID</th>
                     <th>Distrito</th>
                     <th>Nombre</th>
+                    <th>Activo</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -131,7 +65,7 @@
 
                 <c:if test="${empty listaLocalidades}">
                     <tr>
-                        <td colspan="4">No hay localidades registradas.</td>
+                        <td colspan="5">No hay localidades registradas.</td>
                     </tr>
                 </c:if>
 
@@ -141,23 +75,20 @@
                         <td>${l.nombreDistrito}</td>
                         <td>${l.nombre}</td>
                         <td>
-                            <a href="${pageContext.request.contextPath}/localidades?accion=editar&id=${l.idLocalidad}">
-                                Editar
-                            </a>
+                            <c:choose>
+                                <c:when test="${l.activo}">SI</c:when>
+                                <c:otherwise>NO</c:otherwise>
+                            </c:choose>
+                        </td>
+                        <td>
+                            <a href="${pageContext.request.contextPath}/localidades?accion=editar&id=${l.idLocalidad}">Editar</a>
 
-                            <!-- Toggle activar/desactivar (preserva filtros) -->
                             <c:choose>
                                 <c:when test="${l.activo}">
-                                    | <a class="switch on"
-                                         title="Desactivar"
-                                         href="${pageContext.request.contextPath}/localidades?accion=desactivar&id=${l.idLocalidad}&idDistrito=${idDistrito}&filtro=${filtro}">
-                                      </a>
+                                    | <a href="${pageContext.request.contextPath}/localidades?accion=desactivar&id=${l.idLocalidad}">Desactivar</a>
                                 </c:when>
                                 <c:otherwise>
-                                    | <a class="switch off"
-                                         title="Activar"
-                                         href="${pageContext.request.contextPath}/localidades?accion=activar&id=${l.idLocalidad}&idDistrito=${idDistrito}&filtro=${filtro}">
-                                      </a>
+                                    | <a href="${pageContext.request.contextPath}/localidades?accion=activar&id=${l.idLocalidad}">Activar</a>
                                 </c:otherwise>
                             </c:choose>
                         </td>
@@ -166,6 +97,10 @@
 
             </tbody>
         </table>
+
+        <p style="margin-top:15px;">
+            <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
+        </p>
 
     </body>
 </html>

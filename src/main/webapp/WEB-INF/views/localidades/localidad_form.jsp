@@ -38,10 +38,10 @@
                 <label>Distrito:</label>
                 <select name="idDistrito" required>
                     <option value="">-- Seleccione --</option>
-                    <c:forEach var="c" items="${ciudades}">
-                        <option value="${c.idCiudad}"
-                                <c:if test="${not empty localidad.idDistrito and localidad.idDistrito == c.idCiudad}">selected</c:if>>
-                            ${c.nombre}
+                    <c:forEach var="d" items="${distritos}">
+                        <option value="${d.idDistrito}"
+                                <c:if test="${not empty localidad.idDistrito and localidad.idDistrito == d.idDistrito}">selected</c:if>>
+                            ${d.nombre}
                         </option>
                     </c:forEach>
                 </select>
@@ -61,10 +61,6 @@
             <button type="submit">Guardar</button>
             <a href="${pageContext.request.contextPath}/localidades?accion=listar">Cancelar</a>
         </form>
-
-        <p style="margin-top:15px;">
-            <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
-        </p>
 
     </body>
 </html>
