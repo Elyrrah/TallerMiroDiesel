@@ -38,23 +38,21 @@ public class MarcaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        // AJUSTE: ahora usamos "action" en lugar de "accion" para unificar en todo el proyecto.
-        String accion = req.getParameter("action");
+        // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
+        String action = req.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        // AJUSTE: ahora el default es "list" en lugar de "listar".
-        if (accion == null || accion.isBlank()) accion = "list";
+        if (action == null || action.isBlank()) action = "listar";
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
-            switch (accion) {
-                case "new" -> mostrarFormularioNuevo(req, resp);        // antes: "nuevo"
-                case "edit" -> mostrarFormularioEditar(req, resp);      // antes: "editar"
-                case "activate" -> activar(req, resp);                  // antes: "activar"
-                case "deactivate" -> desactivar(req, resp);             // antes: "desactivar"
-                case "search" -> buscar(req, resp);                     // antes: "buscar"
-                case "list" -> listar(req, resp);                       // antes: "listar"
+            switch (action) {
+                case "nuevo" -> mostrarFormularioNuevo(req, resp);
+                case "editar" -> mostrarFormularioEditar(req, resp);
+                case "activar" -> activar(req, resp);
+                case "desactivar" -> desactivar(req, resp);
+                case "buscar" -> buscar(req, resp);
+                case "listar" -> listar(req, resp);
                 default -> listar(req, resp);
             }
         } catch (RuntimeException e) {
@@ -69,19 +67,17 @@ public class MarcaServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        // AJUSTE: ahora usamos "action" también en POST.
-        String accion = req.getParameter("action");
+        // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
+        String action = req.getParameter("action");
 
         // 2. Si no viene acción, se define un default para evitar nulls.
-        // AJUSTE: ahora el default para POST será "save".
-        if (accion == null || accion.isBlank()) accion = "save";
+        if (action == null || action.isBlank()) action = "guardar";
 
         // 3. Router de acciones POST.
         try {
-            switch (accion) {
-                case "save" -> guardar(req, resp); // antes: "guardar"
-                default -> resp.sendRedirect(req.getContextPath() + "/marcas?action=list");
+            switch (action) {
+                case "guardar" -> guardar(req, resp);
+                default -> resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
             }
         } catch (RuntimeException e) {
 
@@ -100,7 +96,6 @@ public class MarcaServlet extends HttpServlet {
             req.setAttribute("marca", marca);
 
             // 6. Re-render del formulario correspondiente.
-            // AJUSTE: Como ahora todo pasa por "save" (crear/actualizar por idMarca), volvemos al mismo form.
             req.getRequestDispatcher("/WEB-INF/views/marcas/marca_form.jsp").forward(req, resp);
         }
     }
@@ -199,8 +194,7 @@ public class MarcaServlet extends HttpServlet {
         marcaService.activar(id);
 
         // 4. Redirige al listado tras la operación.
-        // AJUSTE: ahora usamos action=list
-        resp.sendRedirect(req.getContextPath() + "/marcas?action=list");
+        resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
     }
 
     // DESACTIVAR.
@@ -214,12 +208,11 @@ public class MarcaServlet extends HttpServlet {
             throw new IllegalArgumentException("Id inválido.");
         }
 
-        // 3. Cambia el estado del marca a inactivo usando la capa service.
+        // 3. Cambia el estado de la marca a inactivo usando la capa service.
         marcaService.desactivar(id);
 
         // 4. Redirige al listado tras la operación.
-        // AJUSTE: ahora usamos action=list
-        resp.sendRedirect(req.getContextPath() + "/marcas?action=list");
+        resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
     }
 
     // ========== ========== ========== 
@@ -245,8 +238,7 @@ public class MarcaServlet extends HttpServlet {
             marcaService.actualizar(marca);
         }
 
-        // AJUSTE: ahora usamos action=list
-        resp.sendRedirect(req.getContextPath() + "/marcas?action=list");
+        resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
     }
 
     // ========== ========== ========== 

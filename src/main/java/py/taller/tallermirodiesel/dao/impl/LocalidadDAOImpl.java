@@ -258,7 +258,7 @@ public class LocalidadDAOImpl implements LocalidadDAO {
                     di.nombre AS nombre_distrito
             FROM public.localidades l
             JOIN public.distritos di ON di.id_distrito = l.id_distrito
-            ORDER BY di.nombre ASC, l.nombre ASC
+            ORDER BY l.nombre ASC
             """;
 
         List<Localidad> lista = new ArrayList<>();
@@ -290,7 +290,7 @@ public class LocalidadDAOImpl implements LocalidadDAO {
             FROM public.localidades l
             JOIN public.distritos di ON di.id_distrito = l.id_distrito
             WHERE l.activo = true
-            ORDER BY di.nombre ASC, l.nombre ASC
+            ORDER BY l.nombre ASC
             """;
 
         List<Localidad> lista = new ArrayList<>();
@@ -322,7 +322,7 @@ public class LocalidadDAOImpl implements LocalidadDAO {
             FROM public.localidades l
             JOIN public.distritos di ON di.id_distrito = l.id_distrito
             WHERE l.activo = false
-            ORDER BY di.nombre ASC, l.nombre ASC
+            ORDER BY l.nombre ASC
             """;
 
         List<Localidad> lista = new ArrayList<>();

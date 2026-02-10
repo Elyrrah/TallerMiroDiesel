@@ -24,7 +24,6 @@ import py.taller.tallermirodiesel.service.impl.MarcaServiceImpl;
 import py.taller.tallermirodiesel.service.impl.ModeloServiceImpl;
 
 /**
- *
  * @author elyrr
  */
 @WebServlet(name = "ModeloServlet", urlPatterns = {"/modelos"})
@@ -43,25 +42,23 @@ public class ModeloServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        // AJUSTE: ahora usamos "action" en lugar de "accion" para unificar en todo el proyecto.
-        String accion = request.getParameter("action");
+        // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
+        String action = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        // AJUSTE: ahora el default es "list" en lugar de "listar".
-        if (accion == null || accion.isBlank()) {
-            accion = "list";
+        if (action == null || action.isBlank()) {
+            action = "listar";
         }
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
-            switch (accion) {
-                case "new" -> mostrarFormularioNuevo(request, response);        // antes: "nuevo"
-                case "edit" -> mostrarFormularioEditar(request, response);      // antes: "editar"
-                case "activate" -> activar(request, response);                  // antes: "activar"
-                case "deactivate" -> desactivar(request, response);             // antes: "desactivar"
-                case "search" -> buscar(request, response);                     // antes: "buscar"
-                case "list" -> listar(request, response);                       // antes: "listar"
+            switch (action) {
+                case "nuevo" -> mostrarFormularioNuevo(request, response);
+                case "editar" -> mostrarFormularioEditar(request, response);
+                case "activar" -> activar(request, response);
+                case "desactivar" -> desactivar(request, response);
+                case "buscar" -> buscar(request, response);
+                case "listar" -> listar(request, response);
                 default -> listar(request, response);
             }
 
@@ -78,21 +75,19 @@ public class ModeloServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        // AJUSTE: ahora usamos "action" también en POST.
-        String accion = request.getParameter("action");
+        // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
+        String action = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
-        // AJUSTE: ahora el default para POST será "save".
-        if (accion == null || accion.isBlank()) {
-            accion = "save";
+        if (action == null || action.isBlank()) {
+            action = "guardar";
         }
 
         // 3. Router de acciones POST.
         try {
-            switch (accion) {
-                case "save" -> guardar(request, response); // antes: "guardar"
-                default -> response.sendRedirect(request.getContextPath() + "/modelos?action=list");
+            switch (action) {
+                case "guardar" -> guardar(request, response);
+                default -> response.sendRedirect(request.getContextPath() + "/modelos?action=listar");
             }
 
         // 4. Si falla guardar, devolvemos al formulario con el error y los valores cargados
@@ -212,8 +207,7 @@ public class ModeloServlet extends HttpServlet {
         modeloService.activar(id);
 
         // 3. Reconstruye la URL preservando filtros si venían en la petición.
-        // AJUSTE: ahora usamos action=list
-        String url = request.getContextPath() + "/modelos?action=list";
+        String url = request.getContextPath() + "/modelos?action=listar";
 
         Long idMarca = parseLongNullable(request.getParameter("idMarca"));
         if (idMarca != null) url += "&idMarca=" + idMarca;
@@ -238,8 +232,7 @@ public class ModeloServlet extends HttpServlet {
         modeloService.desactivar(id);
 
         // 3. Reconstruye la URL preservando filtros si venían en la petición.
-        // AJUSTE: ahora usamos action=list
-        String url = request.getContextPath() + "/modelos?action=list";
+        String url = request.getContextPath() + "/modelos?action=listar";
 
         Long idMarca = parseLongNullable(request.getParameter("idMarca"));
         if (idMarca != null) url += "&idMarca=" + idMarca;
@@ -282,8 +275,7 @@ public class ModeloServlet extends HttpServlet {
         }
 
         // 4. Redirige al listado preservando filtros.
-        // AJUSTE: ahora usamos action=list
-        String url = request.getContextPath() + "/modelos?action=list";
+        String url = request.getContextPath() + "/modelos?action=listar";
 
         Long idMarcaFiltro = parseLongNullable(request.getParameter("idMarcaFiltro"));
         if (idMarcaFiltro != null) url += "&idMarca=" + idMarcaFiltro;

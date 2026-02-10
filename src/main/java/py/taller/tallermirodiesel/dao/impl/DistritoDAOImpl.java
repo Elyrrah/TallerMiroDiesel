@@ -242,7 +242,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
             FROM public.distritos di
             JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-            ORDER BY dp.nombre ASC, di.nombre ASC
+            ORDER BY di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -270,7 +270,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             FROM public.distritos di
             JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
             WHERE di.activo = true
-            ORDER BY dp.nombre ASC, di.nombre ASC
+            ORDER BY di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();
@@ -298,7 +298,7 @@ public class DistritoDAOImpl implements DistritoDAO {
             FROM public.distritos di
             JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
             WHERE di.activo = false
-            ORDER BY dp.nombre ASC, di.nombre ASC
+            ORDER BY di.nombre ASC
             """;
 
         List<Distrito> lista = new ArrayList<>();

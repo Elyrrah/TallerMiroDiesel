@@ -64,58 +64,54 @@
                 background: #e74c3c;
                 border-color: #c0392b;
             }
-
-            /* Opcional: cursor de mano */
-            .switch:hover {
-                filter: brightness(0.95);
-            }
-
-            /* Circulito cuando está apagado */
             .switch.off::after {
                 border-color: #c0392b;
+            }
+
+            .switch:hover {
+                filter: brightness(0.95);
             }
         </style>
     </head>
     <body>
 
+        <!-- Volver a la página principal -->
         <p>
             <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
         </p>
 
-        <h2>Catálogo de Distritos</h2>
+        <h1>Distritos</h1>
 
         <c:if test="${not empty error}">
-            <div style="color:red; margin-bottom:10px;">
+            <div style="color: red; margin-bottom: 10px;">
                 ${error}
             </div>
         </c:if>
 
-        <p>
-            <a href="${pageContext.request.contextPath}/distritos?accion=nuevo">
-                Nuevo Distrito
-            </a>
-        </p>
+        <div style="margin-bottom: 12px;">
+            <a href="${pageContext.request.contextPath}/distritos?action=nuevo">Nuevo Distrito</a>
+        </div>
 
-        <!-- Buscador / filtro -->
+        <!-- FILTRO POR DEPARTAMENTO + BÚSQUEDA -->
         <form class="buscador" method="get" action="${pageContext.request.contextPath}/distritos">
-            <input type="hidden" name="accion" value="listar"/>
+            <input type="hidden" name="action" value="listar"/>
 
             <label>Departamento:</label>
             <select name="idDepartamento">
                 <option value="">-- Todos --</option>
                 <c:forEach var="d" items="${departamentos}">
                     <option value="${d.idDepartamento}"
-                            <c:if test="${not empty idDepartamento and idDepartamento == d.idDepartamento}">selected</c:if>>
+                            <c:if test="${d.idDepartamento == idDepartamento}">selected</c:if>>
                         ${d.nombre}
                     </option>
                 </c:forEach>
             </select>
 
-            <label>Buscar:</label>
+            <label style="margin-left: 10px;">Buscar:</label>
             <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
 
             <button type="submit">Filtrar</button>
-            <a href="${pageContext.request.contextPath}/distritos?accion=listar">Limpiar</a>
+            <a href="${pageContext.request.contextPath}/distritos?action=listar">Limpiar</a>
         </form>
 
         <table border="1" cellpadding="6" cellspacing="0">
@@ -123,7 +119,8 @@
                 <tr>
                     <th>ID</th>
                     <th>Departamento</th>
-                    <th>Nombre</th>
+                    <th>Distrito</th>
+                    <th>Activo</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
@@ -131,7 +128,7 @@
 
                 <c:if test="${empty lista}">
                     <tr>
-                        <td colspan="4">No hay distritos registrados.</td>
+                        <td colspan="5">No hay distritos para mostrar.</td>
                     </tr>
                 </c:if>
 
@@ -140,8 +137,16 @@
                         <td>${di.idDistrito}</td>
                         <td>${di.nombreDepartamento}</td>
                         <td>${di.nombre}</td>
+                        
                         <td>
-                            <a href="${pageContext.request.contextPath}/distritos?accion=editar&id=${di.idDistrito}">
+                            <c:choose>
+                                <c:when test="${di.activo}">SÍ</c:when>
+                                <c:otherwise>NO</c:otherwise>
+                            </c:choose>
+                        </td>
+
+                        <td>
+                            <a href="${pageContext.request.contextPath}/distritos?action=editar&id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
                                 Editar
                             </a>
 
@@ -150,13 +155,13 @@
                                 <c:when test="${di.activo}">
                                     | <a class="switch on"
                                          title="Desactivar"
-                                         href="${pageContext.request.contextPath}/distritos?accion=desactivar&id=${di.idDistrito}&idDepartamento=${idDepartamento}&filtro=${filtro}">
+                                         href="${pageContext.request.contextPath}/distritos?action=desactivar&id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
                                       </a>
                                 </c:when>
                                 <c:otherwise>
                                     | <a class="switch off"
                                          title="Activar"
-                                         href="${pageContext.request.contextPath}/distritos?accion=activar&id=${di.idDistrito}&idDepartamento=${idDepartamento}&filtro=${filtro}">
+                                         href="${pageContext.request.contextPath}/distritos?action=activar&id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
                                       </a>
                                 </c:otherwise>
                             </c:choose>

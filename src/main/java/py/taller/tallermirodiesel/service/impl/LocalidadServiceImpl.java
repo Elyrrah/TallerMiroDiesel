@@ -53,6 +53,14 @@ public class LocalidadServiceImpl implements LocalidadService {
         // 4. Cargamos el objeto con los datos.
         localidad.setNombre(nombre);
 
+        // 4.1 VALIDACIÓN: no permitir duplicados (mismo nombre dentro del mismo distrito).
+        List<Localidad> existentesEnDistrito = localidadDAO.listarPorDistrito(localidad.getIdDistrito());
+        boolean existeDuplicado = existentesEnDistrito.stream()
+                .anyMatch(l -> l.getNombre() != null && l.getNombre().trim().equalsIgnoreCase(nombre));
+        if (existeDuplicado) {
+            throw new IllegalArgumentException("Ya existe una localidad con el nombre: " + nombre + " para el distrito seleccionado.");
+        }
+
         // 5. Le pedimos a la base de datos que guarde la localidad.
         return localidadDAO.crear(localidad);
     }
@@ -99,7 +107,18 @@ public class LocalidadServiceImpl implements LocalidadService {
             throw new IllegalArgumentException("No existe una localidad con id: " + localidad.getIdLocalidad());
         }
 
-        // 6. Le pedimos a la base de datos que actualice la localidad.
+        // 6. VALIDACIÓN: no permitir duplicados (mismo nombre dentro del mismo distrito), excluyendo el propio id.
+        List<Localidad> existentesEnDistrito = localidadDAO.listarPorDistrito(localidad.getIdDistrito());
+        boolean existeDuplicado = existentesEnDistrito.stream()
+                .anyMatch(l -> l.getNombre() != null
+                        && l.getNombre().trim().equalsIgnoreCase(nombre)
+                        && l.getIdLocalidad() != null
+                        && !l.getIdLocalidad().equals(localidad.getIdLocalidad()));
+        if (existeDuplicado) {
+            throw new IllegalArgumentException("Ya existe otra localidad con el nombre: " + nombre + " para el distrito seleccionado.");
+        }
+
+        // 7. Le pedimos a la base de datos que actualice la localidad.
         return localidadDAO.actualizar(localidad);
     }
 

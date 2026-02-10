@@ -106,18 +106,18 @@
 </c:if>
 
 <p>
-    <a href="${pageContext.request.contextPath}/servicios?accion=nuevo">
+    <a href="${pageContext.request.contextPath}/servicios?action=nuevo">
         Nuevo Servicio
     </a>
 </p>
 
 <!-- Buscador / filtro -->
 <form class="buscador" method="get" action="${pageContext.request.contextPath}/servicios">
-    <input type="hidden" name="accion" value="listar" />
+    <input type="hidden" name="action" value="listar" />
     <label>Buscar:</label>
-    <input type="text" name="q" value="${q}" placeholder="Código o nombre..." />
+    <input type="text" name="filtro" value="${filtro}" placeholder="Código o nombre..." />
     <button type="submit">Filtrar</button>
-    <a href="${pageContext.request.contextPath}/servicios?accion=listar">Limpiar</a>
+    <a href="${pageContext.request.contextPath}/servicios?action=listar">Limpiar</a>
 </form>
 
 <table border="1" cellpadding="6" cellspacing="0">
@@ -127,7 +127,6 @@
             <th>Código</th>
             <th>Nombre</th>
             <th>Precio Base</th>
-            <th>Activo</th>
             <th>Acciones</th>
         </tr>
     </thead>
@@ -147,10 +146,8 @@
                     </div>
                 </td>
 
-                <td>${s.activo}</td>
-
                 <td>
-                    <a href="${pageContext.request.contextPath}/servicios?accion=editar&id=${s.idServicio}">
+                    <a href="${pageContext.request.contextPath}/servicios?action=editar&id=${s.idServicio}">
                         Editar
                     </a>
 
@@ -159,13 +156,14 @@
                         <c:when test="${s.activo}">
                             | <a class="switch on"
                                  title="Desactivar"
-                                 href="${pageContext.request.contextPath}/servicios?accion=desactivar&id=${s.idServicio}&q=${q}">
+                                 href="${pageContext.request.contextPath}/servicios?action=desactivar&id=${s.idServicio}&filtro=${filtro}">
                               </a>
                         </c:when>
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/servicios?accion=activar&id=${s.idServicio}&q=${q}">
+                                 href="${pageContext.request.contextPath}/servicios?action=activar&id=${s.idServicio}&filtro=${filtro}"
+                                 >
                               </a>
                         </c:otherwise>
                     </c:choose>

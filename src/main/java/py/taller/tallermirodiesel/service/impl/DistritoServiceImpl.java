@@ -52,6 +52,14 @@ public class DistritoServiceImpl implements DistritoService {
         // 4. Cargamos el objeto con los datos.
         distrito.setNombre(nombre);
 
+        // 4.1 VALIDACIÓN: no permitir duplicados (mismo nombre dentro del mismo departamento).
+        List<Distrito> existentesEnDepartamento = distritoDAO.listarPorDepartamento(distrito.getIdDepartamento());
+        boolean existeDuplicado = existentesEnDepartamento.stream()
+                .anyMatch(d -> d.getNombre() != null && d.getNombre().trim().equalsIgnoreCase(nombre));
+        if (existeDuplicado) {
+            throw new IllegalArgumentException("Ya existe un distrito con el nombre: " + nombre + " para el departamento seleccionado.");
+        }
+
         // 5. Le pedimos a la base de datos que guarde el distrito.
         return distritoDAO.crear(distrito);
     }
@@ -98,7 +106,18 @@ public class DistritoServiceImpl implements DistritoService {
             throw new IllegalArgumentException("No existe un distrito con id: " + distrito.getIdDistrito());
         }
 
-        // 6. Le pedimos a la base de datos que actualice el distrito.
+        // 6. VALIDACIÓN: no permitir duplicados (mismo nombre dentro del mismo departamento), excluyendo el propio id.
+        List<Distrito> existentesEnDepartamento = distritoDAO.listarPorDepartamento(distrito.getIdDepartamento());
+        boolean existeDuplicado = existentesEnDepartamento.stream()
+                .anyMatch(d -> d.getNombre() != null
+                        && d.getNombre().trim().equalsIgnoreCase(nombre)
+                        && d.getIdDistrito() != null
+                        && !d.getIdDistrito().equals(distrito.getIdDistrito()));
+        if (existeDuplicado) {
+            throw new IllegalArgumentException("Ya existe otro distrito con el nombre: " + nombre + " para el departamento seleccionado.");
+        }
+
+        // 7. Le pedimos a la base de datos que actualice el distrito.
         return distritoDAO.actualizar(distrito);
     }
 

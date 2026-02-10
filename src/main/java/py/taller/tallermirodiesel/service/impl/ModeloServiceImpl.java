@@ -6,8 +6,11 @@ package py.taller.tallermirodiesel.service.impl;
 
 import java.util.List;
 import java.util.Optional;
+import py.taller.tallermirodiesel.dao.MarcaDAO;
 import py.taller.tallermirodiesel.dao.ModeloDAO;
+import py.taller.tallermirodiesel.dao.impl.MarcaDAOImpl;
 import py.taller.tallermirodiesel.dao.impl.ModeloDAOImpl;
+import py.taller.tallermirodiesel.model.Marca;
 import py.taller.tallermirodiesel.model.Modelo;
 import py.taller.tallermirodiesel.service.ModeloService;
 
@@ -18,10 +21,12 @@ public class ModeloServiceImpl implements ModeloService{
 
     // Esta variable permite que el servicio hable con la base de datos a través del DAO.
     private final ModeloDAO modeloDAO;
+    private final MarcaDAO marcaDAO;
 
     // Al iniciar el servicio, le asignamos su herramienta de base de datos específica.
     public ModeloServiceImpl() {
         this.modeloDAO = new ModeloDAOImpl();
+        this.marcaDAO = new MarcaDAOImpl();
     }
 
     //  VALIDACIONES PARA CREAR UN MODELO.
@@ -41,18 +46,29 @@ public class ModeloServiceImpl implements ModeloService{
             throw new IllegalArgumentException("El id de la marca (idMarca) debe ser mayor a 0.");
         }
 
-        // 2. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
+        // 2. Verificamos que la marca exista en el sistema.
+        Optional<Marca> marca = marcaDAO.buscarPorId(modelo.getIdMarca());
+        if (marca.isEmpty()) {
+            throw new IllegalArgumentException("No existe una marca con id: " + modelo.getIdMarca());
+        }
+
+        // 3. Verificamos que la marca esté activa.
+        if (!marca.get().isActivo()) {
+            throw new IllegalStateException("La marca con id " + modelo.getIdMarca() + " está inactiva.");
+        }
+
+        // 4. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
         String nombre = (modelo.getNombre() == null) ? null : modelo.getNombre().trim().toUpperCase();
 
-        // 3. Aseguramos que se haya cargado el nombre del modelo.
+        // 5. Aseguramos que se haya cargado el nombre del modelo.
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del modelo es obligatorio.");
         }
 
-        // 4. Cargamos el objeto con los datos.
+        // 6. Cargamos el objeto con los datos.
         modelo.setNombre(nombre);
 
-        // 5. Le pedimos a la base de datos que guarde el modelo.
+        // 7. Le pedimos a la base de datos que guarde el modelo.
         return modeloDAO.crear(modelo);
     }
 
@@ -81,24 +97,35 @@ public class ModeloServiceImpl implements ModeloService{
             throw new IllegalArgumentException("El id de la marca (idMarca) debe ser mayor a 0.");
         }
 
-        // 2. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
+        // 2. Verificamos que la marca exista en el sistema.
+        Optional<Marca> marca = marcaDAO.buscarPorId(modelo.getIdMarca());
+        if (marca.isEmpty()) {
+            throw new IllegalArgumentException("No existe una marca con id: " + modelo.getIdMarca());
+        }
+
+        // 3. Verificamos que la marca esté activa.
+        if (!marca.get().isActivo()) {
+            throw new IllegalStateException("La marca con id " + modelo.getIdMarca() + " está inactiva.");
+        }
+
+        // 4. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
         String nombre = (modelo.getNombre() == null) ? null : modelo.getNombre().trim().toUpperCase();
 
-        // 3. Aseguramos que se haya cargado el nombre del modelo.
+        // 5. Aseguramos que se haya cargado el nombre del modelo.
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del modelo es obligatorio.");
         }
 
-        // 4. Actualizamos el objeto con los datos.
+        // 6. Actualizamos el objeto con los datos.
         modelo.setNombre(nombre);
 
-        // 5. Verificar que el modelo a actualizar exista en el sistema.
+        // 7. Verificar que el modelo a actualizar exista en el sistema.
         Optional<Modelo> existente = modeloDAO.buscarPorId(modelo.getIdModelo());
         if (existente.isEmpty()) {
             throw new IllegalArgumentException("No existe un modelo con id: " + modelo.getIdModelo());
         }
 
-        // 7. Le pedimos a la base de datos que actualice el modelo.
+        // 8. Le pedimos a la base de datos que actualice el modelo.
         return modeloDAO.actualizar(modelo);
     }
 

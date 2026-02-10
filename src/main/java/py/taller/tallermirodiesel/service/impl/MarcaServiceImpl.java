@@ -44,7 +44,7 @@ public class MarcaServiceImpl implements MarcaService {
         // 4. Cargamos el objeto con los datos.
         marca.setNombre(nombre);
 
-        // 6. Le pedimos a la base de datos que guarde la marca.
+        // 5. Le pedimos a la base de datos que guarde la marca.
         return marcaDAO.crear(marca);
     }
 
@@ -78,7 +78,7 @@ public class MarcaServiceImpl implements MarcaService {
         return marcaDAO.actualizar(marca);
     }
 
-    //  VALIDACIONES PARA ACTIVAR UN PAÍS.
+    //  VALIDACIONES PARA ACTIVAR UNA MARCA.
     @Override
     public boolean activar(Long id) {
 
@@ -96,7 +96,7 @@ public class MarcaServiceImpl implements MarcaService {
             throw new IllegalStateException("La marca ya se encuentra activa.");
         }
 
-        // 4. Activa la marca.
+        // 4. Activa la marca en la base de datos.
         return marcaDAO.activar(id);
     }
 

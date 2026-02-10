@@ -14,6 +14,19 @@
     <title>Marcas</title>
 
     <style>
+        /* Buscador simple */
+        .buscador {
+            margin: 10px 0 15px 0;
+        }
+        .buscador input[type="text"] {
+            padding: 6px;
+            width: 260px;
+        }
+        .buscador button, .buscador a {
+            padding: 6px 10px;
+            margin-left: 6px;
+        }
+
         /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
@@ -47,25 +60,25 @@
         }
         .switch.off {
             background: #e74c3c;
-            border-color: #c0392b;
+            border-color: #c0392b
         }
 
+        /* Opcional: cursor de mano */
         .switch:hover {
             filter: brightness(0.95);
         }
-
+        
+        /* Circulito cuando está apagado */
         .switch.off::after {
             border-color: #c0392b;
         }
     </style>
 </head>
 <body>
-
 <!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
-
 <h2>Catálogo de Marcas</h2>
 
 <c:if test="${not empty error}">
@@ -75,10 +88,19 @@
 </c:if>
 
 <p>
-    <a href="${pageContext.request.contextPath}/marcas?accion=nuevo">
+    <a href="${pageContext.request.contextPath}/marcas?action=nuevo">
         Nueva Marca
     </a>
 </p>
+
+<!-- Buscador / filtro -->
+<form class="buscador" method="get" action="${pageContext.request.contextPath}/marcas">
+    <input type="hidden" name="action" value="listar" />
+    <label>Buscar:</label>
+    <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
+    <button type="submit">Filtrar</button>
+    <a href="${pageContext.request.contextPath}/marcas?action=listar">Limpiar</a>
+</form>
 
 <table border="1" cellpadding="6" cellspacing="0">
     <thead>
@@ -94,7 +116,7 @@
                 <td>${m.idMarca}</td>
                 <td>${m.nombre}</td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/marcas?accion=editar&id=${m.idMarca}">
+                    <a href="${pageContext.request.contextPath}/marcas?action=editar&id=${m.idMarca}">
                         Editar
                     </a>
 
@@ -103,13 +125,14 @@
                         <c:when test="${m.activo}">
                             | <a class="switch on"
                                  title="Desactivar"
-                                 href="${pageContext.request.contextPath}/marcas?accion=desactivar&id=${m.idMarca}">
+                                 href="${pageContext.request.contextPath}/marcas?action=desactivar&id=${m.idMarca}">
                               </a>
                         </c:when>
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/marcas?accion=activar&id=${m.idMarca}">
+                                 href="${pageContext.request.contextPath}/marcas?action=activar&id=${m.idMarca}"
+                                 >
                               </a>
                         </c:otherwise>
                     </c:choose>
@@ -118,6 +141,5 @@
         </c:forEach>
     </tbody>
 </table>
-
 </body>
 </html>

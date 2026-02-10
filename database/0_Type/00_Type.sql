@@ -17,8 +17,9 @@ BEGIN
           AND n.nspname = 'public'
     ) THEN
         CREATE TYPE public.fuente_referencia_cliente_enum AS ENUM (
+            'NINGUNA',
             'RECOMENDACION',
-            'MECANICO_CLIENTE'
+            'MECANICO'
         );
     END IF;
 END $$;

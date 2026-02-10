@@ -38,15 +38,15 @@ public class DistritoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        String accion = request.getParameter("accion");
+        // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
+        String action = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) accion = "listar";
+        if (action == null || action.isBlank()) action = "listar";
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
-            switch (accion) {
+            switch (action) {
                 case "nuevo" -> mostrarFormularioNuevo(request, response);
                 case "editar" -> mostrarFormularioEditar(request, response);
                 case "activar" -> activar(request, response);
@@ -68,17 +68,17 @@ public class DistritoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        String accion = request.getParameter("accion");
+        // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
+        String action = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) accion = "guardar";
+        if (action == null || action.isBlank()) action = "guardar";
 
         // 3. Router de acciones POST.
         try {
-            switch (accion) {
+            switch (action) {
                 case "guardar" -> guardar(request, response);
-                default -> response.sendRedirect(request.getContextPath() + "/distritos?accion=listar");
+                default -> response.sendRedirect(request.getContextPath() + "/distritos?action=listar");
             }
 
         } catch (Exception e) {
@@ -244,7 +244,7 @@ public class DistritoServlet extends HttpServlet {
         }
 
         // 3. Redirige al listado para evitar re-envío del formulario al refrescar.
-        response.sendRedirect(request.getContextPath() + "/distritos?accion=listar");
+        response.sendRedirect(request.getContextPath() + "/distritos?action=listar");
     }
 
     // ========== ========== ========== 
@@ -290,7 +290,7 @@ public class DistritoServlet extends HttpServlet {
 
     // ARMAR URL DE RETORNO PRESERVANDO FILTROS.
     private String construirUrlRetornoListado(HttpServletRequest request) {
-        String url = request.getContextPath() + "/distritos?accion=listar";
+        String url = request.getContextPath() + "/distritos?action=listar";
 
         Long idDepartamento = parseLong(request.getParameter("idDepartamento"));
         if (idDepartamento != null) url += "&idDepartamento=" + idDepartamento;

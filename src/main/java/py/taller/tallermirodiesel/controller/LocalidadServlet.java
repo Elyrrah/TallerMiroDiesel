@@ -28,11 +28,11 @@ import py.taller.tallermirodiesel.service.DistritoService;
 // Bloque: Mapeo del servlet (todas las acciones de Localidad entran por /localidades).
 public class LocalidadServlet extends HttpServlet {
 
-    // Service utilizado por el Servlet para acceder a la capa de negocio.
+    // Service utilizado por el Servlet para acceder a la capa de negocio de Localidad.
     private final LocalidadService localidadService = new LocalidadServiceImpl();
 
-    // Service utilizado para cargar ciudades (combo en formulario y filtro en listado).
-    private final DistritoService ciudadService = new DistritoServiceImpl();
+    // Service utilizado para cargar distritos (combo en formulario y filtro en listado).
+    private final DistritoService distritoService = new DistritoServiceImpl();
 
     // ========== ========== ========== ========== ========== 
     // MANEJO DE GET (VISTAS / ACCIONES DE NAVEGACIÓN).
@@ -40,17 +40,17 @@ public class LocalidadServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        String accion = request.getParameter("accion");
+        // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
+        String action = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) {
-            accion = "listar";
+        if (action == null || action.isBlank()) {
+            action = "listar";
         }
 
-        // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
+        // 3. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
-            switch (accion) {
+            switch (action) {
                 case "nuevo" -> mostrarFormularioNuevo(request, response);
                 case "editar" -> mostrarFormularioEditar(request, response);
                 case "activar" -> activar(request, response);
@@ -60,8 +60,7 @@ public class LocalidadServlet extends HttpServlet {
                 default -> listar(request, response);
             }
 
-            // 5. Manejo simple de errores: setear mensaje y volver al listado
-        } catch (ServletException | IOException e) {
+        } catch (Exception e) {
             request.setAttribute("error", e.getMessage());
             listar(request, response);
         }
@@ -73,23 +72,22 @@ public class LocalidadServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        String accion = request.getParameter("accion");
+        // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
+        String action = request.getParameter("action");
 
         // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
-        if (accion == null || accion.isBlank()) {
-            accion = "guardar";
+        if (action == null || action.isBlank()) {
+            action = "guardar";
         }
 
         // 3. Router de acciones POST.
         try {
-            switch (accion) {
+            switch (action) {
                 case "guardar" -> guardar(request, response);
-                default -> response.sendRedirect(request.getContextPath() + "/localidades?accion=listar");
+                default -> response.sendRedirect(request.getContextPath() + "/localidades?action=listar");
             }
 
-            // 4. Si falla guardar, devolvemos al formulario con el error y los valores cargados
-        } catch (IOException e) {
+        } catch (Exception e) {
             request.setAttribute("error", e.getMessage());
             reenviarFormularioConDatos(request, response);
         }
@@ -102,70 +100,65 @@ public class LocalidadServlet extends HttpServlet {
     // LISTAR (con filtro por distrito y búsqueda por nombre).
     private void listar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Carga lista de ciudades para filtro y formulario.
-        cargarDistritoes(request);
-
-        // 2. Lee filtro opcional por distrito y texto de búsqueda.
+        // 1. Lee filtro opcional por distrito.
         Long idDistrito = parseLongNullable(request.getParameter("idDistrito"));
 
-        // Mantener compatibilidad: si viene "q" lo tomamos, pero preferimos "filtro"
+        // 2. Lee filtro opcional de texto de búsqueda.
         String filtro = request.getParameter("filtro");
-        if (filtro == null) {
-            filtro = request.getParameter("q");
+
+        // 3. Carga distritos activos para filtro y formulario.
+        cargarDistritos(request);
+
+        // 4. Define la lista a renderizar (filtrada o completa).
+        List<Localidad> lista;
+
+        if (idDistrito != null && filtro != null && !filtro.isBlank()) {
+            // Si hay idDistrito + filtro: se filtra por distrito y luego por nombre (en memoria).
+            List<Localidad> base = localidadService.listarPorDistrito(idDistrito);
+            String filtroUpper = filtro.trim().toUpperCase(Locale.ROOT);
+            lista = base.stream()
+                    .filter(l -> l.getNombre() != null && l.getNombre().toUpperCase(Locale.ROOT).contains(filtroUpper))
+                    .collect(Collectors.toList());
+
+            request.setAttribute("idDistrito", idDistrito);
+            request.setAttribute("filtro", filtro);
+
+        } else if (idDistrito != null) {
+            // Solo filtro por distrito.
+            lista = localidadService.listarPorDistrito(idDistrito);
+            request.setAttribute("idDistrito", idDistrito);
+
+        } else if (filtro != null && !filtro.isBlank()) {
+            // Solo filtro por nombre (SQL).
+            lista = localidadService.buscarPorNombreParcial(filtro);
+            request.setAttribute("filtro", filtro);
+
+        } else {
+            // Sin filtros.
+            lista = localidadService.listarTodos();
         }
 
-        // 3. Guarda los valores para que el JSP los mantenga seleccionados.
-        request.setAttribute("idDistrito", idDistrito);
-        request.setAttribute("filtro", filtro);
+        // 5. Envía la lista a la vista.
+        request.setAttribute("lista", lista);
 
-        // 4. Define la lista base (completa o filtrada por distrito).
-        List<Localidad> listaBase = (idDistrito == null)
-                ? localidadService.listarTodos()
-                : localidadService.listarPorDistrito(idDistrito);
-
-        // 5. Si NO hay idDistrito pero sí filtro, usamos SQL directo.
-        if (idDistrito == null && filtro != null && !filtro.trim().isBlank()) {
-            List<Localidad> listaSql = localidadService.buscarPorNombreParcial(filtro);
-            request.setAttribute("listaLocalidades", listaSql);
-            request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_listar.jsp").forward(request, response);
-            return;
-        }
-
-        // 6. Aplica búsqueda por nombre (opcional) sobre la lista base.
-        if (filtro != null) {
-            String f = filtro.trim();
-            if (!f.isBlank()) {
-                String needle = f.toUpperCase(Locale.ROOT);
-
-                listaBase = listaBase.stream()
-                        .filter(l -> l.getNombre() != null
-                        && l.getNombre().toUpperCase(Locale.ROOT).contains(needle))
-                        .collect(Collectors.toList());
-            }
-        }
-
-        // 7. Envía la lista final a la vista.
-        request.setAttribute("listaLocalidades", listaBase);
-
-        // 8. Renderiza el listado de localidades.
+        // 6. Renderiza el listado de localidades.
         request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_listar.jsp").forward(request, response);
     }
 
     // BUSCAR (AUTOCOMPLETE / FILTRO).
     private void buscar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        // Para no duplicar lógica, reutilizamos listar (que ya soporta filtro e idDistrito).
+        // Reutilizamos la misma lógica del listado para mantener un solo comportamiento.
         listar(request, response);
     }
 
     // FORMULARIO NUEVO.
     private void mostrarFormularioNuevo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Carga ciudades activas para poblar el combo del formulario.
-        cargarDistritoes(request);
-
-        // 2. Envía un Localidad vacío a la vista para llenado inicial.
+        // 1. Envía una Localidad vacía a la vista para llenado inicial.
         request.setAttribute("localidad", new Localidad());
+
+        // 2. Carga distritos activos para poblar el combo.
+        cargarDistritos(request);
 
         // 3. Renderiza el formulario de localidad.
         request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_form.jsp").forward(request, response);
@@ -174,22 +167,22 @@ public class LocalidadServlet extends HttpServlet {
     // FORMULARIO EDITAR.
     private void mostrarFormularioEditar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Carga ciudades activas para poblar el combo del formulario.
-        cargarDistritoes(request);
-
-        // 2. Lee el id desde parámetros y valida.
+        // 1. Lee el id desde parámetros y valida.
         Long id = parseLong(request.getParameter("id"));
 
-        // 3. Busca la localidad por id usando el service.
-        Optional<Localidad> opt = localidadService.buscarPorId(id);
+        // 2. Busca la localidad por id usando el service.
+        Optional<Localidad> localidadOpt = localidadService.buscarPorId(id);
 
-        // 4. Si no existe, se corta el flujo con error.
-        if (opt.isEmpty()) {
+        // 3. Si no existe, se corta el flujo con error.
+        if (localidadOpt.isEmpty()) {
             throw new IllegalArgumentException("No existe una localidad con id: " + id);
         }
 
-        // 5. Coloca la localidad encontrada en request para precargar el formulario.
-        request.setAttribute("localidad", opt.get());
+        // 4. Coloca la localidad encontrada en request para precargar el formulario.
+        request.setAttribute("localidad", localidadOpt.get());
+
+        // 5. Carga distritos activos para poblar el combo.
+        cargarDistritos(request);
 
         // 6. Renderiza el formulario con datos cargados.
         request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_form.jsp").forward(request, response);
@@ -205,10 +198,7 @@ public class LocalidadServlet extends HttpServlet {
         localidadService.activar(id);
 
         // 3. Reconstruye la URL preservando filtros si venían en la petición.
-        String url = construirUrlRetornoListado(request);
-
-        // 4. Redirige al listado tras la operación.
-        response.sendRedirect(url);
+        response.sendRedirect(construirUrlRetornoListado(request));
     }
 
     // DESACTIVAR.
@@ -221,10 +211,7 @@ public class LocalidadServlet extends HttpServlet {
         localidadService.desactivar(id);
 
         // 3. Reconstruye la URL preservando filtros si venían en la petición.
-        String url = construirUrlRetornoListado(request);
-
-        // 4. Redirige al listado tras la operación.
-        response.sendRedirect(url);
+        response.sendRedirect(construirUrlRetornoListado(request));
     }
 
     // ========== ========== ========== 
@@ -234,92 +221,89 @@ public class LocalidadServlet extends HttpServlet {
     // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
-        // 1. Lee parámetros del formulario (idLocalidad puede venir vacío en creación).
-        Long idLocalidad = parseLongNullable(request.getParameter("idLocalidad"));
-        Long idDistrito = parseLong(request.getParameter("idDistrito"));
-        String nombre = request.getParameter("nombre");
+        // 1. Construye el objeto Localidad a partir de los parámetros del formulario.
+        Localidad l = construirDesdeRequest(request);
 
-        // FIX: Toggle activo/inactivo como en País/Departamento:
-        // - En creación: true por defecto
-        // - En edición: true si viene el checkbox; false si no viene
-        boolean activo;
-        if (idLocalidad == null) {
-            activo = true;
-        } else {
-            activo = request.getParameter("activo") != null;
-        }
-
-        // 2. Construye el objeto Localidad a partir de los parámetros.
-        Localidad l = new Localidad();
-        l.setIdLocalidad(idLocalidad);
-        l.setIdDistrito(idDistrito);
-        l.setNombre(nombre);
-        l.setActivo(activo);
-
-        // 3. Si no tiene id, se crea; si tiene id, se actualiza.
-        if (idLocalidad == null) {
+        // 2. Si no tiene id, se crea; si tiene id, se actualiza.
+        if (l.getIdLocalidad() == null) {
             localidadService.crear(l);
         } else {
             localidadService.actualizar(l);
         }
 
-        // 4. Redirige al listado preservando filtros.
-        String url = request.getContextPath() + "/localidades?accion=listar";
-
-        Long idDistritoFiltro = parseLongNullable(request.getParameter("idDistrito"));
-        if (idDistritoFiltro != null) url += "&idDistrito=" + idDistritoFiltro;
-
-        String filtro = request.getParameter("filtro");
-        if (filtro == null) filtro = request.getParameter("q");
-        if (filtro != null && !filtro.isBlank()) url += "&filtro=" + filtro;
-
-        response.sendRedirect(url);
+        // 3. Redirige al listado para evitar re-envío del formulario al refrescar.
+        response.sendRedirect(request.getContextPath() + "/localidades?action=listar");
     }
 
     // ========== ========== ========== 
     // BLOQUE DE ACCIONES UTILES
     // ========== ========== ========== 
 
-    // CARGAR CIUDADES (COMBO/FILTRO).
-    private void cargarDistritoes(HttpServletRequest request) {
+    // CONSTRUIR LOCALIDAD DESDE REQUEST.
+    private Localidad construirDesdeRequest(HttpServletRequest request) {
+        Localidad l = new Localidad();
 
-        // Preferible listarActivos para combos; si no lo tenés, usá listarTodos()
-        List<Distrito> ciudades = ciudadService.listarActivos();
+        // 1. Lee idLocalidad si viene en el request (modo edición).
+        Long idLocalidad = parseLongNullable(request.getParameter("idLocalidad"));
+        if (idLocalidad != null) {
+            l.setIdLocalidad(idLocalidad);
+        }
 
-        // FIX: la vista debe recibir "distritos" (no "ciudades") para que sea consistente
-        request.setAttribute("distritos", ciudades);
+        // 2. Lee idDistrito si viene en el request (FK obligatoria para localidad).
+        Long idDistrito = parseLongNullable(request.getParameter("idDistrito"));
+        if (idDistrito != null) {
+            l.setIdDistrito(idDistrito);
+        }
+
+        // 3. Lee el nombre de la localidad desde el formulario.
+        l.setNombre(request.getParameter("nombre"));
+
+        // 4. Toggle activo/inactivo (SELECT): 
+        //    En creación: true por defecto.
+        //    En edición: lee el valor del select.
+        String activoParam = request.getParameter("activo");
+        if (idLocalidad == null) {
+            l.setActivo(true);
+        } else {
+            l.setActivo("true".equals(activoParam));
+        }
+
+        return l;
+    }
+
+    // CARGAR DISTRITOS (COMBO/FILTRO).
+    private void cargarDistritos(HttpServletRequest request) {
+        List<Distrito> distritos = distritoService.listarActivos();
+        request.setAttribute("distritos", distritos);
     }
 
     // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR EN GUARDAR).
     private void reenviarFormularioConDatos(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        // 1. Carga ciudades para poblar el combo del formulario.
-        cargarDistritoes(request);
+        // 1. Reconstruye el objeto Localidad con los parámetros del request.
+        Localidad l = construirDesdeRequest(request);
 
-        // 2. Reconstruye el objeto Localidad con los parámetros del request.
-        Long idLocalidad = parseLongNullable(request.getParameter("idLocalidad"));
-        Long idDistrito = parseLongNullable(request.getParameter("idDistrito"));
-        String nombre = request.getParameter("nombre");
-
-        // FIX: misma lógica de toggle que en guardar()
-        boolean activo;
-        if (idLocalidad == null) {
-            activo = true;
-        } else {
-            activo = request.getParameter("activo") != null;
-        }
-
-        Localidad l = new Localidad();
-        l.setIdLocalidad(idLocalidad);
-        l.setIdDistrito(idDistrito);
-        l.setNombre(nombre);
-        l.setActivo(activo);
-
-        // 3. Envía el objeto al JSP para que no se pierdan los datos ingresados.
+        // 2. Envía el objeto al JSP para que no se pierdan los datos ingresados.
         request.setAttribute("localidad", l);
+
+        // 3. Carga distritos para poblar el combo del formulario.
+        cargarDistritos(request);
 
         // 4. Renderiza el formulario nuevamente con error.
         request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_form.jsp").forward(request, response);
+    }
+
+    // ARMAR URL DE RETORNO PRESERVANDO FILTROS.
+    private String construirUrlRetornoListado(HttpServletRequest request) {
+        String url = request.getContextPath() + "/localidades?action=listar";
+
+        Long idDistrito = parseLongNullable(request.getParameter("idDistrito"));
+        if (idDistrito != null) url += "&idDistrito=" + idDistrito;
+
+        String filtro = request.getParameter("filtro");
+        if (filtro != null && !filtro.isBlank()) url += "&filtro=" + filtro;
+
+        return url;
     }
 
     // PARSEO DE LONG OBLIGATORIO.
@@ -352,19 +336,5 @@ public class LocalidadServlet extends HttpServlet {
         } catch (NumberFormatException e) {
             return null;
         }
-    }
-
-    // FIX: URL de retorno al listado preservando filtros (para activar/desactivar)
-    private String construirUrlRetornoListado(HttpServletRequest request) {
-        String url = request.getContextPath() + "/localidades?accion=listar";
-
-        Long idDistrito = parseLongNullable(request.getParameter("idDistrito"));
-        if (idDistrito != null) url += "&idDistrito=" + idDistrito;
-
-        String filtro = request.getParameter("filtro");
-        if (filtro == null) filtro = request.getParameter("q");
-        if (filtro != null && !filtro.isBlank()) url += "&filtro=" + filtro;
-
-        return url;
     }
 }
