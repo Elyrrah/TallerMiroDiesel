@@ -5,6 +5,8 @@
 package py.taller.tallermirodiesel.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import py.taller.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 
 /**
@@ -80,9 +82,7 @@ public class ClientePersonaListadoDTO {
     public String getApodo() { return apodo; }
     public void setApodo(String apodo) { this.apodo = apodo; }
 
-    // =========================
     // BLOQUE: Getters/setters nombres (JOIN)
-    // =========================
     public String getNombreDistrito() { return nombreDistrito; }
     public void setNombreDistrito(String nombreDistrito) { this.nombreDistrito = nombreDistrito; }
 
@@ -97,5 +97,11 @@ public class ClientePersonaListadoDTO {
         String n = (nombre == null) ? "" : nombre.trim();
         String a = (apellido == null) ? "" : apellido.trim();
         return (n + " " + a).trim();
+    }
+    
+    // Método helper para JSTL
+    public Date getFechaCreacionAsDate() {
+        if (fechaCreacion == null) return null;
+        return Date.from(fechaCreacion.atZone(ZoneId.systemDefault()).toInstant());
     }
 }

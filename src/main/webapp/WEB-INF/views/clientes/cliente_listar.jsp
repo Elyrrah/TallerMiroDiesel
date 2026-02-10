@@ -6,6 +6,7 @@
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="jakarta.tags.core"%>
+<%@taglib prefix="fmt" uri="jakarta.tags.fmt"%>
 
 <!DOCTYPE html>
 <html>
@@ -114,7 +115,9 @@
                                         <c:otherwise>INACTIVO</c:otherwise>
                                     </c:choose>
                                 </td>
-                                <td>${c.fechaCreacion}</td>
+                                <td>
+                                    <fmt:formatDate value="${c.fechaCreacionAsDate}" pattern="HH:mm - dd/MM/yyyy" />
+                                </td>
                                 <td>
                                     <%-- Toggle único Activar/Desactivar --%>
                                     <form method="post" action="${pageContext.request.contextPath}/clientes" style="margin:0;">
@@ -186,7 +189,9 @@
                                         <c:otherwise>INACTIVO</c:otherwise>
                                     </c:choose>
                                 </td>
-                                <td>${c.fechaCreacion}</td>
+                                <td>
+                                    <fmt:formatDate value="${c.fechaCreacionAsDate}" pattern="HH:mm - dd/MM/yyyy" />
+                                </td>
                                 <td>
                                     <%-- Toggle único Activar/Desactivar --%>
                                     <form method="post" action="${pageContext.request.contextPath}/clientes" style="margin:0;">

@@ -5,6 +5,8 @@
 package py.taller.tallermirodiesel.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import py.taller.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 
 /**
@@ -87,5 +89,11 @@ public class ClienteEmpresaListadoDTO {
         if (nombreFantasia != null && !nombreFantasia.trim().isBlank()) return nombreFantasia.trim();
         if (razonSocial != null && !razonSocial.trim().isBlank()) return razonSocial.trim();
         return "";
+    }
+    
+    // Método helper para JSTL
+    public Date getFechaCreacionAsDate() {
+        if (fechaCreacion == null) return null;
+        return Date.from(fechaCreacion.atZone(ZoneId.systemDefault()).toInstant());
     }
 }
