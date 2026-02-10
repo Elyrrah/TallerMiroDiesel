@@ -6,7 +6,7 @@
  */
 package py.taller.tallermirodiesel.model;
 
-import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaA;
+import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaEnum;
 /**
  *
  * @author elyrr
@@ -17,7 +17,7 @@ public class TipoDocumento {
     private Long idTipoDocumento;
     private String nombre;
     private String codigo;
-    private TipoDocumentoAplicaA aplicaA;
+    private TipoDocumentoAplicaEnum aplicaA;
     private boolean activo;
 
     // Constructor vacío
@@ -25,7 +25,7 @@ public class TipoDocumento {
     }
 
     // Constructor con parámetros
-    public TipoDocumento(Long idTipoDocumento, String nombre, String codigo, TipoDocumentoAplicaA aplicaA, boolean activo) {
+    public TipoDocumento(Long idTipoDocumento, String nombre, String codigo, TipoDocumentoAplicaEnum aplicaA, boolean activo) {
         this.idTipoDocumento = idTipoDocumento;
         this.nombre = nombre;
         this.codigo = codigo;
@@ -55,10 +55,10 @@ public class TipoDocumento {
         this.codigo = codigo;
     }
 //
-    public TipoDocumentoAplicaA getAplicaA() {
+    public TipoDocumentoAplicaEnum getAplicaA() {
         return aplicaA;
     }
-    public void setAplicaA(TipoDocumentoAplicaA aplicaA) {
+    public void setAplicaA(TipoDocumentoAplicaEnum aplicaA) {
         this.aplicaA = aplicaA;
     }
 //

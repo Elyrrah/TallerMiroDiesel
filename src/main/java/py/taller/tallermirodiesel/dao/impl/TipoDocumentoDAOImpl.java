@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import py.taller.tallermirodiesel.dao.TipoDocumentoDAO;
 import py.taller.tallermirodiesel.model.TipoDocumento;
-import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaA;
+import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaEnum;
 import py.taller.tallermirodiesel.util.DatabaseConnection;
 
 /**
@@ -31,7 +31,7 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
         // Leemos el enum desde la BD como String y lo convertimos al enum Java
         String aplicaA = rs.getString("aplica_a");
-        tipoDocumento.setAplicaA(aplicaA == null ? null : TipoDocumentoAplicaA.valueOf(aplicaA));
+        tipoDocumento.setAplicaA(aplicaA == null ? null : TipoDocumentoAplicaEnum.valueOf(aplicaA));
 
         tipoDocumento.setActivo(rs.getBoolean("activo"));
         return tipoDocumento;
@@ -53,8 +53,7 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setString(2, tipoDocumento.getCodigo());
 
             // Si aplica_a en PostgreSQL es ENUM, usamos Types.OTHER
-            // Si fuera VARCHAR, también funciona con setString (pero dejamos lo correcto para ENUM)
-            TipoDocumentoAplicaA aplicaA = tipoDocumento.getAplicaA();
+            TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
             if (aplicaA == null) {
                 ps.setNull(3, Types.OTHER);
             } else {
@@ -93,7 +92,7 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setString(1, tipoDocumento.getNombre());
             ps.setString(2, tipoDocumento.getCodigo());
 
-            TipoDocumentoAplicaA aplicaA = tipoDocumento.getAplicaA();
+            TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
             if (aplicaA == null) {
                 ps.setNull(3, Types.OTHER);
             } else {
@@ -348,6 +347,69 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
         } catch (Exception e) {
             throw new RuntimeException("Error listando tipos_documento inactivos", e);
+        }
+    }
+
+    //  Lista tipos de documento filtrados por aplicación
+    @Override
+    public List<TipoDocumento> listarPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
+        String sql = """
+                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
+                FROM public.tipos_documento
+                WHERE aplica_a = ?::tipo_documento_aplica_enum
+                   OR aplica_a = 'AMBOS'::tipo_documento_aplica_enum
+                ORDER BY nombre ASC
+                """;
+
+        List<TipoDocumento> lista = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setObject(1, aplicaA.name(), Types.OTHER);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearTipoDocumento(rs));
+                }
+            }
+
+            return lista;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error listando tipos_documento por aplica_a", e);
+        }
+    }
+
+    //  Lista tipos de documento activos filtrados por aplicación
+    @Override
+    public List<TipoDocumento> listarActivosPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
+        String sql = """
+                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
+                FROM public.tipos_documento
+                WHERE activo = true
+                  AND (aplica_a = ?::tipo_documento_aplica_enum
+                   OR aplica_a = 'AMBOS'::tipo_documento_aplica_enum)
+                ORDER BY nombre ASC
+                """;
+
+        List<TipoDocumento> lista = new ArrayList<>();
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setObject(1, aplicaA.name(), Types.OTHER);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearTipoDocumento(rs));
+                }
+            }
+
+            return lista;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error listando tipos_documento activos por aplica_a", e);
         }
     }
 }

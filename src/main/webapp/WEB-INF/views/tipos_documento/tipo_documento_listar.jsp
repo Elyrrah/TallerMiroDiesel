@@ -14,6 +14,19 @@
     <title>Tipos de Documento</title>
 
     <style>
+        /* Buscador simple */
+        .buscador {
+            margin: 10px 0 15px 0;
+        }
+        .buscador input[type="text"] {
+            padding: 6px;
+            width: 260px;
+        }
+        .buscador button, .buscador a {
+            padding: 6px 10px;
+            margin-left: 6px;
+        }
+
         /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
@@ -47,25 +60,25 @@
         }
         .switch.off {
             background: #e74c3c;
-            border-color: #c0392b;
+            border-color: #c0392b
         }
 
+        /* Opcional: cursor de mano */
         .switch:hover {
             filter: brightness(0.95);
         }
-
+        
+        /* Circulito cuando está apagado */
         .switch.off::after {
             border-color: #c0392b;
         }
     </style>
 </head>
 <body>
-
 <!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
-
 <h2>Catálogo de Tipos de Documento</h2>
 
 <c:if test="${not empty error}">
@@ -75,10 +88,19 @@
 </c:if>
 
 <p>
-    <a href="${pageContext.request.contextPath}/tipos-documento?accion=nuevo">
+    <a href="${pageContext.request.contextPath}/tipos-documento?action=nuevo">
         Nuevo Tipo de Documento
     </a>
 </p>
+
+<!-- Buscador / filtro -->
+<form class="buscador" method="get" action="${pageContext.request.contextPath}/tipos-documento">
+    <input type="hidden" name="action" value="listar" />
+    <label>Buscar:</label>
+    <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
+    <button type="submit">Filtrar</button>
+    <a href="${pageContext.request.contextPath}/tipos-documento?action=listar">Limpiar</a>
+</form>
 
 <table border="1" cellpadding="6" cellspacing="0">
     <thead>
@@ -98,7 +120,7 @@
                 <td>${td.codigo}</td>
                 <td>${td.aplicaA}</td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/tipos-documento?accion=editar&id=${td.idTipoDocumento}">
+                    <a href="${pageContext.request.contextPath}/tipos-documento?action=editar&id=${td.idTipoDocumento}">
                         Editar
                     </a>
 
@@ -107,13 +129,14 @@
                         <c:when test="${td.activo}">
                             | <a class="switch on"
                                  title="Desactivar"
-                                 href="${pageContext.request.contextPath}/tipos-documento?accion=desactivar&id=${td.idTipoDocumento}">
+                                 href="${pageContext.request.contextPath}/tipos-documento?action=desactivar&id=${td.idTipoDocumento}">
                               </a>
                         </c:when>
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/tipos-documento?accion=activar&id=${td.idTipoDocumento}">
+                                 href="${pageContext.request.contextPath}/tipos-documento?action=activar&id=${td.idTipoDocumento}"
+                                 >
                               </a>
                         </c:otherwise>
                     </c:choose>
@@ -122,6 +145,5 @@
         </c:forEach>
     </tbody>
 </table>
-
 </body>
 </html>

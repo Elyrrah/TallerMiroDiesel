@@ -6,9 +6,11 @@ package py.taller.tallermirodiesel.model.enums;
 
 /**
  * @author elyrr
+ * Indica a qué tipo de recomendación tuvo el cliente.
+ * Coincide con el enum fuente_referencia_cliente_enum de PostgreSQL.
  */
-public enum TipoDocumentoAplicaA {
-    PERSONA,
-    EMPRESA,
-    AMBOS
+public enum FuenteReferenciaClienteEnum {
+    NINGUNA,
+    RECOMENDACION,
+    MECANICO
 }

@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import py.taller.tallermirodiesel.model.TipoDocumento;
-import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaA;
+import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaEnum;
 import py.taller.tallermirodiesel.service.TipoDocumentoService;
 import py.taller.tallermirodiesel.service.impl.TipoDocumentoServiceImpl;
 
@@ -39,23 +39,21 @@ public class TipoDocumentoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué caso ejecutar.
-        // AJUSTE: ahora usamos "action" en lugar de "accion" para unificar en todo el proyecto.
-        String accion = req.getParameter("action");
+        // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
+        String action = req.getParameter("action");
 
         // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
-        // AJUSTE: ahora el default es "list" en lugar de "listar".
-        if (accion == null || accion.isBlank()) accion = "list";
+        if (action == null || action.isBlank()) action = "listar";
 
         // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
-            switch (accion) {
-                case "new" -> mostrarFormularioNuevo(req, resp);        // antes: "nuevo"
-                case "edit" -> mostrarFormularioEditar(req, resp);      // antes: "editar"
-                case "activate" -> activar(req, resp);                  // antes: "activar"
-                case "deactivate" -> desactivar(req, resp);             // antes: "desactivar"
-                case "search" -> buscar(req, resp);                     // antes: "buscar"
-                case "list" -> listar(req, resp);                       // antes: "listar"
+            switch (action) {
+                case "nuevo" -> mostrarFormularioNuevo(req, resp);
+                case "editar" -> mostrarFormularioEditar(req, resp);
+                case "activar" -> activar(req, resp);
+                case "desactivar" -> desactivar(req, resp);
+                case "buscar" -> buscar(req, resp);
+                case "listar" -> listar(req, resp);
                 default -> listar(req, resp);
             }
         } catch (RuntimeException e) {
@@ -70,19 +68,17 @@ public class TipoDocumentoServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        // 1. Lee el parámetro "accion" para decidir qué operación ejecutar.
-        // AJUSTE: ahora usamos "action" también en POST.
-        String accion = req.getParameter("action");
+        // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
+        String action = req.getParameter("action");
 
         // 2. Si no viene acción, se define un default para evitar nulls.
-        // AJUSTE: ahora el default para POST será "save".
-        if (accion == null || accion.isBlank()) accion = "save";
+        if (action == null || action.isBlank()) action = "guardar";
 
         // 3. Router de acciones POST.
         try {
-            switch (accion) {
-                case "save" -> guardar(req, resp); // antes: "guardar"
-                default -> resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
+            switch (action) {
+                case "guardar" -> guardar(req, resp);
+                default -> resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
             }
         } catch (RuntimeException e) {
 
@@ -91,7 +87,7 @@ public class TipoDocumentoServlet extends HttpServlet {
 
             // 5. Re-render del formulario correspondiente.
             // Re-cargamos opciones del enum para el select.
-            req.setAttribute("aplicaAOptions", TipoDocumentoAplicaA.values());
+            req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
 
             // Volvemos al mismo form (con el objeto reconstruido).
             TipoDocumento td = new TipoDocumento();
@@ -103,7 +99,7 @@ public class TipoDocumentoServlet extends HttpServlet {
             String aplicaA = req.getParameter("aplicaA");
             if (aplicaA != null && !aplicaA.isBlank()) {
                 try {
-                    td.setAplicaA(TipoDocumentoAplicaA.valueOf(aplicaA.trim().toUpperCase()));
+                    td.setAplicaA(TipoDocumentoAplicaEnum.valueOf(aplicaA.trim().toUpperCase()));
                 } catch (Exception ignored) {
                 }
             }
@@ -170,7 +166,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         req.setAttribute("tipoDocumento", new TipoDocumento());
 
         // 2. Envía opciones del enum para el select (combo).
-        req.setAttribute("aplicaAOptions", TipoDocumentoAplicaA.values());
+        req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
 
         // 3. Renderiza el formulario.
         req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
@@ -198,7 +194,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         req.setAttribute("tipoDocumento", tipoDocumento.get());
 
         // 5. Envía opciones del enum para el select (combo).
-        req.setAttribute("aplicaAOptions", TipoDocumentoAplicaA.values());
+        req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
 
         // 6. Renderiza el mismo JSP de formulario, pero con datos cargados.
         req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
@@ -219,8 +215,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         tipoDocumentoService.activar(id);
 
         // 4. Redirige al listado tras la operación.
-        // AJUSTE: ahora usamos action=list
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
     // DESACTIVAR.
@@ -238,8 +233,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         tipoDocumentoService.desactivar(id);
 
         // 4. Redirige al listado tras la operación.
-        // AJUSTE: ahora usamos action=list
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
     // ========== ========== ========== 
@@ -259,7 +253,7 @@ public class TipoDocumentoServlet extends HttpServlet {
 
         String aplicaA = req.getParameter("aplicaA");
         if (aplicaA != null && !aplicaA.isBlank()) {
-            td.setAplicaA(TipoDocumentoAplicaA.valueOf(aplicaA.trim().toUpperCase()));
+            td.setAplicaA(TipoDocumentoAplicaEnum.valueOf(aplicaA.trim().toUpperCase()));
         }
 
         // En creación: activo por defecto true; en edición: tomar el valor del form
@@ -271,8 +265,7 @@ public class TipoDocumentoServlet extends HttpServlet {
             tipoDocumentoService.actualizar(td);
         }
 
-        // AJUSTE: ahora usamos action=list
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=list");
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
     // ========== ========== ========== 

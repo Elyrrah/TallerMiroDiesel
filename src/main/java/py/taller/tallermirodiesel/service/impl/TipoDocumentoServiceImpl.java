@@ -9,7 +9,7 @@ import java.util.Optional;
 import py.taller.tallermirodiesel.dao.TipoDocumentoDAO;
 import py.taller.tallermirodiesel.dao.impl.TipoDocumentoDAOImpl;
 import py.taller.tallermirodiesel.model.TipoDocumento;
-import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaA;
+import py.taller.tallermirodiesel.model.enums.TipoDocumentoAplicaEnum;
 import py.taller.tallermirodiesel.service.TipoDocumentoService;
 
 /**
@@ -37,7 +37,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         // 2. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
         String nombre = tipoDocumento.getNombre() == null ? null : tipoDocumento.getNombre().trim().toUpperCase();
         String codigo = tipoDocumento.getCodigo() == null ? null : tipoDocumento.getCodigo().trim().toUpperCase();
-        TipoDocumentoAplicaA aplicaA = tipoDocumento.getAplicaA();
+        TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
 
         // 3. Aseguramos que los datos tengan el formato correcto.
         if (nombre == null || nombre.isBlank()) {
@@ -79,7 +79,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         // 2. Quitamos espacios vacíos y pasamos todo a MAYÚSCULAS.
         String nombre = tipoDocumento.getNombre() == null ? null : tipoDocumento.getNombre().trim().toUpperCase();
         String codigo = tipoDocumento.getCodigo() == null ? null : tipoDocumento.getCodigo().trim().toUpperCase();
-        TipoDocumentoAplicaA aplicaA = tipoDocumento.getAplicaA();
+        TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
 
         // 3. Aseguramos que los datos tengan el formato correcto.
         if (nombre == null || nombre.isBlank()) {
@@ -194,10 +194,12 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
     @Override
     public Optional<TipoDocumento> buscarPorCodigo(String codigo) {
 
+        // 1. Verificamos que los campos estén completos correctamente.
         if (codigo == null || codigo.isBlank()) {
             throw new IllegalArgumentException("El Codigo del TipoDocumento es obligatorio.");
         }
 
+        // 2. Devuelve el TipoDocumento buscado.
         return tipoDocumentoDAO.buscarPorCodigo(codigo.trim().toUpperCase());
     }
 
@@ -233,5 +235,31 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
     @Override
     public List<TipoDocumento> listarInactivos() {
         return tipoDocumentoDAO.listarInactivos();
+    }
+
+    // LISTA TIPOS DE DOCUMENTO FILTRADOS POR APLICACIÓN.
+    @Override
+    public List<TipoDocumento> listarPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
+
+        // 1. Verificamos que el parámetro no sea null.
+        if (aplicaA == null) {
+            throw new IllegalArgumentException("El parámetro aplicaA no puede ser null.");
+        }
+
+        // 2. Devuelve la lista filtrada.
+        return tipoDocumentoDAO.listarPorAplicaA(aplicaA);
+    }
+
+    // LISTA TIPOS DE DOCUMENTO ACTIVOS FILTRADOS POR APLICACIÓN.
+    @Override
+    public List<TipoDocumento> listarActivosPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
+
+        // 1. Verificamos que el parámetro no sea null.
+        if (aplicaA == null) {
+            throw new IllegalArgumentException("El parámetro aplicaA no puede ser null.");
+        }
+
+        // 2. Devuelve la lista filtrada.
+        return tipoDocumentoDAO.listarActivosPorAplicaA(aplicaA);
     }
 }

@@ -23,6 +23,7 @@
         <a href="${pageContext.request.contextPath}/modelos?action=list">Modelos</a><br>
         <a href="${pageContext.request.contextPath}/tipos-documento?action=list">Tipos de documento</a><br>
         <a href="${pageContext.request.contextPath}/servicios?action=list">Servicios</a><br>
+        <a href="${pageContext.request.contextPath}/clientes?action=list">Clientes</a><br>
 
     </body>
 </html>
