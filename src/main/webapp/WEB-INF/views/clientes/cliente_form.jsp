@@ -2,12 +2,6 @@
     Document   : cliente_form
     Created on : 2 feb. 2026, 3:37:10 p. m.
     Author     : elyrr
-
-    Funcionalidades:
-    1) Alta de Cliente PERSONA o EMPRESA.
-    2) Mostrar/Ocultar secciones según tipo.
-    3) Combos (Distrito / Localidad / Referidor) con búsqueda escribiendo.
-    4) No se ingresan IDs manualmente.
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>

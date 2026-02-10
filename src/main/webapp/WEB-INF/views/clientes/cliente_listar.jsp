@@ -2,13 +2,6 @@
     Document   : cliente_listar
     Created on : 2 feb. 2026, 3:37:22 p. m.
     Author     : elyrr
-
-    OBJETIVO:
-    - Mostrar 2 tablas una debajo de la otra:
-      1) Clientes Persona (DTO)
-      2) Clientes Empresa (DTO)
-    - Un solo toggle Activar/Desactivar
-    - Preservar filtros (q / estado) al enviar POST
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
