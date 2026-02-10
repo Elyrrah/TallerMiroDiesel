@@ -45,7 +45,7 @@
          BLOQUE: Acciones
          ========================= --%>
     <p>
-        <a href="${pageContext.request.contextPath}/clientes?action=new">Nuevo Cliente</a>
+        <a href="${pageContext.request.contextPath}/clientes?action=nuevo">Nuevo Cliente</a>
     </p>
 
     <%-- =========================
@@ -53,7 +53,7 @@
          ========================= --%>
     <div class="filters">
         <form method="get" action="${pageContext.request.contextPath}/clientes">
-            <input type="hidden" name="action" value="list"/>
+            <input type="hidden" name="action" value="listar"/>
 
             Buscar (nombre/teléfono):<br/>
             <input type="text" name="q" value="${q}" style="width:260px;"/>
@@ -157,12 +157,12 @@
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Empresa</th>
+                            <th>Razón Social</th>
                             <th>Nombre Fantasía</th>
                             <th>Teléfono</th>
-                            <th>ID Distrito</th>
-                            <th>ID Localidad</th>
-                            <th>ID Referidor</th>
+                            <th>Distrito</th>
+                            <th>Localidad</th>
+                            <th>Referidor</th>
                             <th>Fuente</th>
                             <th>Estado</th>
                             <th>Fecha Creación</th>
@@ -173,12 +173,12 @@
                         <c:forEach var="c" items="${listaClientesEmpresa}">
                             <tr>
                                 <td>${c.idCliente}</td>
-                                <td>${c.nombre}</td>
-                                <td>${c.apodoNombreFantasia}</td>
+                                <td>${c.razonSocial}</td>
+                                <td>${c.nombreFantasia}</td>
                                 <td>${c.telefono}</td>
-                                <td>${c.idDistrito}</td>
-                                <td>${c.idLocalidad}</td>
-                                <td>${c.idClienteReferidor}</td>
+                                <td>${c.nombreDistrito}</td>
+                                <td>${c.nombreLocalidad}</td>
+                                <td>${c.nombreReferidor}</td>
                                 <td>${c.fuenteReferencia}</td>
                                 <td>
                                     <c:choose>

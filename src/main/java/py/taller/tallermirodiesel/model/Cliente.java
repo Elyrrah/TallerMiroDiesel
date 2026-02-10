@@ -14,8 +14,8 @@ public class Cliente {
 
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idCliente;
-    private Long idLocalidad;
     private Long idDistrito;
+    private Long idLocalidad;
     private Long idClienteReferidor;
     private FuenteReferenciaClienteEnum fuenteReferencia;
     private String telefono;

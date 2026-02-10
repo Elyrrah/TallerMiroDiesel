@@ -23,7 +23,8 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
     // Definimos las sentencias SQL utilizadas por este DAO
     private static final String SQL_INSERT =
         "INSERT INTO cliente_documentos (id_cliente, id_tipo_documento, numero, principal, activo) " +
-        "VALUES (?, ?, ?, ?, ?)";
+        "VALUES (?, ?, ?, ?, ?) " +
+        "RETURNING id_cliente_documento";
 
     private static final String SQL_UPDATE =
         "UPDATE cliente_documentos SET id_tipo_documento = ?, numero = ?, principal = ?, activo = ? " +
@@ -67,7 +68,9 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
             return actualizarInterno(clienteDocumento);
         }
 
-        return crearInterno(clienteDocumento);
+        // ✅ Ahora crearInterno retorna el ID generado
+        Long idGenerado = crearInterno(clienteDocumento);
+        return idGenerado != null;
     }
 
     // Verifica si existe un documento por ID
@@ -217,8 +220,8 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
     // Implementación interna (crear/actualizar)
     // ========================
 
-    // Crear documento (interno)
-    private boolean crearInterno(ClienteDocumento clienteDocumento) {
+    // Crear documento (interno) - RETORNA EL ID GENERADO
+    private Long crearInterno(ClienteDocumento clienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
@@ -234,7 +237,15 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
             ps.setBoolean(4, clienteDocumento.isPrincipal());
             ps.setBoolean(5, clienteDocumento.isActivo());
 
-            return ps.executeUpdate() > 0;
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Long idGenerado = rs.getLong("id_cliente_documento");
+                    clienteDocumento.setIdClienteDocumento(idGenerado); // ✅ Setea el ID en el objeto
+                    return idGenerado;
+                }
+            }
+
+            return null;
 
         } catch (Exception e) {
             throw new RuntimeException("Error al guardar (crear) cliente documento", e);

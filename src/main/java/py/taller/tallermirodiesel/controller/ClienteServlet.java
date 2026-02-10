@@ -45,7 +45,6 @@ import py.taller.tallermirodiesel.service.impl.LocalidadServiceImpl;
 import py.taller.tallermirodiesel.service.impl.TipoDocumentoServiceImpl;
 
 /**
- *
  * @author elyrr
  */
 @WebServlet(name = "ClienteServlet", urlPatterns = {"/clientes"})
@@ -79,24 +78,20 @@ public class ClienteServlet extends HttpServlet {
         // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
         String action = request.getParameter("action");
 
-        // 2. Si no viene acción, se asume "list" como comportamiento por defecto.
+        // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
         if (action == null || action.isBlank()) {
-            action = "list";
+            action = "listar";
         }
 
-        // 4. Router de acciones GET (controlador tipo front-controller por parámetro).
+        // 3. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (action) {
-                case "new" -> mostrarFormularioNuevo(request, response);
-
-                // "search" queda como alias de list (tu JSP usa filtros por GET)
-                case "search" -> listar(request, response);
-
-                case "list" -> listar(request, response);
+                case "nuevo" -> mostrarFormularioNuevo(request, response);
+                case "buscar" -> listar(request, response); // "buscar" es alias de listar
+                case "listar" -> listar(request, response);
                 default -> listar(request, response);
             }
 
-            // 5. Manejo simple de errores: setear mensaje y volver al listado
         } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
             listar(request, response);
@@ -112,23 +107,19 @@ public class ClienteServlet extends HttpServlet {
         // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
         String action = request.getParameter("action");
 
-        // 2. Si no viene acción, se asume "save" como comportamiento por defecto.
+        // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
         if (action == null || action.isBlank()) {
-            action = "save";
+            action = "guardar";
         }
 
         // 3. Router de acciones POST.
         try {
             switch (action) {
-                case "save" -> guardar(request, response);
-
-                // Toggle unificado Activar/Desactivar
-                case "toggleActivo" -> toggleActivo(request, response);
-
-                default -> response.sendRedirect(request.getContextPath() + "/clientes?action=list");
+                case "guardar" -> guardar(request, response);
+                case "toggleActivo" -> cambiarEstadoActivo(request, response);
+                default -> response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
             }
 
-            // 4. Si falla guardar, devolvemos al formulario con el error y los valores cargados
         } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
 
@@ -139,7 +130,7 @@ public class ClienteServlet extends HttpServlet {
 
             // Si el error fue en toggle, volvemos al listado (no al form)
             if ("toggleActivo".equalsIgnoreCase(action)) {
-                response.sendRedirect(buildListRedirectUrl(request));
+                response.sendRedirect(construirUrlRetornoListado(request));
                 return;
             }
 
@@ -206,8 +197,8 @@ public class ClienteServlet extends HttpServlet {
     // BLOQUE DE ACCIONES POST
     // ========== ========== ==========
 
-    // TOGGLE ACTIVO (unifica activar/desactivar).
-    private void toggleActivo(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    // CAMBIAR ESTADO ACTIVO (unifica activar/desactivar).
+    private void cambiarEstadoActivo(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         Long id = parseLong(request.getParameter("id"));
 
@@ -218,11 +209,10 @@ public class ClienteServlet extends HttpServlet {
         clienteService.setActivo(id, nuevoActivo);
 
         // Volver al listado preservando filtros
-        response.sendRedirect(buildListRedirectUrl(request));
+        response.sendRedirect(construirUrlRetornoListado(request));
     }
 
     // GUARDAR (CREAR PERSONA O EMPRESA + DOCUMENTO OPCIONAL).
-    // (Tu bloque actual queda igual; lo dejo tal cual lo venías usando)
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
 
         // 1. Tipo de cliente
@@ -234,15 +224,15 @@ public class ClienteServlet extends HttpServlet {
         // 2. Datos comunes
         String telefono = request.getParameter("telefono");
 
-        // OJO: con datalist, el ID real viene en el hidden (id_distrito / id_localidad / id_cliente_referidor)
-        Long idDistrito = parseLongNullableStrict(request.getParameter("id_distrito"));
-        Long idLocalidad = parseLongNullableStrict(request.getParameter("id_localidad"));
+        // El ID real viene en el hidden (id_distrito / id_localidad / id_cliente_referidor)
+        Long idDistrito = parseLongNullableEstricto(request.getParameter("id_distrito"));
+        Long idLocalidad = parseLongNullableEstricto(request.getParameter("id_localidad"));
 
         if (idDistrito == null && idLocalidad == null) {
             throw new IllegalArgumentException("Debe especificar al menos Distrito o Localidad.");
         }
 
-        Long idClienteReferidor = parseLongNullableStrict(request.getParameter("id_cliente_referidor"));
+        Long idClienteReferidor = parseLongNullableEstricto(request.getParameter("id_cliente_referidor"));
         String fuente = request.getParameter("fuente_referencia");
 
         // =========================
@@ -330,7 +320,7 @@ public class ClienteServlet extends HttpServlet {
         }
 
         // 5. Documento opcional (si eligió tipo y cargó número)
-        Long idTipoDocumento = parseLongNullableStrict(request.getParameter("id_tipo_documento"));
+        Long idTipoDocumento = parseLongNullableEstricto(request.getParameter("id_tipo_documento"));
         String numeroDocumento = request.getParameter("numero_documento");
 
         boolean principalDocumento = false;
@@ -354,17 +344,10 @@ public class ClienteServlet extends HttpServlet {
             if (!okDoc) {
                 throw new RuntimeException("No se pudo guardar el documento del cliente.");
             }
-
-            if (principalDocumento) {
-                Optional<Long> idDocOpt = findDocumentoIdByTipoNumero(idCreado, idTipoDocumento, cd.getNumero());
-                if (idDocOpt.isPresent()) {
-                    clienteDocumentoService.definirPrincipal(idCreado, idDocOpt.get());
-                }
-            }
         }
 
         // 6. Redirige al listado
-        response.sendRedirect(request.getContextPath() + "/clientes?action=list");
+        response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
     }
 
     // ========== ========== ==========
@@ -390,7 +373,7 @@ public class ClienteServlet extends HttpServlet {
         for (Cliente cRef : clientesReferidores) {
             Long idRef = cRef.getIdCliente();
 
-            String nombre = resolveClientName(idRef);
+            String nombre = resolverNombreCliente(idRef);
             if (nombre == null || nombre.isBlank()) {
                 if (cRef.getTelefono() != null && !cRef.getTelefono().trim().isBlank()) {
                     nombre = cRef.getTelefono().trim();
@@ -410,9 +393,9 @@ public class ClienteServlet extends HttpServlet {
 
         Cliente c = new Cliente();
         c.setTelefono(request.getParameter("telefono"));
-        c.setIdDistrito(parseLongNullableStrict(request.getParameter("id_distrito")));
-        c.setIdLocalidad(parseLongNullableStrict(request.getParameter("id_localidad")));
-        c.setIdClienteReferidor(parseLongNullableStrict(request.getParameter("id_cliente_referidor")));
+        c.setIdDistrito(parseLongNullableEstricto(request.getParameter("id_distrito")));
+        c.setIdLocalidad(parseLongNullableEstricto(request.getParameter("id_localidad")));
+        c.setIdClienteReferidor(parseLongNullableEstricto(request.getParameter("id_cliente_referidor")));
 
         String fuente = request.getParameter("fuente_referencia");
         if (fuente != null && !fuente.isBlank()) {
@@ -437,13 +420,14 @@ public class ClienteServlet extends HttpServlet {
             request.setAttribute("nombre_fantasia", request.getParameter("nombre_fantasia"));
         }
 
-        request.setAttribute("id_tipo_documento", parseLongNullableStrict(request.getParameter("id_tipo_documento")));
+        request.setAttribute("id_tipo_documento", parseLongNullableEstricto(request.getParameter("id_tipo_documento")));
         request.setAttribute("numero_documento", request.getParameter("numero_documento"));
         request.setAttribute("principal_documento", request.getParameter("principal_documento"));
 
         request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_form.jsp").forward(request, response);
     }
 
+    // PARSEO DE LONG OBLIGATORIO.
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Parámetro numérico obligatorio.");
@@ -459,7 +443,8 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    private Long parseLongNullableStrict(String value) {
+    // PARSEO DE LONG NULLABLE ESTRICTO (RETORNA NULL O LANZA ERROR).
+    private Long parseLongNullableEstricto(String value) {
         if (value == null || value.isBlank()) {
             return null;
         }
@@ -474,7 +459,8 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    private String resolveClientName(Long idCliente) {
+    // RESOLVER NOMBRE DE CLIENTE (PERSONA O EMPRESA).
+    private String resolverNombreCliente(Long idCliente) {
         if (idCliente == null) return null;
 
         Optional<ClientePersona> pOpt = clientePersonaService.buscarPorIdCliente(idCliente);
@@ -509,8 +495,9 @@ public class ClienteServlet extends HttpServlet {
         return null;
     }
 
-    private String buildListRedirectUrl(HttpServletRequest request) {
-        String url = request.getContextPath() + "/clientes?action=list";
+    // ARMAR URL DE RETORNO PRESERVANDO FILTROS.
+    private String construirUrlRetornoListado(HttpServletRequest request) {
+        String url = request.getContextPath() + "/clientes?action=listar";
 
         String q = request.getParameter("q");
         if (q != null && !q.isBlank()) {
@@ -523,20 +510,5 @@ public class ClienteServlet extends HttpServlet {
         }
 
         return url;
-    }
-
-    private Optional<Long> findDocumentoIdByTipoNumero(Long idCliente, Long idTipoDocumento, String numero) {
-        if (idCliente == null || idTipoDocumento == null || numero == null || numero.isBlank()) {
-            return Optional.empty();
-        }
-
-        List<ClienteDocumento> docs = clienteDocumentoService.listarPorCliente(idCliente);
-        for (ClienteDocumento d : docs) {
-            if (idTipoDocumento.equals(d.getIdTipoDocumento())
-                    && numero.equalsIgnoreCase(d.getNumero() != null ? d.getNumero().trim() : "")) {
-                return Optional.ofNullable(d.getIdClienteDocumento());
-            }
-        }
-        return Optional.empty();
     }
 }

@@ -88,7 +88,7 @@
 </c:if>
 
 <p>
-    <a href="${pageContext.request.contextPath}/paises?action=new">
+    <a href="${pageContext.request.contextPath}/paises?action=nuevo">
         Nuevo País
     </a>
 </p>

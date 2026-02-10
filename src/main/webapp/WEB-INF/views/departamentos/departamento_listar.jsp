@@ -87,7 +87,7 @@
 </c:if>
 
 <div style="margin-bottom: 12px;">
-    <a href="${pageContext.request.contextPath}/departamentos?action=new">Nuevo Departamento</a>
+    <a href="${pageContext.request.contextPath}/departamentos?action=nuevo">Nuevo Departamento</a>
 </div>
 
 <!-- FILTRO POR PAÍS -->

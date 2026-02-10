@@ -20,7 +20,7 @@
     </p>
 
     <p>
-        <a href="${pageContext.request.contextPath}/clientes?action=list">Volver al listado</a>
+        <a href="${pageContext.request.contextPath}/clientes?action=listar">Volver al listado</a>
     </p>
 
     <h2>Nuevo Cliente</h2>
@@ -38,7 +38,7 @@
     </c:if>
 
     <form method="post" action="${pageContext.request.contextPath}/clientes">
-        <input type="hidden" name="action" value="save"/>
+        <input type="hidden" name="action" value="guardar"/>
 
         <!-- ================= TIPO DE CLIENTE ================= -->
         <fieldset style="margin-bottom:12px;">
