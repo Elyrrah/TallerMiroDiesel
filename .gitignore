@@ -14,3 +14,6 @@ nbdist/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Configuración con credenciales sensibles
+src/main/resources/config.properties

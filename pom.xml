@@ -9,7 +9,7 @@
     <artifactId>TallerMiroDiesel</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>war</packaging>
-    <name>TallerMiroDiesel-1.0-SNAPSHOT</name>
+    <name>TallerMiroDiesel</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
