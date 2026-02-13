@@ -49,12 +49,13 @@ ON public.ordenes_trabajo (id_vehiculo);
 CREATE INDEX IF NOT EXISTS idx_pagos_plan_ot
 ON public.pagos (id_plan_pago, id_orden_trabajo);
 
--- CLIENTES / VEHICULOS / COMPONENTES: acelera listados y joins por cliente
-CREATE INDEX IF NOT EXISTS idx_vehiculos_id_cliente
-ON public.vehiculos (id_cliente);
+-- Vehiculos se vinculan a cliente a través de ordenes_trabajo
+CREATE INDEX IF NOT EXISTS idx_ordenes_trabajo_fecha_ingreso
+ON public.ordenes_trabajo (fecha_ingreso);
 
-CREATE INDEX IF NOT EXISTS idx_componentes_id_cliente
-ON public.componentes (id_cliente);
+-- Componentes se vinculan a cliente a través de ordenes_trabajo
+CREATE INDEX IF NOT EXISTS idx_ordenes_trabajo_componente
+ON public.ordenes_trabajo (id_componente);
 
 -- ORDENES y DETALLES: acelera listados, joins y recalculo de totales
 CREATE INDEX IF NOT EXISTS idx_ordenes_trabajo_id_usuario
@@ -64,14 +65,19 @@ ON public.ordenes_trabajo (id_usuario);
 CREATE INDEX IF NOT EXISTS idx_ot_detalles_id_ot
 ON public.orden_trabajo_detalles (id_orden_trabajo);
 
+-- Acelera recálculo de totales usando (id_orden_trabajo, activo)
+CREATE INDEX IF NOT EXISTS idx_ot_detalles_id_ot_activo
+ON public.orden_trabajo_detalles (id_orden_trabajo, activo);
+
 -- Optimiza joins y consultas de detalles por servicio aplicado
 CREATE INDEX IF NOT EXISTS idx_ot_detalles_id_servicio
 ON public.orden_trabajo_detalles (id_servicio);
 
--- PLANES y EVENTOS: acelera consultas y joins desde OT y plan
+-- PLANES: acelera consultas y joins desde OT y plan
 CREATE INDEX IF NOT EXISTS idx_planes_pago_id_ot
 ON public.planes_pago (id_orden_trabajo);
 
+-- EVENTOS: acelera consultas y joins desde OT y plan
 CREATE INDEX IF NOT EXISTS idx_planes_pago_eventos_id_plan
 ON public.planes_pago_eventos (id_plan_pago);
 
@@ -79,18 +85,20 @@ ON public.planes_pago_eventos (id_plan_pago);
 CREATE INDEX IF NOT EXISTS idx_pagos_id_usuario
 ON public.pagos (id_usuario);
 
+-- Mejora reportes y listados de pagos por OT ordenados por fecha
+CREATE INDEX IF NOT EXISTS idx_pagos_id_ot_fecha
+ON public.pagos (id_orden_trabajo, fecha_pago);
+
 -- Evita duplicar documentos activos por tipo + número dentro del mismo cliente
 CREATE UNIQUE INDEX IF NOT EXISTS ux_cliente_documentos_cliente_tipo_numero_activo
 ON public.cliente_documentos (id_cliente, id_tipo_documento, numero)
 WHERE activo = true;
 
--- Optimiza joins y filtros por cliente en documentos,
--- especialmente en consultas de perfil del cliente y validaciones de documentos
+-- Optimiza joins y filtros por cliente en documentos
 CREATE INDEX IF NOT EXISTS idx_cliente_documentos_id_cliente
 ON public.cliente_documentos (id_cliente);
 
--- Acelera búsquedas y joins por tipo de documento,
--- útil para listados, validaciones y controles administrativos
+-- Acelera búsquedas y joins por tipo de documento
 CREATE INDEX IF NOT EXISTS idx_cliente_documentos_id_tipo_documento
 ON public.cliente_documentos (id_tipo_documento);
 
@@ -98,129 +106,9 @@ ON public.cliente_documentos (id_tipo_documento);
 CREATE INDEX IF NOT EXISTS idx_usuarios_id_rol
 ON public.usuarios (id_rol);
 
--- limpieza por seguridad si existió versión anterior en post
-DROP TRIGGER IF EXISTS trg_clientes_set_distrito_por_localidad ON public.clientes;
-DROP FUNCTION IF EXISTS public.fn_clientes_set_distrito_por_localidad();
-
-DROP TRIGGER IF EXISTS trg_clientes_persona_no_empresa ON public.clientes_persona;
-DROP TRIGGER IF EXISTS trg_clientes_empresa_no_persona ON public.clientes_empresa;
-DROP FUNCTION IF EXISTS public.fn_clientes_evitar_doble_tipo();
-
 -- =============================================================================
 -- CHECK / UNIQUE CONSTRAINTS (IDEMPOTENTES)
 -- =============================================================================
-
--- Garantiza que una orden de trabajo esté asociada exclusivamente
--- a un vehículo o a un componente, según el tipo de ingreso definido
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_ot_sujeto_por_tipo'
-          AND conrelid = 'public.ordenes_trabajo'::regclass
-    ) THEN
-        ALTER TABLE public.ordenes_trabajo
-        ADD CONSTRAINT check_ot_sujeto_por_tipo
-        CHECK (
-            (tipo_ingreso = 'VEHICULO'   AND id_vehiculo   IS NOT NULL AND id_componente IS NULL) OR
-            (tipo_ingreso = 'COMPONENTE' AND id_componente IS NOT NULL AND id_vehiculo   IS NULL)
-        );
-    END IF;
-END $$;
-
--- Impide registrar servicios con precios base negativos
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_precio_base_no_negativo'
-          AND conrelid = 'public.servicios'::regclass
-    ) THEN
-        ALTER TABLE public.servicios
-        ADD CONSTRAINT check_precio_base_no_negativo
-        CHECK (precio_base >= 0);
-    END IF;
-END $$;
-
--- Evita precios unitarios negativos en los detalles de orden
--- (SE ELIMINA DEL POST: YA SE AGREGA EN EL SCHEMA COMO CONSTRAINT)
-
--- Asegura que la cantidad de trabajos o servicios sea siempre mayor a cero
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_cantidad_minima'
-          AND conrelid = 'public.orden_trabajo_detalles'::regclass
-    ) THEN
-        ALTER TABLE public.orden_trabajo_detalles
-        ADD CONSTRAINT check_cantidad_minima
-        CHECK (cantidad > 0);
-    END IF;
-END $$;
-
--- Impide valores negativos en la garantía expresada en meses
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_garantia_meses_no_negativo'
-          AND conrelid = 'public.orden_trabajo_detalles'::regclass
-    ) THEN
-        ALTER TABLE public.orden_trabajo_detalles
-        ADD CONSTRAINT check_garantia_meses_no_negativo
-        CHECK (garantia_meses IS NULL OR garantia_meses >= 0);
-    END IF;
-END $$;
-
--- Impide valores negativos en la garantía expresada en días
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_garantia_dias_no_negativo'
-          AND conrelid = 'public.orden_trabajo_detalles'::regclass
-    ) THEN
-        ALTER TABLE public.orden_trabajo_detalles
-        ADD CONSTRAINT check_garantia_dias_no_negativo
-        CHECK (garantia_dias IS NULL OR garantia_dias >= 0);
-    END IF;
-END $$;
-
--- Evita duplicar componentes para un mismo cliente, tipo, marca y modelo
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'componentes_unique_cliente_tipo_marca_modelo'
-          AND conrelid = 'public.componentes'::regclass
-    ) THEN
-        ALTER TABLE public.componentes
-        ADD CONSTRAINT componentes_unique_cliente_tipo_marca_modelo
-        UNIQUE (id_cliente, tipo_componente, id_marca, id_modelo);
-    END IF;
-END $$;
-
--- Asegura que la cantidad declarada de componentes sea siempre positiva
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_componentes_cantidad_positiva'
-          AND conrelid = 'public.componentes'::regclass
-    ) THEN
-        ALTER TABLE public.componentes
-        ADD CONSTRAINT check_componentes_cantidad_positiva
-        CHECK (cantidad > 0);
-    END IF;
-END $$;
 
 -- Impide registrar pagos con monto cero o negativo
 DO $$
@@ -234,26 +122,6 @@ BEGIN
         ALTER TABLE public.pagos
         ADD CONSTRAINT check_pagos_monto_positivo
         CHECK (monto > 0);
-    END IF;
-END $$;
-
--- Asegura coherencia mínima del plan de pago según el tipo:
---   • CONTADO debe tener exactamente 1 cuota
---   • CUOTAS debe tener 1 o más cuotas
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'check_planes_pago_tipo_vs_cuotas'
-          AND conrelid = 'public.planes_pago'::regclass
-    ) THEN
-        ALTER TABLE public.planes_pago
-        ADD CONSTRAINT check_planes_pago_tipo_vs_cuotas
-        CHECK (
-            (tipo_plan = 'CONTADO' AND cantidad_cuotas = 1)
-         OR (tipo_plan = 'CUOTAS'  AND cantidad_cuotas >= 1)
-        );
     END IF;
 END $$;
 
@@ -272,39 +140,20 @@ BEGIN
     END IF;
 END $$;
 
--- Actualiza todos los id's para seguir del máximo ingresado
+-- Asegura cantidad_cuotas mínima 1
 DO $$
-DECLARE
-    r record;
-    seq_name text;
-    max_id bigint;
 BEGIN
-    -- Recorre todas las columnas que tienen una sequence asociada (SERIAL / IDENTITY)
-    FOR r IN
-        SELECT
-            n.nspname  AS schema_name,
-            c.relname  AS table_name,
-            a.attname  AS column_name
-        FROM pg_class c
-        JOIN pg_namespace n ON n.oid = c.relnamespace
-        JOIN pg_attribute a ON a.attrelid = c.oid
-        WHERE n.nspname = 'public'
-          AND c.relkind = 'r'              -- tablas reales
-          AND a.attnum > 0
-          AND NOT a.attisdropped
-          AND pg_get_serial_sequence(format('%I.%I', n.nspname, c.relname), a.attname) IS NOT NULL
-    LOOP
-        seq_name := pg_get_serial_sequence(format('%I.%I', r.schema_name, r.table_name), r.column_name);
-
-        -- MAX(col) de la tabla (si está vacía, usa 0)
-        EXECUTE format('SELECT COALESCE(MAX(%I), 0) FROM %I.%I', r.column_name, r.schema_name, r.table_name)
-        INTO max_id;
-
-        -- Ajusta la secuencia a MAX+1
-        EXECUTE format('SELECT setval(%L, %s, false)', seq_name, (max_id + 1));
-    END LOOP;
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'check_planes_pago_cantidad_cuotas_min_1'
+          AND conrelid = 'public.planes_pago'::regclass
+    ) THEN
+        ALTER TABLE public.planes_pago
+        ADD CONSTRAINT check_planes_pago_cantidad_cuotas_min_1
+        CHECK (cantidad_cuotas >= 1);
+    END IF;
 END $$;
-
 
 -- =============================================================================
 -- FUNCIONES
@@ -319,9 +168,8 @@ DECLARE
     v_prefix text;
     v_ultimo integer;
 BEGIN
-    -- Usar valor ENUM RECIBIDO por defecto
-    IF NEW.estado IS NULL THEN
-        NEW.estado := 'RECIBIDO';
+    IF NEW.estado IS NULL OR NEW.estado = '' THEN
+        NEW.estado := 'ABIERTA';
     END IF;
 
     IF NEW.numero_orden IS NULL OR NEW.numero_orden = '' THEN
@@ -346,11 +194,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 2) Completa automáticamente el precio unitario del detalle
--- Nota (decisión actual):
---   Si el precio_unitario viene NULL o 0, se autocompleta con el precio_base.
---   Esto fuerza que "0" no sea considerado un valor manual válido.
-CREATE OR REPLACE FUNCTION public.fn_ot_detalle_precio_auto()
+-- 2) Completa automáticamente el precio unitario del detalle + Calcula subtotal
+CREATE OR REPLACE FUNCTION public.fn_ot_detalle_precio_y_subtotal_auto()
 RETURNS trigger AS $$
 BEGIN
     IF NEW.precio_unitario IS NULL OR NEW.precio_unitario = 0 THEN
@@ -360,40 +205,23 @@ BEGIN
         WHERE s.id_servicio = NEW.id_servicio;
     END IF;
 
+    NEW.cantidad := COALESCE(NEW.cantidad, 1);
     NEW.precio_unitario := COALESCE(NEW.precio_unitario, 0);
+    NEW.subtotal := (NEW.cantidad * NEW.precio_unitario);
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- 3) Recalcula el total estimado de la orden
-CREATE OR REPLACE FUNCTION public.fn_ot_actualizar_total_cabecera()
-RETURNS trigger AS $$
-DECLARE
-    v_id_ot bigint;
-BEGIN
-    v_id_ot := COALESCE(NEW.id_orden_trabajo, OLD.id_orden_trabajo);
-
-    UPDATE public.ordenes_trabajo
-    SET total_estimado = (
-        SELECT COALESCE(SUM(subtotal), 0)
-        FROM public.orden_trabajo_detalles
-        WHERE id_orden_trabajo = v_id_ot
-    )
-    WHERE id_orden_trabajo = v_id_ot;
-
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
--- 4) Controla la fecha de finalización según el estado de la orden (usando ENUM FINALIZADO)
+-- 3) Controla la fecha de finalización según el estado de la orden
 CREATE OR REPLACE FUNCTION public.fn_ordenes_trabajo_fechas_estado()
 RETURNS trigger AS $$
 BEGIN
-    IF NEW.estado = 'FINALIZADO' AND (OLD.estado IS NULL OR OLD.estado <> 'FINALIZADO') THEN
+    IF NEW.estado = 'FINALIZADA' AND (OLD.estado IS NULL OR OLD.estado <> 'FINALIZADA') THEN
         NEW.fecha_fin := now();
     END IF;
 
-    IF NEW.estado <> 'FINALIZADO' AND OLD.estado = 'FINALIZADO' THEN
+    IF NEW.estado <> 'FINALIZADA' AND OLD.estado = 'FINALIZADA' THEN
         NEW.fecha_fin := NULL;
     END IF;
 
@@ -401,7 +229,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 5) Valida coherencia entre marca y modelo del vehículo
+-- 4) Valida coherencia entre marca y modelo del vehículo
 CREATE OR REPLACE FUNCTION public.fn_vehiculos_validar_modelo_marca()
 RETURNS trigger AS $$
 DECLARE
@@ -427,7 +255,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 6) Valida coherencia entre marca y modelo del componente
+-- 5) Valida coherencia entre marca y modelo del componente
 CREATE OR REPLACE FUNCTION public.fn_componentes_validar_modelo_marca()
 RETURNS trigger AS $$
 DECLARE
@@ -451,53 +279,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 7) Calcula automáticamente las fechas de garantía al finalizar la orden
-CREATE OR REPLACE FUNCTION public.fn_ot_detalles_calcular_garantia_al_terminar()
-RETURNS trigger AS $$
-DECLARE
-    v_desde date;
-BEGIN
-    IF NEW.estado = 'FINALIZADO' AND (OLD.estado IS NULL OR OLD.estado <> 'FINALIZADO') THEN
-        IF NEW.fecha_fin IS NULL THEN
-            NEW.fecha_fin := now();
-        END IF;
-
-        v_desde := (NEW.fecha_fin)::date;
-
-        UPDATE public.orden_trabajo_detalles
-        SET garantia_desde = v_desde,
-            garantia_hasta = (
-                v_desde
-                + COALESCE((garantia_meses || ' months')::interval, interval '0 months')
-                + COALESCE((garantia_dias  || ' days')::interval,  interval '0 days')
-            )::date
-        WHERE id_orden_trabajo = NEW.id_orden_trabajo
-          AND (
-                (garantia_meses IS NOT NULL AND garantia_meses > 0)
-             OR (garantia_dias  IS NOT NULL AND garantia_dias  > 0)
-          );
-
-        UPDATE public.orden_trabajo_detalles
-        SET garantia_desde = NULL,
-            garantia_hasta = NULL
-        WHERE id_orden_trabajo = NEW.id_orden_trabajo
-          AND NOT (
-                (garantia_meses IS NOT NULL AND garantia_meses > 0)
-             OR (garantia_dias  IS NOT NULL AND garantia_dias  > 0)
-          );
-    END IF;
-
-    IF NEW.estado <> 'FINALIZADO' AND OLD.estado = 'FINALIZADO' THEN
-        UPDATE public.orden_trabajo_detalles
-        SET garantia_desde = NULL,
-            garantia_hasta = NULL
-        WHERE id_orden_trabajo = NEW.id_orden_trabajo;
-    END IF;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 -- 8) Impide borrar clientes que tengan OT abiertas
 CREATE OR REPLACE FUNCTION public.fn_clientes_no_borrar_ot()
 RETURNS trigger AS $$
@@ -506,7 +287,7 @@ BEGIN
         SELECT 1
         FROM public.ordenes_trabajo
         WHERE id_cliente = OLD.id_cliente
-          AND estado <> 'FINALIZADO'
+          AND estado NOT IN ('FINALIZADA', 'ENTREGADA', 'CANCELADA')
     ) THEN
         RAISE EXCEPTION 'No se puede borrar el cliente %, tiene órdenes de trabajo abiertas', OLD.id_cliente;
     END IF;
@@ -519,70 +300,83 @@ $$ LANGUAGE plpgsql;
 -- TRIGGERS
 -- =============================================================================
 
--- Asigna estado inicial y número correlativo al crear una orden de trabajo
-DROP TRIGGER IF EXISTS trg_ordenes_trabajo_inicio ON public.ordenes_trabajo;
-DROP TRIGGER IF EXISTS trg_ot_01_inicio ON public.ordenes_trabajo;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_ot_01_inicio'
+          AND tgrelid = 'public.ordenes_trabajo'::regclass
+    ) THEN
+        CREATE TRIGGER trg_ot_01_inicio
+        BEFORE INSERT ON public.ordenes_trabajo
+        FOR EACH ROW EXECUTE FUNCTION public.fn_ordenes_trabajo_inicio();
+    END IF;
+END $$;
 
-CREATE TRIGGER trg_ot_01_inicio
-BEFORE INSERT ON public.ordenes_trabajo
-FOR EACH ROW EXECUTE FUNCTION public.fn_ordenes_trabajo_inicio();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_otd_01_precio_y_subtotal_auto'
+          AND tgrelid = 'public.orden_trabajo_detalles'::regclass
+    ) THEN
+        CREATE TRIGGER trg_otd_01_precio_y_subtotal_auto
+        BEFORE INSERT OR UPDATE ON public.orden_trabajo_detalles
+        FOR EACH ROW EXECUTE FUNCTION public.fn_ot_detalle_precio_y_subtotal_auto();
+    END IF;
+END $$;
 
--- Completa el precio unitario del detalle antes de guardar el registro
-DROP TRIGGER IF EXISTS trg_ot_detalle_precio_auto ON public.orden_trabajo_detalles;
-DROP TRIGGER IF EXISTS trg_otd_01_precio_auto ON public.orden_trabajo_detalles;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_ot_10_fechas_estado'
+          AND tgrelid = 'public.ordenes_trabajo'::regclass
+    ) THEN
+        CREATE TRIGGER trg_ot_10_fechas_estado
+        BEFORE UPDATE OF estado ON public.ordenes_trabajo
+        FOR EACH ROW EXECUTE FUNCTION public.fn_ordenes_trabajo_fechas_estado();
+    END IF;
+END $$;
 
-CREATE TRIGGER trg_otd_01_precio_auto
-BEFORE INSERT OR UPDATE ON public.orden_trabajo_detalles
-FOR EACH ROW EXECUTE FUNCTION public.fn_ot_detalle_precio_auto();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_veh_01_validar_modelo_marca'
+          AND tgrelid = 'public.vehiculos'::regclass
+    ) THEN
+        CREATE TRIGGER trg_veh_01_validar_modelo_marca
+        BEFORE INSERT OR UPDATE OF id_marca, id_modelo ON public.vehiculos
+        FOR EACH ROW EXECUTE FUNCTION public.fn_vehiculos_validar_modelo_marca();
+    END IF;
+END $$;
 
--- Recalcula el total estimado de la orden ante cualquier cambio en los detalles
-DROP TRIGGER IF EXISTS trg_ot_detalle_actualizar_total ON public.orden_trabajo_detalles;
-DROP TRIGGER IF EXISTS trg_otd_02_actualizar_total ON public.orden_trabajo_detalles;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_comp_01_validar_modelo_marca'
+          AND tgrelid = 'public.componentes'::regclass
+    ) THEN
+        CREATE TRIGGER trg_comp_01_validar_modelo_marca
+        BEFORE INSERT OR UPDATE OF id_marca, id_modelo ON public.componentes
+        FOR EACH ROW EXECUTE FUNCTION public.fn_componentes_validar_modelo_marca();
+    END IF;
+END $$;
 
-CREATE TRIGGER trg_otd_02_actualizar_total
-AFTER INSERT OR UPDATE OR DELETE ON public.orden_trabajo_detalles
-FOR EACH ROW EXECUTE FUNCTION public.fn_ot_actualizar_total_cabecera();
-
--- Actualiza o limpia la fecha de finalización según el estado de la orden
-DROP TRIGGER IF EXISTS trg_ordenes_trabajo_fechas ON public.ordenes_trabajo;
-DROP TRIGGER IF EXISTS trg_ot_10_fechas_estado ON public.ordenes_trabajo;
-
-CREATE TRIGGER trg_ot_10_fechas_estado
-BEFORE UPDATE OF estado ON public.ordenes_trabajo
-FOR EACH ROW EXECUTE FUNCTION public.fn_ordenes_trabajo_fechas_estado();
-
--- Valida que el modelo seleccionado pertenezca a la marca del vehículo
-DROP TRIGGER IF EXISTS trg_vehiculos_validar_modelo_marca ON public.vehiculos;
-DROP TRIGGER IF EXISTS trg_veh_01_validar_modelo_marca ON public.vehiculos;
-
-CREATE TRIGGER trg_veh_01_validar_modelo_marca
-BEFORE INSERT OR UPDATE OF id_marca, id_modelo ON public.vehiculos
-FOR EACH ROW EXECUTE FUNCTION public.fn_vehiculos_validar_modelo_marca();
-
--- Valida que el modelo seleccionado pertenezca a la marca del componente
-DROP TRIGGER IF EXISTS trg_componentes_validar_modelo_marca ON public.componentes;
-DROP TRIGGER IF EXISTS trg_comp_01_validar_modelo_marca ON public.componentes;
-
-CREATE TRIGGER trg_comp_01_validar_modelo_marca
-BEFORE INSERT OR UPDATE OF id_marca, id_modelo
-ON public.componentes
-FOR EACH ROW EXECUTE FUNCTION public.fn_componentes_validar_modelo_marca();
-
--- Calcula automáticamente la garantía de los trabajos al finalizar la orden
-DROP TRIGGER IF EXISTS trg_ot_calcular_garantia ON public.ordenes_trabajo;
-DROP TRIGGER IF EXISTS trg_ot_20_calcular_garantia ON public.ordenes_trabajo;
-
-CREATE TRIGGER trg_ot_20_calcular_garantia
-BEFORE UPDATE OF estado ON public.ordenes_trabajo
-FOR EACH ROW EXECUTE FUNCTION public.fn_ot_detalles_calcular_garantia_al_terminar();
-
--- Trigger preventivo de borrado de cliente
-DROP TRIGGER IF EXISTS trg_clientes_no_borrar_ot ON public.clientes;
-DROP TRIGGER IF EXISTS trg_cli_01_no_borrar_ot ON public.clientes;
-
-CREATE TRIGGER trg_cli_01_no_borrar_ot
-BEFORE DELETE ON public.clientes
-FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_no_borrar_ot();
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger
+        WHERE tgname = 'trg_cli_01_no_borrar_ot'
+          AND tgrelid = 'public.clientes'::regclass
+    ) THEN
+        CREATE TRIGGER trg_cli_01_no_borrar_ot
+        BEFORE DELETE ON public.clientes
+        FOR EACH ROW EXECUTE FUNCTION public.fn_clientes_no_borrar_ot();
+    END IF;
+END $$;
 
 COMMIT;
 
