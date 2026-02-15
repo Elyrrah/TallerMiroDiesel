@@ -21,7 +21,6 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ServicioDAOImpl implements ServicioDAO {
 
-    //  Mapear Servicio
     private Servicio mapearServicio(ResultSet rs) throws SQLException {
         Servicio s = new Servicio();
         s.setIdServicio(rs.getLong("id_servicio"));
@@ -31,8 +30,6 @@ public class ServicioDAOImpl implements ServicioDAO {
         s.setPrecioBase(rs.getBigDecimal("precio_base"));
         s.setActivo(rs.getBoolean("activo"));
 
-        //  fecha_creacion (si existe en el SELECT)
-        //  Nota: usamos Timestamp porque ResultSet no tiene getLocalDateTime en todos los drivers/versiones.
         Timestamp ts = rs.getTimestamp("fecha_creacion");
         if (ts != null) {
             s.setFechaCreacion(ts.toLocalDateTime());
@@ -41,7 +38,6 @@ public class ServicioDAOImpl implements ServicioDAO {
         return s;
     }
 
-    //  Crea un nuevo Servicio
     @Override
     public Long crear(Servicio servicio) {
         String sql = """
@@ -63,15 +59,14 @@ public class ServicioDAOImpl implements ServicioDAO {
                 if (rs.next()) {
                     return rs.getLong("id_servicio");
                 }
-                throw new RuntimeException("No se generó id_servicio al crear el servicio.");
+                throw new RuntimeException("No se generó id_servicio");
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error creando servicio: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al crear servicio: " + e.getMessage(), e);
         }
     }
 
-    //  Actualiza un Servicio
     @Override
     public boolean actualizar(Servicio servicio) {
         String sql = """
@@ -96,12 +91,11 @@ public class ServicioDAOImpl implements ServicioDAO {
 
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error actualizando servicio: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al actualizar servicio: " + e.getMessage(), e);
         }
     }
 
-    //  Elimina un Servicio
     @Override
     public boolean eliminar(Long id) {
         String sql = "DELETE FROM public.servicios WHERE id_servicio = ?";
@@ -112,12 +106,11 @@ public class ServicioDAOImpl implements ServicioDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error eliminando servicio: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al eliminar servicio: " + e.getMessage(), e);
         }
     }
 
-    //  Activa un Servicio
     @Override
     public boolean activar(Long id) {
         String sql = """
@@ -132,12 +125,11 @@ public class ServicioDAOImpl implements ServicioDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error activando servicio: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al activar servicio: " + e.getMessage(), e);
         }
     }
 
-    //  Desactiva un Servicio
     @Override
     public boolean desactivar(Long id) {
         String sql = """
@@ -152,12 +144,11 @@ public class ServicioDAOImpl implements ServicioDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error desactivando servicio: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al desactivar servicio: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un Servicio por su id
     @Override
     public Optional<Servicio> buscarPorId(Long id) {
         String sql = """
@@ -172,18 +163,36 @@ public class ServicioDAOImpl implements ServicioDAO {
             ps.setLong(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearServicio(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearServicio(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando servicio por id: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar servicio por ID: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un Servicio por su nombre (exacto)
+    @Override
+    public Optional<Servicio> buscarPorCodigo(String codigo) {
+        String sql = """
+                SELECT id_servicio, codigo, nombre, descripcion, precio_base, activo, fecha_creacion
+                FROM public.servicios
+                WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))
+                """;
+
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, codigo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? Optional.of(mapearServicio(rs)) : Optional.empty();
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar servicio por código: " + e.getMessage(), e);
+        }
+    }
+
     @Override
     public Optional<Servicio> buscarPorNombre(String nombre) {
         String sql = """
@@ -199,51 +208,20 @@ public class ServicioDAOImpl implements ServicioDAO {
             ps.setString(1, nombreNorm);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearServicio(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearServicio(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando servicio por nombre: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar servicio por nombre: " + e.getMessage(), e);
         }
     }
-    
-    //  Busca un Servicio por su codigo
-    @Override
-    public Optional<Servicio> buscarPorCodigo(String codigo) {
-        String sql = """
-                SELECT id_servicio, codigo, nombre, descripcion, precio_base, activo, fecha_creacion
-                FROM public.servicios
-                WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))
-                """;
 
-        try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            String codigoNorm = (codigo == null) ? "" : codigo.trim();
-            ps.setString(1, codigoNorm);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearServicio(rs));
-                }
-                return Optional.empty();
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando servicio por codigo: " + e.getMessage(), e);
-        }
-    }
-    
-    //  Busca Servicios cuyo nombre coincida parcialmente
     @Override
     public List<Servicio> buscarPorNombreParcial(String filtro) {
         String sql = """
                 SELECT id_servicio, codigo, nombre, descripcion, precio_base, activo, fecha_creacion
                 FROM public.servicios
-                WHERE nombre ILIKE ?
+                WHERE UPPER(nombre) LIKE UPPER(?)
                 ORDER BY nombre ASC
                 """;
 
@@ -263,12 +241,11 @@ public class ServicioDAOImpl implements ServicioDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando servicio por nombre parcial: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar servicios por nombre parcial: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Servicios
     @Override
     public List<Servicio> listarTodos() {
         String sql = """
@@ -289,12 +266,11 @@ public class ServicioDAOImpl implements ServicioDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando servicios: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar todos los servicios: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Servicios Activos
     @Override
     public List<Servicio> listarActivos() {
         String sql = """
@@ -316,12 +292,11 @@ public class ServicioDAOImpl implements ServicioDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando servicios activos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar servicios activos: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Servicios Inactivos
     @Override
     public List<Servicio> listarInactivos() {
         String sql = """
@@ -343,8 +318,8 @@ public class ServicioDAOImpl implements ServicioDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando servicios inactivos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar servicios inactivos: " + e.getMessage(), e);
         }
     }
 }

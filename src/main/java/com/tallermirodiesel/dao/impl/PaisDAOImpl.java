@@ -19,8 +19,7 @@ import com.tallermirodiesel.util.DatabaseConnection;
  * @author elyrr
  */
 public class PaisDAOImpl implements PaisDAO {
-    
-    //  Mapear Pais
+
     private Pais mapearPais(ResultSet rs) throws SQLException {
         Pais p = new Pais();
         p.setIdPais(rs.getLong("id_pais"));
@@ -28,11 +27,9 @@ public class PaisDAOImpl implements PaisDAO {
         p.setIso2(rs.getString("iso2"));
         p.setIso3(rs.getString("iso3"));
         p.setActivo(rs.getBoolean("activo"));
-        
         return p;
     }
-    
-    //  Crea un nuevo Pais
+
     @Override
     public Long crear(Pais pais) {
         String sql = """
@@ -53,15 +50,14 @@ public class PaisDAOImpl implements PaisDAO {
                 if (rs.next()) {
                     return rs.getLong("id_pais");
                 }
-                throw new RuntimeException("No se generó id_pais al crear el país.");
+                throw new RuntimeException("No se generó id_pais");
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error creando pais: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al crear país: " + e.getMessage(), e);
         }
     }
-    
-    //  Actualiza un Pais
+
     @Override
     public boolean actualizar(Pais pais) {
         String sql = """
@@ -84,12 +80,11 @@ public class PaisDAOImpl implements PaisDAO {
 
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error actualizando pais: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al actualizar país: " + e.getMessage(), e);
         }
     }
-    
-    //  Elimina un Pais
+
     @Override
     public boolean eliminar(Long id) {
         String sql = "DELETE FROM public.paises WHERE id_pais = ?";
@@ -100,12 +95,11 @@ public class PaisDAOImpl implements PaisDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error eliminando pais: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al eliminar país: " + e.getMessage(), e);
         }
-    }    
-    
-    //  Activa un Pais
+    }
+
     @Override
     public boolean activar(Long id) {
         String sql = """
@@ -120,12 +114,11 @@ public class PaisDAOImpl implements PaisDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error activando país: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al activar país: " + e.getMessage(), e);
         }
     }
-    
-    //  Desactiva un Pais
+
     @Override
     public boolean desactivar(Long id) {
         String sql = """
@@ -140,12 +133,11 @@ public class PaisDAOImpl implements PaisDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error desactivando pais: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al desactivar país: " + e.getMessage(), e);
         }
     }
-    
-    //  Busca un Pais por su id
+
     @Override
     public Optional<Pais> buscarPorId(Long id) {
         String sql = """
@@ -160,45 +152,36 @@ public class PaisDAOImpl implements PaisDAO {
             ps.setLong(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearPais(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearPais(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando pais por id: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar país por ID: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un Pais por su Iso2
     @Override
     public Optional<Pais> buscarPorIso2(String iso2) {
         String sql = """
-            SELECT id_pais, nombre, iso2, iso3, activo
-            FROM public.paises
-            WHERE iso2 = ?
-            """;
+                SELECT id_pais, nombre, iso2, iso3, activo
+                FROM public.paises
+                WHERE UPPER(TRIM(iso2)) = UPPER(TRIM(?))
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            String iso2Norm = (iso2 == null) ? null : iso2.trim().toUpperCase();
-            ps.setString(1, iso2Norm);
+            ps.setString(1, iso2);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearPais(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearPais(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando pais por iso2: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar país por ISO2: " + e.getMessage(), e);
         }
     }
-    
-    //  Busca un Pais por su nombre
+
     @Override
     public Optional<Pais> buscarPorNombre(String nombre) {
         String sql = """
@@ -210,28 +193,24 @@ public class PaisDAOImpl implements PaisDAO {
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            String nombreNorm = (nombre == null) ? null : nombre.trim();
+            String nombreNorm = (nombre == null) ? "" : nombre.trim();
             ps.setString(1, nombreNorm);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearPais(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearPais(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando pais por nombre: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar país por nombre: " + e.getMessage(), e);
         }
     }
-    
-    //  Busca Paises cuyo nombre coincida parcialmente
+
     @Override
     public List<Pais> buscarPorNombreParcial(String filtro) {
         String sql = """
                 SELECT id_pais, nombre, iso2, iso3, activo
                 FROM public.paises
-                WHERE nombre ILIKE ?
+                WHERE UPPER(nombre) LIKE UPPER(?)
                 ORDER BY nombre ASC
                 """;
 
@@ -251,12 +230,11 @@ public class PaisDAOImpl implements PaisDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando pais por nombre parcial: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar países por nombre parcial: " + e.getMessage(), e);
         }
     }
-    
-    //  Lista todos los Paises
+
     @Override
     public List<Pais> listarTodos() {
         String sql = """
@@ -277,12 +255,11 @@ public class PaisDAOImpl implements PaisDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando paises: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar todos los países: " + e.getMessage(), e);
         }
     }
-    
-    //  Lista todos los Paises Activos
+
     @Override
     public List<Pais> listarActivos() {
         String sql = """
@@ -304,12 +281,11 @@ public class PaisDAOImpl implements PaisDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando paises activos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar países activos: " + e.getMessage(), e);
         }
     }
-    
-    //  Lista todos los Paises Inactivos
+
     @Override
     public List<Pais> listarInactivos() {
         String sql = """
@@ -331,8 +307,8 @@ public class PaisDAOImpl implements PaisDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando paises inactivos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar países inactivos: " + e.getMessage(), e);
         }
     }
 }

@@ -14,13 +14,12 @@ import java.util.Optional;
 import com.tallermirodiesel.dao.ModeloDAO;
 import com.tallermirodiesel.model.Modelo;
 import com.tallermirodiesel.util.DatabaseConnection;
+
 /**
- *
  * @author elyrr
  */
-public class ModeloDAOImpl implements ModeloDAO{
+public class ModeloDAOImpl implements ModeloDAO {
 
-    //  Mapear Modelo
     private Modelo mapearModelo(ResultSet rs) throws SQLException {
         Modelo m = new Modelo();
         m.setIdModelo(rs.getLong("id_modelo"));
@@ -28,7 +27,6 @@ public class ModeloDAOImpl implements ModeloDAO{
         m.setNombre(rs.getString("nombre"));
         m.setActivo(rs.getBoolean("activo"));
 
-        // Nota: nombre_marca solo existe cuando el SELECT hace JOIN con marcas
         try {
             m.setNombreMarca(rs.getString("nombre_marca"));
         } catch (SQLException ignore) {
@@ -38,7 +36,6 @@ public class ModeloDAOImpl implements ModeloDAO{
         return m;
     }
 
-    //  Crea un nuevo Modelo
     @Override
     public Long crear(Modelo modelo) {
         String sql = """
@@ -58,15 +55,14 @@ public class ModeloDAOImpl implements ModeloDAO{
                 if (rs.next()) {
                     return rs.getLong("id_modelo");
                 }
-                throw new RuntimeException("No se generó id_modelo al crear el modelo.");
+                throw new RuntimeException("No se generó id_modelo");
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error creando modelo: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al crear modelo: " + e.getMessage(), e);
         }
     }
 
-    //  Actualiza un Modelo
     @Override
     public boolean actualizar(Modelo modelo) {
         String sql = """
@@ -87,12 +83,11 @@ public class ModeloDAOImpl implements ModeloDAO{
 
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error actualizando modelo: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al actualizar modelo: " + e.getMessage(), e);
         }
     }
 
-    //  Elimina un Modelo
     @Override
     public boolean eliminar(Long id) {
         String sql = "DELETE FROM public.modelos WHERE id_modelo = ?";
@@ -103,12 +98,11 @@ public class ModeloDAOImpl implements ModeloDAO{
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error eliminando modelo: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al eliminar modelo: " + e.getMessage(), e);
         }
     }
 
-    //  Activa un Modelo
     @Override
     public boolean activar(Long id) {
         String sql = """
@@ -123,12 +117,11 @@ public class ModeloDAOImpl implements ModeloDAO{
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error activando modelo: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al activar modelo: " + e.getMessage(), e);
         }
     }
 
-    //  Desactiva un Modelo
     @Override
     public boolean desactivar(Long id) {
         String sql = """
@@ -143,12 +136,11 @@ public class ModeloDAOImpl implements ModeloDAO{
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error desactivando modelo: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al desactivar modelo: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un Modelo por su id
     @Override
     public Optional<Modelo> buscarPorId(Long id) {
         String sql = """
@@ -164,18 +156,14 @@ public class ModeloDAOImpl implements ModeloDAO{
             ps.setLong(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearModelo(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearModelo(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando modelo por id: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar modelo por ID: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un Modelo por su nombre
     @Override
     public Optional<Modelo> buscarPorNombre(String nombre) {
         String sql = """
@@ -183,35 +171,30 @@ public class ModeloDAOImpl implements ModeloDAO{
             FROM public.modelos mo
             JOIN public.marcas ma ON ma.id_marca = mo.id_marca
             WHERE UPPER(TRIM(mo.nombre)) = UPPER(TRIM(?))
-            ORDER BY ma.nombre ASC, mo.nombre ASC
             """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            String nombreNorm = (nombre == null) ? null : nombre.trim();
+            String nombreNorm = (nombre == null) ? "" : nombre.trim();
             ps.setString(1, nombreNorm);
 
             try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return Optional.of(mapearModelo(rs));
-                }
-                return Optional.empty();
+                return rs.next() ? Optional.of(mapearModelo(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando modelo por nombre: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar modelo por nombre: " + e.getMessage(), e);
         }
     }
 
-    //  Busca Modelos cuyo nombre coincida parcialmente
     @Override
     public List<Modelo> buscarPorNombreParcial(String filtro) {
         String sql = """
             SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
             FROM public.modelos mo
             JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE mo.nombre ILIKE ?
+            WHERE UPPER(mo.nombre) LIKE UPPER(?)
             ORDER BY ma.nombre ASC, mo.nombre ASC
             """;
 
@@ -231,12 +214,11 @@ public class ModeloDAOImpl implements ModeloDAO{
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando modelo por nombre parcial: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar modelos por nombre parcial: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Modelos
     @Override
     public List<Modelo> listarTodos() {
         String sql = """
@@ -258,12 +240,11 @@ public class ModeloDAOImpl implements ModeloDAO{
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando modelos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar todos los modelos: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Modelos Activos
     @Override
     public List<Modelo> listarActivos() {
         String sql = """
@@ -286,12 +267,11 @@ public class ModeloDAOImpl implements ModeloDAO{
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando modelos activos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar modelos activos: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Modelos Inactivos
     @Override
     public List<Modelo> listarInactivos() {
         String sql = """
@@ -314,12 +294,11 @@ public class ModeloDAOImpl implements ModeloDAO{
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando modelos inactivos: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar modelos inactivos: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los Modelos de una Marca
     @Override
     public List<Modelo> listarPorMarca(Long idMarca) {
         String sql = """
@@ -345,8 +324,8 @@ public class ModeloDAOImpl implements ModeloDAO{
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando modelos por marca: " + e.getMessage(), e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar modelos por marca: " + e.getMessage(), e);
         }
     }
 }

@@ -22,14 +22,12 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
-    //  Mapear TipoDocumento
     private TipoDocumento mapearTipoDocumento(ResultSet rs) throws SQLException {
         TipoDocumento tipoDocumento = new TipoDocumento();
         tipoDocumento.setIdTipoDocumento(rs.getLong("id_tipo_documento"));
         tipoDocumento.setNombre(rs.getString("nombre"));
         tipoDocumento.setCodigo(rs.getString("codigo"));
 
-        // Leemos el enum desde la BD como String y lo convertimos al enum Java
         String aplicaA = rs.getString("aplica_a");
         tipoDocumento.setAplicaA(aplicaA == null ? null : TipoDocumentoAplicaEnum.valueOf(aplicaA));
 
@@ -37,7 +35,6 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         return tipoDocumento;
     }
 
-    //  Crea un nuevo TipoDocumento
     @Override
     public Long crear(TipoDocumento tipoDocumento) {
         String sql = """
@@ -52,7 +49,6 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setString(1, tipoDocumento.getNombre());
             ps.setString(2, tipoDocumento.getCodigo());
 
-            // Si aplica_a en PostgreSQL es ENUM, usamos Types.OTHER
             TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
             if (aplicaA == null) {
                 ps.setNull(3, Types.OTHER);
@@ -66,15 +62,14 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
                 if (rs.next()) {
                     return rs.getLong("id_tipo_documento");
                 }
-                throw new RuntimeException("No se generó id_tipo_documento.");
+                throw new RuntimeException("No se generó id_tipo_documento");
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error creando tipo_documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al crear tipo documento: " + e.getMessage(), e);
         }
     }
 
-    //  Actualiza un TipoDocumento
     @Override
     public boolean actualizar(TipoDocumento tipoDocumento) {
         String sql = """
@@ -104,12 +99,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error actualizando tipo_documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al actualizar tipo documento: " + e.getMessage(), e);
         }
     }
 
-    //  Elimina un TipoDocumento
     @Override
     public boolean eliminar(Long id) {
         String sql = "DELETE FROM public.tipos_documento WHERE id_tipo_documento = ?";
@@ -120,12 +114,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error eliminando tipo_documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al eliminar tipo documento: " + e.getMessage(), e);
         }
     }
 
-    //  Activa un TipoDocumento
     @Override
     public boolean activar(Long id) {
         String sql = """
@@ -140,12 +133,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error activando tipo_documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al activar tipo documento: " + e.getMessage(), e);
         }
     }
 
-    //  Desactiva un TipoDocumento
     @Override
     public boolean desactivar(Long id) {
         String sql = """
@@ -160,12 +152,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error desactivando tipo_documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al desactivar tipo documento: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un TipoDocumento por su id
     @Override
     public Optional<TipoDocumento> buscarPorId(Long id) {
         String sql = """
@@ -180,17 +171,14 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setLong(1, id);
 
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next()
-                        ? Optional.of(mapearTipoDocumento(rs))
-                        : Optional.empty();
+                return rs.next() ? Optional.of(mapearTipoDocumento(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando tipo_documento por id", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar tipo documento por ID: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un TipoDocumento por su codigo
     @Override
     public Optional<TipoDocumento> buscarPorCodigo(String codigo) {
         String sql = """
@@ -205,17 +193,14 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setString(1, codigo);
 
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next()
-                        ? Optional.of(mapearTipoDocumento(rs))
-                        : Optional.empty();
+                return rs.next() ? Optional.of(mapearTipoDocumento(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando tipo_documento por codigo", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar tipo documento por código: " + e.getMessage(), e);
         }
     }
 
-    //  Busca un TipoDocumento por su nombre
     @Override
     public Optional<TipoDocumento> buscarPorNombre(String nombre) {
         String sql = """
@@ -230,17 +215,14 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
             ps.setString(1, nombre);
 
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next()
-                        ? Optional.of(mapearTipoDocumento(rs))
-                        : Optional.empty();
+                return rs.next() ? Optional.of(mapearTipoDocumento(rs)) : Optional.empty();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando tipo_documento por nombre", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar tipo documento por nombre: " + e.getMessage(), e);
         }
     }
 
-    //  Busca TipoDocumentos cuyo nombre coincida parcialmente
     @Override
     public List<TipoDocumento> buscarPorNombreParcial(String filtro) {
         String sql = """
@@ -265,12 +247,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error buscando tipo_documento por nombre parcial", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar tipos documento por nombre parcial: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los TipoDocumentos
     @Override
     public List<TipoDocumento> listarTodos() {
         String sql = """
@@ -291,12 +272,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando tipos_documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar todos los tipos documento: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los TipoDocumentos Activos
     @Override
     public List<TipoDocumento> listarActivos() {
         String sql = """
@@ -318,12 +298,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando tipos_documento activos", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar tipos documento activos: " + e.getMessage(), e);
         }
     }
 
-    //  Lista todos los TipoDocumentos Inactivos
     @Override
     public List<TipoDocumento> listarInactivos() {
         String sql = """
@@ -345,19 +324,17 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando tipos_documento inactivos", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar tipos documento inactivos: " + e.getMessage(), e);
         }
     }
 
-    //  Lista tipos de documento filtrados por aplicación
     @Override
     public List<TipoDocumento> listarPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
         String sql = """
                 SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
                 FROM public.tipos_documento
-                WHERE aplica_a = ?::tipo_documento_aplica_enum
-                   OR aplica_a = 'AMBOS'::tipo_documento_aplica_enum
+                WHERE aplica_a = ?
                 ORDER BY nombre ASC
                 """;
 
@@ -376,20 +353,17 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando tipos_documento por aplica_a", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar tipos documento por aplicaA: " + e.getMessage(), e);
         }
     }
 
-    //  Lista tipos de documento activos filtrados por aplicación
     @Override
     public List<TipoDocumento> listarActivosPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
         String sql = """
                 SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
                 FROM public.tipos_documento
-                WHERE activo = true
-                  AND (aplica_a = ?::tipo_documento_aplica_enum
-                   OR aplica_a = 'AMBOS'::tipo_documento_aplica_enum)
+                WHERE activo = true AND aplica_a = ?
                 ORDER BY nombre ASC
                 """;
 
@@ -408,8 +382,8 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando tipos_documento activos por aplica_a", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar tipos documento activos por aplicaA: " + e.getMessage(), e);
         }
     }
 }
