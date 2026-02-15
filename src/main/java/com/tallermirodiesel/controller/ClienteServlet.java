@@ -48,87 +48,59 @@ import com.tallermirodiesel.service.impl.TipoDocumentoServiceImpl;
  * @author elyrr
  */
 @WebServlet(name = "ClienteServlet", urlPatterns = {"/clientes"})
-// Bloque: Mapeo del servlet (todas las acciones de Clientes entran por /clientes).
 public class ClienteServlet extends HttpServlet {
 
-    // Service utilizado por el Servlet para acceder a la capa de negocio.
     private final ClienteService clienteService = new ClienteServiceImpl();
-
-    // Service de listados con JOIN (2 DTOs: persona y empresa)
     private final ClienteListadoService clienteListadoService = new ClienteListadoServiceImpl();
-
-    // Services utilizados para combos.
     private final DistritoService distritoService = new DistritoServiceImpl();
     private final LocalidadService localidadService = new LocalidadServiceImpl();
     private final TipoDocumentoService tipoDocumentoService = new TipoDocumentoServiceImpl();
-
-    // Services para resolver nombre del cliente (persona/empresa).
     private final ClientePersonaService clientePersonaService = new ClientePersonaServiceImpl();
     private final ClienteEmpresaService clienteEmpresaService = new ClienteEmpresaServiceImpl();
-
-    // Service para documentos del cliente.
     private final ClienteDocumentoService clienteDocumentoService = new ClienteDocumentoServiceImpl();
 
-    // ========== ========== ========== ========== ==========
-    // MANEJO DE GET (VISTAS / ACCIONES DE NAVEGACIÓN).
-    // ========== ========== ========== ========== ==========
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        // 1. Lee el parámetro "action" para decidir qué caso ejecutar.
         String action = request.getParameter("action");
 
-        // 2. Si no viene acción, se asume "listar" como comportamiento por defecto.
         if (action == null || action.isBlank()) {
             action = "listar";
         }
 
-        // 3. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (action) {
                 case "nuevo" -> mostrarFormularioNuevo(request, response);
-                case "buscar" -> listar(request, response); // "buscar" es alias de listar
+                case "buscar" -> listar(request, response);
                 case "listar" -> listar(request, response);
                 default -> listar(request, response);
             }
-
         } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
             listar(request, response);
         }
     }
 
-    // ========== ========== ========== ========== ==========
-    // MANEJO DE POST (ACCIONES QUE MODIFICAN DATOS).
-    // ========== ========== ========== ========== ==========
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        // 1. Lee el parámetro "action" para decidir qué operación ejecutar.
         String action = request.getParameter("action");
 
-        // 2. Si no viene acción, se asume "guardar" como comportamiento por defecto.
         if (action == null || action.isBlank()) {
             action = "guardar";
         }
 
-        // 3. Router de acciones POST.
         try {
             switch (action) {
                 case "guardar" -> guardar(request, response);
                 case "toggleActivo" -> cambiarEstadoActivo(request, response);
                 default -> response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
             }
-
         } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
 
-            // Si querés ver el motivo REAL de PostgreSQL (trigger/constraint), lo mostramos aparte
             if (e.getCause() != null && e.getCause().getMessage() != null) {
                 request.setAttribute("errorDetalle", e.getCause().getMessage());
             }
 
-            // Si el error fue en toggle, volvemos al listado (no al form)
             if ("toggleActivo".equalsIgnoreCase(action)) {
                 response.sendRedirect(construirUrlRetornoListado(request));
                 return;
@@ -138,20 +110,11 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    // ========== ========== ==========
-    // BLOQUE DE ACCIONES GET
-    // ========== ========== ==========
-
-    // LISTAR (2 TABLAS: PERSONA y EMPRESA, cada una con su DTO y su JOIN).
     private void listar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        // =========================
-        // BLOQUE: Lectura de filtros
-        // =========================
         String q = request.getParameter("q");
         if (q == null) q = request.getParameter("filtro");
 
-        String estado = request.getParameter("estado"); // "TODOS" | "ACTIVOS" | "INACTIVOS"
+        String estado = request.getParameter("estado");
 
         Boolean activo = null;
         if (estado != null) {
@@ -162,130 +125,70 @@ public class ClienteServlet extends HttpServlet {
         request.setAttribute("q", q);
         request.setAttribute("estado", estado);
 
-        // =========================
-        // BLOQUE: Cargar 2 listas (JOIN)
-        // =========================
         List<ClientePersonaListadoDTO> listaClientesPersona = clienteListadoService.listarPersonas(q, activo);
         List<ClienteEmpresaListadoDTO> listaClientesEmpresa = clienteListadoService.listarEmpresas(q, activo);
 
         request.setAttribute("listaClientesPersona", listaClientesPersona);
         request.setAttribute("listaClientesEmpresa", listaClientesEmpresa);
 
-        // =========================
-        // BLOQUE: Forward
-        // =========================
         request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_listar.jsp").forward(request, response);
     }
 
-    // FORMULARIO NUEVO.
     private void mostrarFormularioNuevo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-        // 1. Carga combos (distritos/localidades/referidores/tiposDocumento).
         cargarCombos(request);
-
-        // 2. Envía un Cliente vacío a la vista para llenado inicial.
         request.setAttribute("cliente", new Cliente());
-
-        // 3. Tipo por defecto
         request.setAttribute("tipo", "PERSONA");
-
-        // 4. Renderiza el formulario.
         request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_form.jsp").forward(request, response);
     }
 
-    // ========== ========== ==========
-    // BLOQUE DE ACCIONES POST
-    // ========== ========== ==========
-
-    // CAMBIAR ESTADO ACTIVO (unifica activar/desactivar).
     private void cambiarEstadoActivo(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
         Long id = parseLong(request.getParameter("id"));
-
-        // activo_actual llega como "true/false"
         boolean activoActual = Boolean.parseBoolean(request.getParameter("activo_actual"));
         boolean nuevoActivo = !activoActual;
 
         clienteService.setActivo(id, nuevoActivo);
-
-        // Volver al listado preservando filtros
         response.sendRedirect(construirUrlRetornoListado(request));
     }
 
-    // GUARDAR (CREAR PERSONA O EMPRESA + DOCUMENTO OPCIONAL).
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
-        // 1. Tipo de cliente
         String tipo = request.getParameter("tipo");
         if (tipo == null || tipo.isBlank()) {
-            throw new IllegalArgumentException("Debe seleccionar el tipo de cliente (PERSONA o EMPRESA).");
-        }
-
-        // 2. Datos comunes
-        String telefono = request.getParameter("telefono");
-
-        // El ID real viene en el hidden (id_distrito / id_localidad / id_cliente_referidor)
-        Long idDistrito = parseLongNullableEstricto(request.getParameter("id_distrito"));
-        Long idLocalidad = parseLongNullableEstricto(request.getParameter("id_localidad"));
-
-        if (idDistrito == null && idLocalidad == null) {
-            throw new IllegalArgumentException("Debe especificar al menos Distrito o Localidad.");
-        }
-
-        Long idClienteReferidor = parseLongNullableEstricto(request.getParameter("id_cliente_referidor"));
-        String fuente = request.getParameter("fuente_referencia");
-
-        // =========================
-        // BLOQUE: Validación Fuente vs Referidor (con NINGUNA)
-        // =========================
-        boolean fuenteVacia = (fuente == null || fuente.isBlank());
-        boolean fuenteEsNinguna = (!fuenteVacia && "NINGUNA".equalsIgnoreCase(fuente.trim()));
-
-        if (fuenteEsNinguna) {
-            idClienteReferidor = null;
-        }
-
-        if (!fuenteVacia && !fuenteEsNinguna && idClienteReferidor == null) {
-            throw new IllegalArgumentException("Si la fuente de referencia no es NINGUNA, debe existir cliente referidor.");
-        }
-
-        if (idClienteReferidor != null && (fuenteVacia || fuenteEsNinguna)) {
-            throw new IllegalArgumentException("Si existe cliente referidor, la fuente de referencia no puede ser NINGUNA.");
+            throw new IllegalArgumentException("Debe seleccionar un tipo de cliente (PERSONA o EMPRESA).");
         }
 
         Cliente c = new Cliente();
-        c.setTelefono(telefono);
-        c.setIdDistrito(idDistrito);
-        c.setIdLocalidad(idLocalidad);
-        c.setIdClienteReferidor(idClienteReferidor);
+        c.setTelefono(request.getParameter("telefono"));
+        c.setIdDistrito(parseLongNullableEstricto(request.getParameter("id_distrito")));
+        c.setIdLocalidad(parseLongNullableEstricto(request.getParameter("id_localidad")));
+        c.setIdClienteReferidor(parseLongNullableEstricto(request.getParameter("id_cliente_referidor")));
 
-        if (fuenteVacia || fuenteEsNinguna) {
-            c.setFuenteReferencia(null);
-        } else {
+        String fuente = request.getParameter("fuente_referencia");
+        if (fuente != null && !fuente.isBlank()) {
             try {
                 c.setFuenteReferencia(FuenteReferenciaClienteEnum.valueOf(fuente.trim().toUpperCase(Locale.ROOT)));
             } catch (Exception ex) {
-                throw new IllegalArgumentException("Fuente de referencia inválida: " + fuente);
+                c.setFuenteReferencia(null);
             }
         }
 
         c.setActivo(true);
 
-        // 3) Guardar cliente base (insert) => nos devuelve id
         Long idCreado = clienteService.guardar(c);
         if (idCreado == null) {
-            throw new RuntimeException("No se pudo guardar el cliente base.");
+            throw new RuntimeException("No se pudo guardar el cliente.");
         }
 
-        // 4) Guardar datos específicos según tipo (persona/empresa)
         if ("PERSONA".equalsIgnoreCase(tipo)) {
-
             String nombre = request.getParameter("nombre");
             String apellido = request.getParameter("apellido");
             String apodo = request.getParameter("apodo");
 
-            if (nombre == null || nombre.isBlank()) throw new IllegalArgumentException("Nombre es obligatorio.");
-            if (apellido == null || apellido.isBlank()) throw new IllegalArgumentException("Apellido es obligatorio.");
+            if (nombre == null || nombre.isBlank()) {
+                throw new IllegalArgumentException("Nombre es obligatorio.");
+            }
+            if (apellido == null || apellido.isBlank()) {
+                throw new IllegalArgumentException("Apellido es obligatorio.");
+            }
 
             ClientePersona p = new ClientePersona();
             p.setIdCliente(idCreado);
@@ -299,11 +202,12 @@ public class ClienteServlet extends HttpServlet {
             }
 
         } else if ("EMPRESA".equalsIgnoreCase(tipo)) {
-
             String razonSocial = request.getParameter("razon_social");
             String nombreFantasia = request.getParameter("nombre_fantasia");
 
-            if (razonSocial == null || razonSocial.isBlank()) throw new IllegalArgumentException("Razón Social es obligatoria.");
+            if (razonSocial == null || razonSocial.isBlank()) {
+                throw new IllegalArgumentException("Razón Social es obligatoria.");
+            }
 
             ClienteEmpresa e = new ClienteEmpresa();
             e.setIdCliente(idCreado);
@@ -319,7 +223,6 @@ public class ClienteServlet extends HttpServlet {
             throw new IllegalArgumentException("Tipo inválido. Use PERSONA o EMPRESA.");
         }
 
-        // 5. Documento opcional (si eligió tipo y cargó número)
         Long idTipoDocumento = parseLongNullableEstricto(request.getParameter("id_tipo_documento"));
         String numeroDocumento = request.getParameter("numero_documento");
 
@@ -346,16 +249,10 @@ public class ClienteServlet extends HttpServlet {
             }
         }
 
-        // 6. Redirige al listado
         response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
     }
 
-    // ========== ========== ==========
-    // BLOQUE DE ACCIONES UTILES
-    // ========== ========== ==========
-
     private void cargarCombos(HttpServletRequest request) {
-
         List<Distrito> distritos = distritoService.listarActivos();
         request.setAttribute("distritos", distritos);
 
@@ -388,7 +285,6 @@ public class ClienteServlet extends HttpServlet {
     }
 
     private void reenviarFormularioConDatos(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
         cargarCombos(request);
 
         Cliente c = new Cliente();
@@ -427,7 +323,6 @@ public class ClienteServlet extends HttpServlet {
         request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_form.jsp").forward(request, response);
     }
 
-    // PARSEO DE LONG OBLIGATORIO.
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Parámetro numérico obligatorio.");
@@ -443,7 +338,6 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    // PARSEO DE LONG NULLABLE ESTRICTO (RETORNA NULL O LANZA ERROR).
     private Long parseLongNullableEstricto(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -459,7 +353,6 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    // RESOLVER NOMBRE DE CLIENTE (PERSONA O EMPRESA).
     private String resolverNombreCliente(Long idCliente) {
         if (idCliente == null) return null;
 
@@ -495,7 +388,6 @@ public class ClienteServlet extends HttpServlet {
         return null;
     }
 
-    // ARMAR URL DE RETORNO PRESERVANDO FILTROS.
     private String construirUrlRetornoListado(HttpServletRequest request) {
         String url = request.getContextPath() + "/clientes?action=listar";
 

@@ -7,6 +7,7 @@ package com.tallermirodiesel.dao.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,6 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
 
-    // Definimos las sentencias SQL utilizadas por este DAO
     private static final String SQL_INSERT =
         "INSERT INTO cliente_documentos (id_cliente, id_tipo_documento, numero, principal, activo) " +
         "VALUES (?, ?, ?, ?, ?) " +
@@ -47,7 +47,8 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         "SELECT * FROM cliente_documentos WHERE id_cliente = ? ORDER BY id_cliente_documento ASC";
 
     private static final String SQL_LISTAR_ACTIVOS_POR_CLIENTE =
-        "SELECT * FROM cliente_documentos WHERE id_cliente = ? AND activo = true ORDER BY id_cliente_documento ASC";
+        "SELECT * FROM cliente_documentos WHERE id_cliente = ? " +
+        "AND activo = true ORDER BY id_cliente_documento ASC";
 
     private static final String SQL_OBTENER_PRINCIPAL =
         "SELECT * FROM cliente_documentos WHERE id_cliente = ? AND principal = true AND activo = true";
@@ -58,22 +59,18 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
     private static final String SQL_MARCAR_PRINCIPAL =
         "UPDATE cliente_documentos SET principal = true WHERE id_cliente_documento = ?";
 
-    // Guardar (crea o actualiza según exista el id)
     @Override
     public boolean guardar(ClienteDocumento clienteDocumento) {
-        // Si tiene id y existe => UPDATE, si no => INSERT
         Long id = clienteDocumento.getIdClienteDocumento();
 
         if (id != null && existePorId(id)) {
             return actualizarInterno(clienteDocumento);
         }
 
-        // ✅ Ahora crearInterno retorna el ID generado
         Long idGenerado = crearInterno(clienteDocumento);
         return idGenerado != null;
     }
 
-    // Verifica si existe un documento por ID
     @Override
     public boolean existePorId(Long idClienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -85,12 +82,11 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
                 return rs.next();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al verificar existencia del documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al verificar existencia del documento: " + e.getMessage(), e);
         }
     }
 
-    // Cambia el estado activo/inactivo en una sola operación
     @Override
     public boolean setActivo(Long idClienteDocumento, boolean activo) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -100,12 +96,11 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
             ps.setLong(2, idClienteDocumento);
             return ps.executeUpdate() > 0;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al cambiar estado del documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al cambiar estado del documento: " + e.getMessage(), e);
         }
     }
 
-    // Define un documento como principal para el cliente (DAO puro: sin reglas/validaciones)
     @Override
     public boolean definirPrincipal(Long idCliente, Long idClienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion()) {
@@ -117,28 +112,25 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
                 PreparedStatement psMarcar = conn.prepareStatement(SQL_MARCAR_PRINCIPAL)
             ) {
 
-                // 1) Desmarcar todos los principales del cliente
                 psDesmarcar.setLong(1, idCliente);
                 psDesmarcar.executeUpdate();
 
-                // 2) Marcar como principal el documento indicado
                 psMarcar.setLong(1, idClienteDocumento);
                 int filas = psMarcar.executeUpdate();
 
                 conn.commit();
                 return filas > 0;
 
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 conn.rollback();
                 throw e;
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al definir documento principal", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al definir documento principal: " + e.getMessage(), e);
         }
     }
 
-    // Verifica si ya existe un documento con ese tipo y número para el cliente
     @Override
     public boolean existePorClienteTipoNumero(Long idCliente, Long idTipoDocumento, String numero) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -157,12 +149,11 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
                 return rs.next();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al verificar existencia del documento por cliente/tipo/numero", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al verificar existencia del documento por cliente/tipo/numero: " + e.getMessage(), e);
         }
     }
 
-    // Busca un documento por su ID
     @Override
     public Optional<ClienteDocumento> buscarPorId(Long idClienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -178,24 +169,21 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
 
             return Optional.empty();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al buscar cliente documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar cliente documento: " + e.getMessage(), e);
         }
     }
 
-    // Lista todos los documentos de un cliente
     @Override
     public List<ClienteDocumento> listarPorCliente(Long idCliente) {
         return listar(SQL_LISTAR_POR_CLIENTE, idCliente);
     }
 
-    // Lista solo los documentos activos de un cliente
     @Override
     public List<ClienteDocumento> listarActivosPorCliente(Long idCliente) {
         return listar(SQL_LISTAR_ACTIVOS_POR_CLIENTE, idCliente);
     }
 
-    // Obtiene el documento principal activo de un cliente
     @Override
     public Optional<ClienteDocumento> obtenerPrincipalPorCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -211,16 +199,11 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
 
             return Optional.empty();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al obtener documento principal", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al obtener documento principal: " + e.getMessage(), e);
         }
     }
 
-    // ========================
-    // Implementación interna (crear/actualizar)
-    // ========================
-
-    // Crear documento (interno) - RETORNA EL ID GENERADO
     private Long crearInterno(ClienteDocumento clienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
@@ -240,19 +223,18 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Long idGenerado = rs.getLong("id_cliente_documento");
-                    clienteDocumento.setIdClienteDocumento(idGenerado); // ✅ Setea el ID en el objeto
+                    clienteDocumento.setIdClienteDocumento(idGenerado);
                     return idGenerado;
                 }
             }
 
             return null;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al guardar (crear) cliente documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al crear cliente documento: " + e.getMessage(), e);
         }
     }
 
-    // Actualizar documento (interno)
     private boolean actualizarInterno(ClienteDocumento clienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
@@ -271,14 +253,10 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
 
             return ps.executeUpdate() > 0;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al guardar (actualizar) cliente documento", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al actualizar cliente documento: " + e.getMessage(), e);
         }
     }
-
-    // ========================
-    // Métodos auxiliares
-    // ========================
 
     private List<ClienteDocumento> listar(String sql, Long idCliente) {
         List<ClienteDocumento> lista = new ArrayList<>();
@@ -294,14 +272,14 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
                 }
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al listar documentos", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar documentos: " + e.getMessage(), e);
         }
 
         return lista;
     }
 
-    private ClienteDocumento mapear(ResultSet rs) throws Exception {
+    private ClienteDocumento mapear(ResultSet rs) throws SQLException {
         ClienteDocumento cd = new ClienteDocumento();
         cd.setIdClienteDocumento(rs.getLong("id_cliente_documento"));
         cd.setIdCliente(rs.getLong("id_cliente"));

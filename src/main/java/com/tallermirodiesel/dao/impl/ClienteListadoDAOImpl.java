@@ -7,6 +7,7 @@ package com.tallermirodiesel.dao.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -16,17 +17,12 @@ import com.tallermirodiesel.dto.ClienteEmpresaListadoDTO;
 import com.tallermirodiesel.dto.ClientePersonaListadoDTO;
 import com.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 import com.tallermirodiesel.util.DatabaseConnection;
+
 /**
  * @author elyrr
- * DAOImpl: ClienteListadoDAOImpl
- * - Implementa listados con JOIN en 2 queries (persona / empresa).
- * - Evita N+1 queries en el servlet.
  */
 public class ClienteListadoDAOImpl implements ClienteListadoDAO {
 
-    // =========================
-    // BLOQUE: SQL con JOINs para nombres
-    // =========================
     private static final String SQL_LISTAR_PERSONAS = """
         SELECT
             c.id_cliente,
@@ -62,9 +58,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         ORDER BY c.id_cliente ASC
     """;
 
-    // =========================
-    // BLOQUE: SQL LISTAR EMPRESAS
-    // =========================
     private static final String SQL_LISTAR_EMPRESAS = """
         SELECT
             c.id_cliente,
@@ -99,9 +92,8 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         ORDER BY c.id_cliente ASC
     """;
 
- @Override
+    @Override
     public List<ClientePersonaListadoDTO> listarPersonas(String q, Boolean activo) {
-
         String qNorm = (q == null || q.trim().isBlank()) ? null : q.trim();
 
         List<ClientePersonaListadoDTO> lista = new ArrayList<>();
@@ -109,17 +101,11 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_LISTAR_PERSONAS)) {
 
-            // =========================
-            // BLOQUE: filtro texto (q)
-            // =========================
             ps.setString(1, qNorm);
             ps.setString(2, qNorm);
             ps.setString(3, qNorm);
             ps.setString(4, qNorm);
 
-            // =========================
-            // BLOQUE: filtro activo
-            // =========================
             if (activo == null) {
                 ps.setNull(5, Types.BOOLEAN);
                 ps.setNull(6, Types.BOOLEAN);
@@ -136,18 +122,13 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando clientes persona (DTO)", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar clientes persona (DTO): " + e.getMessage(), e);
         }
     }
 
-
-    // =========================
-    // LISTAR EMPRESAS
-    // =========================
     @Override
     public List<ClienteEmpresaListadoDTO> listarEmpresas(String q, Boolean activo) {
-
         String qNorm = (q == null || q.trim().isBlank()) ? null : q.trim();
 
         List<ClienteEmpresaListadoDTO> lista = new ArrayList<>();
@@ -176,15 +157,12 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error listando clientes empresa (DTO)", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar clientes empresa (DTO): " + e.getMessage(), e);
         }
     }
 
-    // =========================
-    // BLOQUE: Mapper ResultSet -> DTO
-    // =========================
-    private ClientePersonaListadoDTO mapPersona(ResultSet rs) throws Exception {
+    private ClientePersonaListadoDTO mapPersona(ResultSet rs) throws SQLException {
         ClientePersonaListadoDTO dto = new ClientePersonaListadoDTO();
 
         dto.setIdCliente(rs.getLong("id_cliente"));
@@ -205,7 +183,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         dto.setApellido(rs.getString("apellido"));
         dto.setApodo(rs.getString("apodo"));
 
-        // ✅ Nombres en vez de IDs
         dto.setNombreDistrito(rs.getString("nombre_distrito"));
         dto.setNombreLocalidad(rs.getString("nombre_localidad"));
         dto.setNombreReferidor(rs.getString("nombre_referidor"));
@@ -213,10 +190,7 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         return dto;
     }
 
-    // =========================
-    // MAPEO EMPRESA
-    // =========================
-    private ClienteEmpresaListadoDTO mapEmpresa(ResultSet rs) throws Exception {
+    private ClienteEmpresaListadoDTO mapEmpresa(ResultSet rs) throws SQLException {
         ClienteEmpresaListadoDTO dto = new ClienteEmpresaListadoDTO();
 
         dto.setIdCliente(rs.getLong("id_cliente"));
@@ -236,7 +210,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         dto.setRazonSocial(rs.getString("razon_social"));
         dto.setNombreFantasia(rs.getString("nombre_fantasia"));
 
-        // ✅ Nombres en vez de IDs
         dto.setNombreDistrito(rs.getString("nombre_distrito"));
         dto.setNombreLocalidad(rs.getString("nombre_localidad"));
         dto.setNombreReferidor(rs.getString("nombre_referidor"));

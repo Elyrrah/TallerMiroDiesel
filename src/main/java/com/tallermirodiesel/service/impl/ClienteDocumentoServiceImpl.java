@@ -18,24 +18,20 @@ public class ClienteDocumentoServiceImpl implements ClienteDocumentoService {
 
     private final ClienteDocumentoDAO clienteDocumentoDAO;
 
-    // Constructor por defecto (usa implementación concreta)
     public ClienteDocumentoServiceImpl() {
         this.clienteDocumentoDAO = new ClienteDocumentoDAOImpl();
     }
 
-    // Constructor para inyección (tests / configuración)
     public ClienteDocumentoServiceImpl(ClienteDocumentoDAO clienteDocumentoDAO) {
         this.clienteDocumentoDAO = clienteDocumentoDAO;
     }
 
-    // Crea o actualiza un documento de cliente
     @Override
     public boolean guardar(ClienteDocumento clienteDocumento) {
         if (clienteDocumento == null) {
             throw new IllegalArgumentException("El clienteDocumento no puede ser null");
         }
 
-        // Validaciones mínimas (reglas de negocio)
         if (clienteDocumento.getIdCliente() == null) {
             throw new IllegalArgumentException("El idCliente es obligatorio");
         }
@@ -52,15 +48,8 @@ public class ClienteDocumentoServiceImpl implements ClienteDocumentoService {
             clienteDocumento.setNumero(numero);
         }
 
-        // Reglas comunes:
-        // - Si viene como principal, lo definimos como principal (para que quede único).
-        // - Si NO viene como principal, solo guardamos.
         boolean ok = clienteDocumentoDAO.guardar(clienteDocumento);
 
-        // Si se guardó y debe ser principal, aseguramos unicidad marcando principal.
-        // OJO: para marcar principal se requiere idClienteDocumento. Si en tu modelo todavía
-        // no se setea el id al insertar, entonces esta parte debe resolverse en el DAO
-        // retornando el id o buscando el registro insertado.
         if (ok && clienteDocumento.isPrincipal() && clienteDocumento.getIdClienteDocumento() != null) {
             clienteDocumentoDAO.definirPrincipal(
                     clienteDocumento.getIdCliente(),

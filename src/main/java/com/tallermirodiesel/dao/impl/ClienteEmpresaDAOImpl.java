@@ -7,6 +7,7 @@ package com.tallermirodiesel.dao.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +21,6 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
 
-    // Definimos las sentencias SQL utilizadas por este DAO
     private static final String SQL_INSERT =
         "INSERT INTO clientes_empresa (id_cliente, razon_social, nombre_fantasia) VALUES (?, ?, ?)";
 
@@ -39,9 +39,6 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
     private static final String SQL_LISTAR_TODOS =
         "SELECT id_cliente, razon_social, nombre_fantasia FROM clientes_empresa ORDER BY id_cliente ASC";
 
-    // Crea o actualiza según exista el id.
-    // IMPORTANTE: este DAO NO hace validaciones de negocio. Eso debe ir en el Service.
-    // Acá "guardar" NO decide por existencia: intenta UPDATE; si no actualiza filas, intenta INSERT.
     @Override
     public boolean guardar(ClienteEmpresa empresa) {
         if (empresa == null || empresa.getIdCliente() == null) {
@@ -49,21 +46,16 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
 
         try (Connection conn = DatabaseConnection.getConexion()) {
-
-            // Intentamos primero actualizar (si no existe, update afectará 0 filas)
             if (actualizar(conn, empresa)) {
                 return true;
             }
-
-            // Si no actualizó, intentamos insertar (si ya existía, la BD rechazará por PK)
             return insertar(conn, empresa);
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al guardar cliente empresa", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al guardar cliente empresa: " + e.getMessage(), e);
         }
     }
 
-    // Verifica si el cliente ya tiene datos de empresa
     @Override
     public boolean existePorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -75,12 +67,11 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
                 return rs.next();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al verificar existencia de cliente empresa", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al verificar existencia de cliente empresa: " + e.getMessage(), e);
         }
     }
 
-    // Busca los datos de empresa por id_cliente
     @Override
     public Optional<ClienteEmpresa> buscarPorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -96,12 +87,11 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
 
             return Optional.empty();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al buscar cliente empresa", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar cliente empresa: " + e.getMessage(), e);
         }
     }
 
-    // Elimina el registro de empresa (caso excepcional)
     @Override
     public boolean eliminarPorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -110,12 +100,11 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
             ps.setLong(1, idCliente);
             return ps.executeUpdate() > 0;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al eliminar cliente empresa", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al eliminar cliente empresa: " + e.getMessage(), e);
         }
     }
 
-    // Lista todos los clientes empresa
     @Override
     public List<ClienteEmpresa> listarTodos() {
         List<ClienteEmpresa> lista = new ArrayList<>();
@@ -128,24 +117,19 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
                 lista.add(mapEmpresa(rs));
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al listar clientes empresa", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar clientes empresa: " + e.getMessage(), e);
         }
 
         return lista;
     }
 
-    // -------------------------
-    // Métodos internos (DAO puro)
-    // -------------------------
-
-    private boolean insertar(Connection conn, ClienteEmpresa empresa) throws Exception {
+    private boolean insertar(Connection conn, ClienteEmpresa empresa) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
             ps.setLong(1, empresa.getIdCliente());
             ps.setString(2, empresa.getRazonSocial());
 
-            // nombre_fantasia es nullable
             if (empresa.getNombreFantasia() == null) {
                 ps.setNull(3, Types.VARCHAR);
             } else {
@@ -156,12 +140,11 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
-    private boolean actualizar(Connection conn, ClienteEmpresa empresa) throws Exception {
+    private boolean actualizar(Connection conn, ClienteEmpresa empresa) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
 
             ps.setString(1, empresa.getRazonSocial());
 
-            // nombre_fantasia es nullable
             if (empresa.getNombreFantasia() == null) {
                 ps.setNull(2, Types.VARCHAR);
             } else {
@@ -173,7 +156,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
-    private ClienteEmpresa mapEmpresa(ResultSet rs) throws Exception {
+    private ClienteEmpresa mapEmpresa(ResultSet rs) throws SQLException {
         ClienteEmpresa e = new ClienteEmpresa();
         e.setIdCliente(rs.getLong("id_cliente"));
         e.setRazonSocial(rs.getString("razon_social"));

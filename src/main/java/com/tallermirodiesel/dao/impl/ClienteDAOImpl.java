@@ -7,6 +7,7 @@ package com.tallermirodiesel.dao.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -22,7 +23,6 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteDAOImpl implements ClienteDAO {
 
-    // Definimos las sentencias SQL utilizadas por este DAO
     private static final String SQL_INSERT =
         "INSERT INTO clientes (" +
         "id_localidad, id_distrito, id_cliente_referidor, fuente_referencia, telefono, activo" +
@@ -59,35 +59,20 @@ public class ClienteDAOImpl implements ClienteDAO {
         "AND ( ? IS NULL OR activo = ? ) " +
         "ORDER BY id_cliente ASC";
 
-    // Crea o actualiza según exista el id. Devuelve el id (nuevo o existente)
-    // IMPORTANTE: este DAO NO hace validaciones de negocio. Eso debe ir en el Service.
     @Override
     public Long guardar(Cliente cliente) {
-        if (cliente == null) {
-            return null;
-        }
-
         try (Connection conn = DatabaseConnection.getConexion()) {
-
-            // INSERT si no hay id
             if (cliente.getIdCliente() == null) {
-                Long idGenerado = insertar(conn, cliente);
-                if (idGenerado != null) {
-                    cliente.setIdCliente(idGenerado);
-                }
-                return idGenerado;
+                return insertar(conn, cliente);
+            } else {
+                actualizar(conn, cliente);
+                return cliente.getIdCliente();
             }
-
-            // UPDATE si hay id (sin validar existencia: eso lo maneja el Service)
-            boolean ok = actualizar(conn, cliente);
-            return ok ? cliente.getIdCliente() : null;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Error al guardar cliente", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al guardar cliente: " + e.getMessage(), e);
         }
     }
 
-    // Cambia el estado activo/inactivo en una sola operación
     @Override
     public boolean setActivo(Long idCliente, boolean activo) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -97,12 +82,11 @@ public class ClienteDAOImpl implements ClienteDAO {
             ps.setLong(2, idCliente);
             return ps.executeUpdate() > 0;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al cambiar estado del cliente", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al cambiar estado del cliente: " + e.getMessage(), e);
         }
     }
 
-    // Verifica si existe un cliente por ID
     @Override
     public boolean existePorId(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -113,12 +97,11 @@ public class ClienteDAOImpl implements ClienteDAO {
                 return rs.next();
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al verificar existencia del cliente", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al verificar existencia del cliente: " + e.getMessage(), e);
         }
     }
 
-    // Busca un cliente por su ID
     @Override
     public Optional<Cliente> buscarPorId(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -134,30 +117,26 @@ public class ClienteDAOImpl implements ClienteDAO {
 
             return Optional.empty();
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al buscar cliente", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar cliente: " + e.getMessage(), e);
         }
     }
 
-    // Lista todos los clientes
     @Override
     public List<Cliente> listarTodos() {
         return listar(SQL_LISTAR);
     }
 
-    // Lista solo clientes activos
     @Override
     public List<Cliente> listarActivos() {
         return listar(SQL_LISTAR_ACTIVOS);
     }
 
-    // Lista solo clientes inactivos
     @Override
     public List<Cliente> listarInactivos() {
         return listar(SQL_LISTAR_INACTIVOS);
     }
 
-    // Búsqueda simple por texto (q) y filtro opcional de activo (null = todos)
     @Override
     public List<Cliente> buscar(String q, Boolean activo) {
         List<Cliente> lista = new ArrayList<>();
@@ -186,23 +165,18 @@ public class ClienteDAOImpl implements ClienteDAO {
 
             return lista;
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al buscar clientes", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al buscar clientes: " + e.getMessage(), e);
         }
     }
 
-    // -------------------------
-    // Métodos internos (DAO puro)
-    // -------------------------
-
-    private Long insertar(Connection conn, Cliente cliente) throws Exception {
+    private Long insertar(Connection conn, Cliente cliente) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
             ps.setObject(1, cliente.getIdLocalidad(), Types.BIGINT);
             ps.setObject(2, cliente.getIdDistrito(), Types.BIGINT);
             ps.setObject(3, cliente.getIdClienteReferidor(), Types.BIGINT);
 
-            // Fuente de referencia (enum o null). Las reglas (null vs NINGUNA) van en Service.
             ps.setString(4, cliente.getFuenteReferencia() != null ? cliente.getFuenteReferencia().name() : null);
 
             ps.setString(5, cliente.getTelefono());
@@ -214,14 +188,13 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
-    private boolean actualizar(Connection conn, Cliente cliente) throws Exception {
+    private boolean actualizar(Connection conn, Cliente cliente) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
 
             ps.setObject(1, cliente.getIdLocalidad(), Types.BIGINT);
             ps.setObject(2, cliente.getIdDistrito(), Types.BIGINT);
             ps.setObject(3, cliente.getIdClienteReferidor(), Types.BIGINT);
 
-            // Fuente de referencia (enum o null). Las reglas (null vs NINGUNA) van en Service.
             ps.setString(4, cliente.getFuenteReferencia() != null ? cliente.getFuenteReferencia().name() : null);
 
             ps.setString(5, cliente.getTelefono());
@@ -242,15 +215,14 @@ public class ClienteDAOImpl implements ClienteDAO {
                 lista.add(mapCliente(rs));
             }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error al listar clientes", e);
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar clientes: " + e.getMessage(), e);
         }
 
         return lista;
     }
 
-    // Mapeo centralizado de ResultSet -> Cliente
-    private Cliente mapCliente(ResultSet rs) throws Exception {
+    private Cliente mapCliente(ResultSet rs) throws SQLException {
         Cliente c = new Cliente();
 
         c.setIdCliente(rs.getLong("id_cliente"));
