@@ -5,6 +5,7 @@
 package com.tallermirodiesel.service;
 
 import java.util.List;
+import java.util.Optional;
 import com.tallermirodiesel.model.Localidad;
 
 /**
@@ -12,6 +13,9 @@ import com.tallermirodiesel.model.Localidad;
  */
 public interface LocalidadService extends CatalogoCrudService<Localidad, Long> {
 
-    //  Lista todas las Localidades por su Distrito
+    // Busca una Localidad por nombre dentro de un Distrito concreto
+    Optional<Localidad> buscarPorNombre(String nombre, Long idDistrito);
+
+    // Lista todas las Localidades de un Distrito
     List<Localidad> listarPorDistrito(Long idDistrito);
 }

@@ -1,6 +1,6 @@
 /*
  * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
  */
 package com.tallermirodiesel.controller;
 
@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -34,9 +36,9 @@ public class LocalidadServlet extends HttpServlet {
     // Service utilizado para cargar distritos (combo en formulario y filtro en listado).
     private final DistritoService distritoService = new DistritoServiceImpl();
 
-    // ========== ========== ========== ========== ========== 
+    // ========== ========== ========== ========== ==========
     // MANEJO DE GET (VISTAS / ACCIONES DE NAVEGACIÓN).
-    // ========== ========== ========== ========== ========== 
+    // ========== ========== ========== ========== ==========
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -51,13 +53,13 @@ public class LocalidadServlet extends HttpServlet {
         // 3. Router de acciones GET (controlador tipo front-controller por parámetro).
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(request, response);
-                case "editar" -> mostrarFormularioEditar(request, response);
-                case "activar" -> activar(request, response);
+                case "nuevo"      -> mostrarFormularioNuevo(request, response);
+                case "editar"     -> mostrarFormularioEditar(request, response);
+                case "activar"    -> activar(request, response);
                 case "desactivar" -> desactivar(request, response);
-                case "buscar" -> buscar(request, response);
-                case "listar" -> listar(request, response);
-                default -> listar(request, response);
+                case "buscar"     -> listar(request, response);
+                case "listar"     -> listar(request, response);
+                default           -> listar(request, response);
             }
 
         } catch (Exception e) {
@@ -66,9 +68,9 @@ public class LocalidadServlet extends HttpServlet {
         }
     }
 
-    // ========== ========== ========== ========== ========== 
+    // ========== ========== ========== ========== ==========
     // MANEJO DE POST (ACCIONES QUE MODIFICAN DATOS).
-    // ========== ========== ========== ========== ========== 
+    // ========== ========== ========== ========== ==========
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
@@ -93,9 +95,9 @@ public class LocalidadServlet extends HttpServlet {
         }
     }
 
-    // ========== ========== ========== 
+    // ========== ========== ==========
     // BLOQUE DE ACCIONES GET
-    // ========== ========== ========== 
+    // ========== ========== ==========
 
     // LISTAR (con filtro por distrito y búsqueda por nombre).
     private void listar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -106,10 +108,14 @@ public class LocalidadServlet extends HttpServlet {
         // 2. Lee filtro opcional de texto de búsqueda.
         String filtro = request.getParameter("filtro");
 
-        // 3. Carga distritos activos para filtro y formulario.
+        // 3. Siempre seteamos los atributos de filtro para que el JSP nunca los reciba como null.
+        request.setAttribute("idDistrito", idDistrito != null ? idDistrito : "");
+        request.setAttribute("filtro", filtro != null ? filtro : "");
+
+        // 4. Carga distritos activos para filtro y formulario.
         cargarDistritos(request);
 
-        // 4. Define la lista a renderizar (filtrada o completa).
+        // 5. Define la lista a renderizar (filtrada o completa).
         List<Localidad> lista;
 
         if (idDistrito != null && filtro != null && !filtro.isBlank()) {
@@ -120,35 +126,24 @@ public class LocalidadServlet extends HttpServlet {
                     .filter(l -> l.getNombre() != null && l.getNombre().toUpperCase(Locale.ROOT).contains(filtroUpper))
                     .collect(Collectors.toList());
 
-            request.setAttribute("idDistrito", idDistrito);
-            request.setAttribute("filtro", filtro);
-
         } else if (idDistrito != null) {
             // Solo filtro por distrito.
             lista = localidadService.listarPorDistrito(idDistrito);
-            request.setAttribute("idDistrito", idDistrito);
 
         } else if (filtro != null && !filtro.isBlank()) {
             // Solo filtro por nombre (SQL).
             lista = localidadService.buscarPorNombreParcial(filtro);
-            request.setAttribute("filtro", filtro);
 
         } else {
             // Sin filtros.
             lista = localidadService.listarTodos();
         }
 
-        // 5. Envía la lista a la vista.
+        // 6. Envía la lista a la vista.
         request.setAttribute("lista", lista);
 
-        // 6. Renderiza el listado de localidades.
-        request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_listar.jsp").forward(request, response);
-    }
-
-    // BUSCAR (AUTOCOMPLETE / FILTRO).
-    private void buscar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Reutilizamos la misma lógica del listado para mantener un solo comportamiento.
-        listar(request, response);
+        // 7. Renderiza el listado de localidades.
+        request.getRequestDispatcher("/WEB-INF/views/geografia/localidades/localidad_listar.jsp").forward(request, response);
     }
 
     // FORMULARIO NUEVO.
@@ -161,7 +156,7 @@ public class LocalidadServlet extends HttpServlet {
         cargarDistritos(request);
 
         // 3. Renderiza el formulario de localidad.
-        request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_form.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/geografia/localidades/localidad_form.jsp").forward(request, response);
     }
 
     // FORMULARIO EDITAR.
@@ -185,7 +180,7 @@ public class LocalidadServlet extends HttpServlet {
         cargarDistritos(request);
 
         // 6. Renderiza el formulario con datos cargados.
-        request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_form.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/geografia/localidades/localidad_form.jsp").forward(request, response);
     }
 
     // ACTIVAR.
@@ -214,9 +209,9 @@ public class LocalidadServlet extends HttpServlet {
         response.sendRedirect(construirUrlRetornoListado(request));
     }
 
-    // ========== ========== ========== 
+    // ========== ========== ==========
     // BLOQUE DE ACCIONES POST
-    // ========== ========== ========== 
+    // ========== ========== ==========
 
     // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -235,9 +230,9 @@ public class LocalidadServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/localidades?action=listar");
     }
 
-    // ========== ========== ========== 
+    // ========== ========== ==========
     // BLOQUE DE ACCIONES UTILES
-    // ========== ========== ========== 
+    // ========== ========== ==========
 
     // CONSTRUIR LOCALIDAD DESDE REQUEST.
     private Localidad construirDesdeRequest(HttpServletRequest request) {
@@ -258,7 +253,7 @@ public class LocalidadServlet extends HttpServlet {
         // 3. Lee el nombre de la localidad desde el formulario.
         l.setNombre(request.getParameter("nombre"));
 
-        // 4. Toggle activo/inactivo (SELECT): 
+        // 4. Toggle activo/inactivo (SELECT):
         //    En creación: true por defecto.
         //    En edición: lee el valor del select.
         String activoParam = request.getParameter("activo");
@@ -290,18 +285,22 @@ public class LocalidadServlet extends HttpServlet {
         cargarDistritos(request);
 
         // 4. Renderiza el formulario nuevamente con error.
-        request.getRequestDispatcher("/WEB-INF/views/localidades/localidad_form.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/geografia/localidades/localidad_form.jsp").forward(request, response);
     }
 
     // ARMAR URL DE RETORNO PRESERVANDO FILTROS.
     private String construirUrlRetornoListado(HttpServletRequest request) {
         String url = request.getContextPath() + "/localidades?action=listar";
 
+        // Preserva el filtro de distrito si existe.
         Long idDistrito = parseLongNullable(request.getParameter("idDistrito"));
         if (idDistrito != null) url += "&idDistrito=" + idDistrito;
 
+        // Preserva el filtro de nombre si existe, codificado para evitar problemas con caracteres especiales.
         String filtro = request.getParameter("filtro");
-        if (filtro != null && !filtro.isBlank()) url += "&filtro=" + filtro;
+        if (filtro != null && !filtro.isBlank()) {
+            url += "&filtro=" + URLEncoder.encode(filtro, StandardCharsets.UTF_8);
+        }
 
         return url;
     }

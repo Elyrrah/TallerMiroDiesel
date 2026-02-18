@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.tallermirodiesel.controller;
 
 import jakarta.servlet.ServletException;
@@ -10,7 +6,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import com.tallermirodiesel.model.Pais;
 import com.tallermirodiesel.service.PaisService;
@@ -39,13 +34,13 @@ public class PaisServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
+                case "nuevo"      -> mostrarFormularioNuevo(req, resp);
+                case "editar"     -> mostrarFormularioEditar(req, resp);
+                case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
-                default -> listar(req, resp);
+                case "buscar"     -> listar(req, resp);
+                case "listar"     -> listar(req, resp);
+                default           -> listar(req, resp);
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
@@ -78,7 +73,7 @@ public class PaisServlet extends HttpServlet {
             p.setActivo("true".equals(req.getParameter("activo")));
 
             req.setAttribute("pais", p);
-            req.getRequestDispatcher("/WEB-INF/views/paises/pais_form.jsp").forward(req, resp);
+            req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_form.jsp").forward(req, resp);
         }
     }
 
@@ -90,29 +85,15 @@ public class PaisServlet extends HttpServlet {
             req.setAttribute("filtro", filtro);
         } else {
             req.setAttribute("paises", paisService.listarTodos());
+            req.setAttribute("filtro", "");
         }
 
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_listar.jsp").forward(req, resp);
-    }
-
-    private void buscar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String filtro = req.getParameter("filtro");
-
-        List<Pais> lista;
-        if (filtro == null || filtro.isBlank()) {
-            lista = paisService.listarTodos();
-        } else {
-            lista = paisService.buscarPorNombreParcial(filtro);
-        }
-
-        req.setAttribute("paises", lista);
-        req.setAttribute("filtro", (filtro == null) ? "" : filtro);
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_listar.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_listar.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("pais", new Pais());
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_form.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -129,7 +110,7 @@ public class PaisServlet extends HttpServlet {
         }
 
         req.setAttribute("pais", pais.get());
-        req.getRequestDispatcher("/WEB-INF/views/paises/pais_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_form.jsp").forward(req, resp);
     }
 
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {

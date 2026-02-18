@@ -26,13 +26,7 @@ public class LocalidadDAOImpl implements LocalidadDAO {
         l.setIdDistrito(rs.getLong("id_distrito"));
         l.setNombre(rs.getString("nombre"));
         l.setActivo(rs.getBoolean("activo"));
-
-        try {
-            l.setNombreDistrito(rs.getString("nombre_distrito"));
-        } catch (SQLException ignore) {
-            l.setNombreDistrito(null);
-        }
-
+        l.setNombreDistrito(rs.getString("nombre_distrito"));
         return l;
     }
 
@@ -106,10 +100,10 @@ public class LocalidadDAOImpl implements LocalidadDAO {
     @Override
     public boolean activar(Long id) {
         String sql = """
-            UPDATE public.localidades
-            SET activo = true
-            WHERE id_localidad = ?
-        """;
+                UPDATE public.localidades
+                SET activo = true
+                WHERE id_localidad = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -144,11 +138,11 @@ public class LocalidadDAOImpl implements LocalidadDAO {
     @Override
     public Optional<Localidad> buscarPorId(Long id) {
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            WHERE l.id_localidad = ?
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                WHERE l.id_localidad = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -164,20 +158,34 @@ public class LocalidadDAOImpl implements LocalidadDAO {
         }
     }
 
+    /**
+     * No usar este método para Localidad.
+     * Usar buscarPorNombre(String nombre, Long idDistrito) en su lugar,
+     * ya que el nombre de una localidad solo es único dentro de un distrito.
+     */
     @Override
     public Optional<Localidad> buscarPorNombre(String nombre) {
+        throw new UnsupportedOperationException(
+            "Para localidades usa buscarPorNombre(String nombre, Long idDistrito)."
+        );
+    }
+
+    @Override
+    public Optional<Localidad> buscarPorNombre(String nombre, Long idDistrito) {
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            WHERE UPPER(TRIM(l.nombre)) = UPPER(TRIM(?))
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                WHERE UPPER(TRIM(l.nombre)) = UPPER(TRIM(?))
+                  AND l.id_distrito = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             String nombreNorm = (nombre == null) ? "" : nombre.trim();
             ps.setString(1, nombreNorm);
+            ps.setLong(2, idDistrito);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? Optional.of(mapearLocalidad(rs)) : Optional.empty();
@@ -191,12 +199,12 @@ public class LocalidadDAOImpl implements LocalidadDAO {
     @Override
     public List<Localidad> buscarPorNombreParcial(String filtro) {
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            WHERE UPPER(l.nombre) LIKE UPPER(?)
-            ORDER BY l.nombre ASC
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                WHERE UPPER(l.nombre) LIKE UPPER(?)
+                ORDER BY l.nombre ASC
+                """;
 
         List<Localidad> lista = new ArrayList<>();
 
@@ -222,11 +230,11 @@ public class LocalidadDAOImpl implements LocalidadDAO {
     @Override
     public List<Localidad> listarTodos() {
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            ORDER BY l.nombre ASC
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                ORDER BY l.nombre ASC
+                """;
 
         List<Localidad> lista = new ArrayList<>();
 
@@ -248,12 +256,12 @@ public class LocalidadDAOImpl implements LocalidadDAO {
     @Override
     public List<Localidad> listarActivos() {
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            WHERE l.activo = true
-            ORDER BY l.nombre ASC
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                WHERE l.activo = true
+                ORDER BY l.nombre ASC
+                """;
 
         List<Localidad> lista = new ArrayList<>();
 
@@ -275,12 +283,12 @@ public class LocalidadDAOImpl implements LocalidadDAO {
     @Override
     public List<Localidad> listarInactivos() {
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            WHERE l.activo = false
-            ORDER BY l.nombre ASC
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                WHERE l.activo = false
+                ORDER BY l.nombre ASC
+                """;
 
         List<Localidad> lista = new ArrayList<>();
 
@@ -306,12 +314,12 @@ public class LocalidadDAOImpl implements LocalidadDAO {
         }
 
         String sql = """
-            SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
-            FROM public.localidades l
-            JOIN public.distritos d ON d.id_distrito = l.id_distrito
-            WHERE l.id_distrito = ?
-            ORDER BY l.nombre ASC
-            """;
+                SELECT l.id_localidad, l.id_distrito, l.nombre, l.activo, d.nombre AS nombre_distrito
+                FROM public.localidades l
+                JOIN public.distritos d ON d.id_distrito = l.id_distrito
+                WHERE l.id_distrito = ?
+                ORDER BY l.nombre ASC
+                """;
 
         List<Localidad> lista = new ArrayList<>();
 

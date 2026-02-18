@@ -6,7 +6,6 @@
 
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -14,30 +13,23 @@
     <title>Formulario País</title>
 </head>
 <body>
-
 <c:if test="${not empty error}">
     <div style="color:red; margin-bottom:10px;">
         ${error}
     </div>
 </c:if>
-
 <c:set var="esEdicion" value="${not empty pais.idPais}" />
-
 <h2>
     <c:choose>
         <c:when test="${esEdicion}">Editar País</c:when>
         <c:otherwise>Nuevo País</c:otherwise>
     </c:choose>
 </h2>
-
 <form method="post" action="${pageContext.request.contextPath}/paises">
-
-    <input type="hidden" name="action" value="save" />
-
+    <input type="hidden" name="action" value="guardar" />
     <c:if test="${esEdicion}">
         <input type="hidden" name="idPais" value="${pais.idPais}" />
     </c:if>
-
     <div>
         <label>Nombre</label><br/>
         <input type="text"
@@ -45,7 +37,6 @@
                value="${pais.nombre}"
                required />
     </div>
-
     <div>
         <label>ISO2</label><br/>
         <input type="text"
@@ -54,7 +45,6 @@
                maxlength="2"
                required />
     </div>
-
     <div>
         <label>ISO3</label><br/>
         <input type="text"
@@ -62,7 +52,6 @@
                value="${pais.iso3}"
                maxlength="3" />
     </div>
-
     <c:if test="${esEdicion}">
         <div>
             <label>Activo</label><br/>
@@ -72,14 +61,11 @@
             </select>
         </div>
     </c:if>
-
     <br/>
-
     <button type="submit">Guardar</button>
-    <a href="${pageContext.request.contextPath}/paises?action=list">
+    <a href="${pageContext.request.contextPath}/paises?action=listar">
         Cancelar
     </a>
 </form>
-
 </body>
 </html>

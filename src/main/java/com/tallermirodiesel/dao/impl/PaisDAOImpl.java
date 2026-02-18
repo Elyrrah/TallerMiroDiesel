@@ -171,7 +171,8 @@ public class PaisDAOImpl implements PaisDAO {
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setString(1, iso2);
+            String iso2Norm = (iso2 == null) ? "" : iso2.trim();
+            ps.setString(1, iso2Norm);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? Optional.of(mapearPais(rs)) : Optional.empty();

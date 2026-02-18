@@ -14,7 +14,6 @@
     <title>Países</title>
 
     <style>
-        /* Buscador simple */
         .buscador {
             margin: 10px 0 15px 0;
         }
@@ -27,7 +26,6 @@
             margin-left: 6px;
         }
 
-        /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
             width: 46px;
@@ -60,22 +58,17 @@
         }
         .switch.off {
             background: #e74c3c;
-            border-color: #c0392b
+            border-color: #c0392b;
         }
-
-        /* Opcional: cursor de mano */
         .switch:hover {
             filter: brightness(0.95);
         }
-        
-        /* Circulito cuando está apagado */
         .switch.off::after {
             border-color: #c0392b;
         }
     </style>
 </head>
 <body>
-<!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
@@ -93,13 +86,12 @@
     </a>
 </p>
 
-<!-- Buscador / filtro -->
 <form class="buscador" method="get" action="${pageContext.request.contextPath}/paises">
-    <input type="hidden" name="action" value="list" />
+    <input type="hidden" name="action" value="buscar" />
     <label>Buscar:</label>
     <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
     <button type="submit">Filtrar</button>
-    <a href="${pageContext.request.contextPath}/paises?action=list">Limpiar</a>
+    <a href="${pageContext.request.contextPath}/paises?action=listar">Limpiar</a>
 </form>
 
 <table border="1" cellpadding="6" cellspacing="0">
@@ -120,23 +112,21 @@
                 <td>${p.iso2}</td>
                 <td>${p.iso3}</td>
                 <td>
-                    <a href="${pageContext.request.contextPath}/paises?action=edit&id=${p.idPais}">
+                    <a href="${pageContext.request.contextPath}/paises?action=editar&id=${p.idPais}">
                         Editar
                     </a>
 
-                    <!-- Toggle activar/desactivar -->
                     <c:choose>
                         <c:when test="${p.activo}">
                             | <a class="switch on"
                                  title="Desactivar"
-                                 href="${pageContext.request.contextPath}/paises?action=deactivate&id=${p.idPais}">
+                                 href="${pageContext.request.contextPath}/paises?action=desactivar&id=${p.idPais}">
                               </a>
                         </c:when>
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/paises?action=activate&id=${p.idPais}"
-                                 >
+                                 href="${pageContext.request.contextPath}/paises?action=activar&id=${p.idPais}">
                               </a>
                         </c:otherwise>
                     </c:choose>

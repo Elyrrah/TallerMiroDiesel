@@ -13,27 +13,27 @@
     </head>
     <body>
         <c:set var="esEdicion" value="${not empty distrito.idDistrito}" />
-        
+
         <h1>
             <c:choose>
                 <c:when test="${esEdicion}">Editar Distrito</c:when>
                 <c:otherwise>Nuevo Distrito</c:otherwise>
             </c:choose>
         </h1>
-        
+
         <c:if test="${not empty error}">
             <div style="color: red; margin-bottom: 10px;">
                 ${error}
             </div>
         </c:if>
-        
+
         <form method="post" action="${pageContext.request.contextPath}/distritos">
             <input type="hidden" name="action" value="guardar"/>
-            
+
             <c:if test="${esEdicion}">
                 <input type="hidden" name="idDistrito" value="${distrito.idDistrito}"/>
             </c:if>
-            
+
             <div style="margin-bottom: 10px;">
                 <label>Departamento:</label><br/>
                 <select name="idDepartamento" required>
@@ -46,12 +46,12 @@
                     </c:forEach>
                 </select>
             </div>
-            
+
             <div style="margin-bottom: 10px;">
                 <label>Nombre del Distrito:</label><br/>
                 <input type="text" name="nombre" value="${distrito.nombre}" required/>
             </div>
-            
+
             <c:if test="${esEdicion}">
                 <div style="margin-bottom: 10px;">
                     <label>Activo:</label><br/>
@@ -61,7 +61,7 @@
                     </select>
                 </div>
             </c:if>
-            
+
             <button type="submit">
                 <c:choose>
                     <c:when test="${esEdicion}">Guardar cambios</c:when>

@@ -3,6 +3,7 @@
     Created on : 21 ene. 2026, 4:01:11 p. m.
     Author     : elyrr
 --%>
+
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="jakarta.tags.core"%>
 <!DOCTYPE html>
@@ -135,7 +136,7 @@
                         <td>${l.idLocalidad}</td>
                         <td>${l.nombreDistrito}</td>
                         <td>${l.nombre}</td>
-                        
+
                         <td>
                             <c:choose>
                                 <c:when test="${l.activo}">SÍ</c:when>
@@ -144,7 +145,7 @@
                         </td>
 
                         <td>
-                            <a href="${pageContext.request.contextPath}/localidades?action=editar&id=${l.idLocalidad}<c:if test='${not empty idDistrito}'>&idDistrito=${idDistrito}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                            <a href="${pageContext.request.contextPath}/localidades?action=editar&amp;id=${l.idLocalidad}<c:if test='${not empty idDistrito}'>&amp;idDistrito=${idDistrito}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                                 Editar
                             </a>
 
@@ -153,13 +154,13 @@
                                 <c:when test="${l.activo}">
                                     | <a class="switch on"
                                          title="Desactivar"
-                                         href="${pageContext.request.contextPath}/localidades?action=desactivar&id=${l.idLocalidad}<c:if test='${not empty idDistrito}'>&idDistrito=${idDistrito}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                                         href="${pageContext.request.contextPath}/localidades?action=desactivar&amp;id=${l.idLocalidad}<c:if test='${not empty idDistrito}'>&amp;idDistrito=${idDistrito}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                                       </a>
                                 </c:when>
                                 <c:otherwise>
                                     | <a class="switch off"
                                          title="Activar"
-                                         href="${pageContext.request.contextPath}/localidades?action=activar&id=${l.idLocalidad}<c:if test='${not empty idDistrito}'>&idDistrito=${idDistrito}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                                         href="${pageContext.request.contextPath}/localidades?action=activar&amp;id=${l.idLocalidad}<c:if test='${not empty idDistrito}'>&amp;idDistrito=${idDistrito}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                                       </a>
                                 </c:otherwise>
                             </c:choose>

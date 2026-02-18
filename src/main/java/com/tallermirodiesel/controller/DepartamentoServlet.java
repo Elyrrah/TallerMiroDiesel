@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.tallermirodiesel.controller;
 
 import jakarta.servlet.ServletException;
@@ -47,13 +43,13 @@ public class DepartamentoServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
+                case "nuevo"      -> mostrarFormularioNuevo(req, resp);
+                case "editar"     -> mostrarFormularioEditar(req, resp);
+                case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
-                default -> listar(req, resp);
+                case "buscar"     -> listar(req, resp);
+                case "listar"     -> listar(req, resp);
+                default           -> listar(req, resp);
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
@@ -86,7 +82,7 @@ public class DepartamentoServlet extends HttpServlet {
             d.setActivo("true".equals(req.getParameter("activo")));
 
             req.setAttribute("departamento", d);
-            req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_form.jsp").forward(req, resp);
+            req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_form.jsp").forward(req, resp);
         }
     }
 
@@ -115,17 +111,13 @@ public class DepartamentoServlet extends HttpServlet {
         }
 
         req.setAttribute("departamentos", lista);
-        req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_listar.jsp").forward(req, resp);
-    }
-
-    private void buscar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        listar(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_listar.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("paises", paisService.listarActivos());
         req.setAttribute("departamento", new Departamento());
-        req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_form.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -143,7 +135,7 @@ public class DepartamentoServlet extends HttpServlet {
 
         req.setAttribute("paises", paisService.listarActivos());
         req.setAttribute("departamento", departamento.get());
-        req.getRequestDispatcher("/WEB-INF/views/departamentos/departamento_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_form.jsp").forward(req, resp);
     }
 
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {

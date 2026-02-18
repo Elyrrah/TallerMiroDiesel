@@ -1,7 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.tallermirodiesel.service.impl;
 
 import java.util.List;
@@ -22,12 +18,7 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         this.departamentoDAO = new DepartamentoDAOImpl();
     }
 
-    @Override
-    public Long crear(Departamento departamento) {
-        if (departamento == null) {
-            throw new IllegalArgumentException("El departamento no puede ser null.");
-        }
-
+    private void validarCampos(Departamento departamento) {
         if (departamento.getIdPais() == null || departamento.getIdPais() <= 0) {
             throw new IllegalArgumentException("El país (idPais) debe ser válido.");
         }
@@ -39,12 +30,18 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         }
 
         departamento.setNombre(nombre);
+    }
 
-        List<Departamento> existentesEnPais = departamentoDAO.listarPorPais(departamento.getIdPais());
-        boolean existeDuplicado = existentesEnPais.stream()
-                .anyMatch(d -> d.getNombre() != null && d.getNombre().trim().equalsIgnoreCase(nombre));
-        if (existeDuplicado) {
-            throw new IllegalArgumentException("Ya existe un departamento con el nombre: " + nombre + " para el país seleccionado.");
+    @Override
+    public Long crear(Departamento departamento) {
+        if (departamento == null) {
+            throw new IllegalArgumentException("El departamento no puede ser null.");
+        }
+
+        validarCampos(departamento);
+
+        if (departamentoDAO.buscarPorNombre(departamento.getNombre(), departamento.getIdPais()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un departamento con el nombre: " + departamento.getNombre() + " para el país seleccionado.");
         }
 
         return departamentoDAO.crear(departamento);
@@ -60,31 +57,15 @@ public class DepartamentoServiceImpl implements DepartamentoService {
             throw new IllegalArgumentException("El id del departamento debe ser mayor a 0.");
         }
 
-        if (departamento.getIdPais() == null || departamento.getIdPais() <= 0) {
-            throw new IllegalArgumentException("El país (idPais) debe ser válido.");
-        }
+        validarCampos(departamento);
 
-        String nombre = (departamento.getNombre() == null) ? null : departamento.getNombre().trim().toUpperCase();
-
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre del departamento es obligatorio.");
-        }
-
-        departamento.setNombre(nombre);
-
-        Optional<Departamento> existente = departamentoDAO.buscarPorId(departamento.getIdDepartamento());
-        if (existente.isEmpty()) {
+        if (departamentoDAO.buscarPorId(departamento.getIdDepartamento()).isEmpty()) {
             throw new IllegalArgumentException("No existe un departamento con id: " + departamento.getIdDepartamento());
         }
 
-        List<Departamento> existentesEnPais = departamentoDAO.listarPorPais(departamento.getIdPais());
-        boolean existeDuplicado = existentesEnPais.stream()
-                .anyMatch(d -> d.getNombre() != null
-                        && d.getNombre().trim().equalsIgnoreCase(nombre)
-                        && d.getIdDepartamento() != null
-                        && !d.getIdDepartamento().equals(departamento.getIdDepartamento()));
-        if (existeDuplicado) {
-            throw new IllegalArgumentException("Ya existe otro departamento con el nombre: " + nombre + " para el país seleccionado.");
+        Optional<Departamento> porNombre = departamentoDAO.buscarPorNombre(departamento.getNombre(), departamento.getIdPais());
+        if (porNombre.isPresent() && !porNombre.get().getIdDepartamento().equals(departamento.getIdDepartamento())) {
+            throw new IllegalArgumentException("Ya existe otro departamento con el nombre: " + departamento.getNombre() + " para el país seleccionado.");
         }
 
         return departamentoDAO.actualizar(departamento);
@@ -96,8 +77,7 @@ public class DepartamentoServiceImpl implements DepartamentoService {
             throw new IllegalArgumentException("El id del departamento debe ser válido.");
         }
 
-        Optional<Departamento> departamento = departamentoDAO.buscarPorId(id);
-        if (departamento.isEmpty()) {
+        if (departamentoDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un departamento con id: " + id);
         }
 
@@ -110,8 +90,7 @@ public class DepartamentoServiceImpl implements DepartamentoService {
             throw new IllegalArgumentException("El id del departamento debe ser válido.");
         }
 
-        Optional<Departamento> departamento = departamentoDAO.buscarPorId(id);
-        if (departamento.isEmpty()) {
+        if (departamentoDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un departamento con id: " + id);
         }
 
@@ -127,14 +106,29 @@ public class DepartamentoServiceImpl implements DepartamentoService {
         return departamentoDAO.buscarPorId(id);
     }
 
+    /**
+     * No usar este método para Departamento.
+     * Usar buscarPorNombre(String nombre, Long idPais) en su lugar,
+     * ya que el nombre de un departamento solo es único dentro de un país.
+     */
     @Override
     public Optional<Departamento> buscarPorNombre(String nombre) {
+        throw new UnsupportedOperationException(
+            "Para departamentos usa buscarPorNombre(String nombre, Long idPais)."
+        );
+    }
+
+    @Override
+    public Optional<Departamento> buscarPorNombre(String nombre, Long idPais) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre del departamento es obligatorio.");
         }
 
-        String nombreNorm = nombre.trim().toUpperCase();
-        return departamentoDAO.buscarPorNombre(nombreNorm);
+        if (idPais == null || idPais <= 0) {
+            throw new IllegalArgumentException("El id del país debe ser válido.");
+        }
+
+        return departamentoDAO.buscarPorNombre(nombre.trim().toUpperCase(), idPais);
     }
 
     @Override
@@ -143,8 +137,7 @@ public class DepartamentoServiceImpl implements DepartamentoService {
             throw new IllegalArgumentException("El filtro no puede ser null.");
         }
 
-        String filtroNorm = filtro.trim();
-        return departamentoDAO.buscarPorNombreParcial(filtroNorm);
+        return departamentoDAO.buscarPorNombreParcial(filtro.trim());
     }
 
     @Override

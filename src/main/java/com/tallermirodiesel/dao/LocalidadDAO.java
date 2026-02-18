@@ -5,12 +5,16 @@
 package com.tallermirodiesel.dao;
 
 import java.util.List;
+import java.util.Optional;
 import com.tallermirodiesel.model.Localidad;
 
 /**
  * @author elyrr
  */
 public interface LocalidadDAO extends CatalogoCrudDAO<Localidad, Long> {
+
+    // Busca una Localidad por nombre dentro de un Distrito concreto
+    Optional<Localidad> buscarPorNombre(String nombre, Long idDistrito);
 
     // Lista todas las Localidades de un Distrito
     List<Localidad> listarPorDistrito(Long idDistrito);

@@ -14,7 +14,6 @@
     <title>Departamentos</title>
 
     <style>
-        /* Buscador simple */
         .buscador {
             margin: 10px 0 15px 0;
         }
@@ -27,7 +26,6 @@
             margin-left: 6px;
         }
 
-        /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
             width: 46px;
@@ -65,7 +63,6 @@
         .switch.off::after {
             border-color: #c0392b;
         }
-
         .switch:hover {
             filter: brightness(0.95);
         }
@@ -73,7 +70,6 @@
 </head>
 <body>
 
-<!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
@@ -92,7 +88,7 @@
 
 <!-- FILTRO POR PAÍS -->
 <form method="get" action="${pageContext.request.contextPath}/departamentos" style="margin-bottom: 12px;">
-    <input type="hidden" name="action" value="list" />
+    <input type="hidden" name="action" value="listar" />
 
     <label>Filtrar por país:</label>
     <select name="idPais">
@@ -107,14 +103,14 @@
 
     <button type="submit">Filtrar</button>
 
-    <a href="${pageContext.request.contextPath}/departamentos?action=list" style="margin-left: 10px;">
+    <a href="${pageContext.request.contextPath}/departamentos?action=listar" style="margin-left: 10px;">
         Limpiar
     </a>
 </form>
 
-<!-- Buscador / filtro -->
+<!-- Buscador / filtro por nombre -->
 <form class="buscador" method="get" action="${pageContext.request.contextPath}/departamentos">
-    <input type="hidden" name="action" value="list" />
+    <input type="hidden" name="action" value="buscar" />
 
     <c:if test="${not empty idPaisSeleccionado}">
         <input type="hidden" name="idPais" value="${idPaisSeleccionado}" />
@@ -124,7 +120,7 @@
     <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
     <button type="submit">Buscar</button>
 
-    <a href="${pageContext.request.contextPath}/departamentos?action=list<c:if test='${not empty idPaisSeleccionado}'>&idPais=${idPaisSeleccionado}</c:if>">
+    <a href="${pageContext.request.contextPath}/departamentos?action=listar<c:if test='${not empty idPaisSeleccionado}'>&amp;idPais=${idPaisSeleccionado}</c:if>">
         Limpiar
     </a>
 </form>
@@ -155,7 +151,7 @@
                 </td>
 
                 <td>
-                    <a href="${pageContext.request.contextPath}/departamentos?action=edit&id=${d.idDepartamento}<c:if test='${not empty idPaisSeleccionado}'>&idPais=${idPaisSeleccionado}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                    <a href="${pageContext.request.contextPath}/departamentos?action=editar&amp;id=${d.idDepartamento}<c:if test='${not empty idPaisSeleccionado}'>&amp;idPais=${idPaisSeleccionado}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                         Editar
                     </a>
 
@@ -163,13 +159,13 @@
                         <c:when test="${d.activo}">
                             | <a class="switch on"
                                  title="Desactivar"
-                                 href="${pageContext.request.contextPath}/departamentos?action=deactivate&id=${d.idDepartamento}<c:if test='${not empty idPaisSeleccionado}'>&idPais=${idPaisSeleccionado}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                                 href="${pageContext.request.contextPath}/departamentos?action=desactivar&amp;id=${d.idDepartamento}<c:if test='${not empty idPaisSeleccionado}'>&amp;idPais=${idPaisSeleccionado}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                               </a>
                         </c:when>
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/departamentos?action=activate&id=${d.idDepartamento}<c:if test='${not empty idPaisSeleccionado}'>&idPais=${idPaisSeleccionado}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                                 href="${pageContext.request.contextPath}/departamentos?action=activar&amp;id=${d.idDepartamento}<c:if test='${not empty idPaisSeleccionado}'>&amp;idPais=${idPaisSeleccionado}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                               </a>
                         </c:otherwise>
                     </c:choose>

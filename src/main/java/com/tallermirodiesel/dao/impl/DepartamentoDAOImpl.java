@@ -1,11 +1,6 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package com.tallermirodiesel.dao.impl;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
+import java.sql.Connection;import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -100,10 +95,10 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
     @Override
     public boolean activar(Long id) {
         String sql = """
-            UPDATE public.departamentos
-            SET activo = true
-            WHERE id_departamento = ?
-        """;
+                UPDATE public.departamentos
+                SET activo = true
+                WHERE id_departamento = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -138,11 +133,11 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
     @Override
     public Optional<Departamento> buscarPorId(Long id) {
         String sql = """
-            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-            FROM public.departamentos d
-            JOIN public.paises p ON p.id_pais = d.id_pais
-            WHERE d.id_departamento = ?
-            """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                WHERE d.id_departamento = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -158,20 +153,34 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
         }
     }
 
+    /**
+     * No usar este método para Departamento.
+     * Usar buscarPorNombre(String nombre, Long idPais) en su lugar,
+     * ya que el nombre de un departamento solo es único dentro de un país.
+     */
     @Override
     public Optional<Departamento> buscarPorNombre(String nombre) {
+        throw new UnsupportedOperationException(
+            "Para departamentos usa buscarPorNombre(String nombre, Long idPais)."
+        );
+    }
+
+    @Override
+    public Optional<Departamento> buscarPorNombre(String nombre, Long idPais) {
         String sql = """
-            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-            FROM public.departamentos d
-            JOIN public.paises p ON p.id_pais = d.id_pais
-            WHERE UPPER(TRIM(d.nombre)) = UPPER(TRIM(?))
-            """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                WHERE UPPER(TRIM(d.nombre)) = UPPER(TRIM(?))
+                  AND d.id_pais = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             String nombreNorm = (nombre == null) ? "" : nombre.trim();
             ps.setString(1, nombreNorm);
+            ps.setLong(2, idPais);
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? Optional.of(mapearDepartamento(rs)) : Optional.empty();
@@ -185,12 +194,12 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
     @Override
     public List<Departamento> buscarPorNombreParcial(String filtro) {
         String sql = """
-            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-            FROM public.departamentos d
-            JOIN public.paises p ON p.id_pais = d.id_pais
-            WHERE UPPER(d.nombre) LIKE UPPER(?)
-            ORDER BY p.nombre ASC, d.nombre ASC
-            """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                WHERE UPPER(d.nombre) LIKE UPPER(?)
+                ORDER BY p.nombre ASC, d.nombre ASC
+                """;
 
         List<Departamento> lista = new ArrayList<>();
 
@@ -216,11 +225,11 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
     @Override
     public List<Departamento> listarTodos() {
         String sql = """
-            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-            FROM public.departamentos d
-            JOIN public.paises p ON p.id_pais = d.id_pais
-            ORDER BY p.nombre ASC, d.nombre ASC
-            """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                ORDER BY p.nombre ASC, d.nombre ASC
+                """;
 
         List<Departamento> lista = new ArrayList<>();
 
@@ -242,12 +251,12 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
     @Override
     public List<Departamento> listarActivos() {
         String sql = """
-            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-            FROM public.departamentos d
-            JOIN public.paises p ON p.id_pais = d.id_pais
-            WHERE d.activo = true
-            ORDER BY p.nombre ASC, d.nombre ASC
-            """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                WHERE d.activo = true
+                ORDER BY p.nombre ASC, d.nombre ASC
+                """;
 
         List<Departamento> lista = new ArrayList<>();
 
@@ -269,12 +278,12 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
     @Override
     public List<Departamento> listarInactivos() {
         String sql = """
-            SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-            FROM public.departamentos d
-            JOIN public.paises p ON p.id_pais = d.id_pais
-            WHERE d.activo = false
-            ORDER BY p.nombre ASC, d.nombre ASC
-            """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                WHERE d.activo = false
+                ORDER BY p.nombre ASC, d.nombre ASC
+                """;
 
         List<Departamento> lista = new ArrayList<>();
 
@@ -300,12 +309,12 @@ public class DepartamentoDAOImpl implements DepartamentoDAO {
         }
 
         String sql = """
-        SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
-        FROM public.departamentos d
-        JOIN public.paises p ON p.id_pais = d.id_pais
-        WHERE d.id_pais = ?
-        ORDER BY d.nombre ASC
-        """;
+                SELECT d.id_departamento, d.id_pais, d.nombre, d.activo, p.nombre AS nombre_pais
+                FROM public.departamentos d
+                JOIN public.paises p ON p.id_pais = d.id_pais
+                WHERE d.id_pais = ?
+                ORDER BY d.nombre ASC
+                """;
 
         List<Departamento> lista = new ArrayList<>();
 

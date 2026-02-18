@@ -23,12 +23,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         this.localidadDAO = new LocalidadDAOImpl();
     }
 
-    @Override
-    public Long crear(Localidad localidad) {
-        if (localidad == null) {
-            throw new IllegalArgumentException("La localidad no puede ser null.");
-        }
-
+    private void validarCampos(Localidad localidad) {
         if (localidad.getIdDistrito() == null || localidad.getIdDistrito() <= 0) {
             throw new IllegalArgumentException("El distrito (idDistrito) debe ser válido.");
         }
@@ -40,12 +35,18 @@ public class LocalidadServiceImpl implements LocalidadService {
         }
 
         localidad.setNombre(nombre);
+    }
 
-        List<Localidad> existentesEnDistrito = localidadDAO.listarPorDistrito(localidad.getIdDistrito());
-        boolean existeDuplicado = existentesEnDistrito.stream()
-                .anyMatch(l -> l.getNombre() != null && l.getNombre().trim().equalsIgnoreCase(nombre));
-        if (existeDuplicado) {
-            throw new IllegalArgumentException("Ya existe una localidad con el nombre: " + nombre + " para el distrito seleccionado.");
+    @Override
+    public Long crear(Localidad localidad) {
+        if (localidad == null) {
+            throw new IllegalArgumentException("La localidad no puede ser null.");
+        }
+
+        validarCampos(localidad);
+
+        if (localidadDAO.buscarPorNombre(localidad.getNombre(), localidad.getIdDistrito()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe una localidad con el nombre: " + localidad.getNombre() + " para el distrito seleccionado.");
         }
 
         return localidadDAO.crear(localidad);
@@ -61,31 +62,15 @@ public class LocalidadServiceImpl implements LocalidadService {
             throw new IllegalArgumentException("El id de la localidad debe ser mayor a 0.");
         }
 
-        if (localidad.getIdDistrito() == null || localidad.getIdDistrito() <= 0) {
-            throw new IllegalArgumentException("El distrito (idDistrito) debe ser válido.");
-        }
+        validarCampos(localidad);
 
-        String nombre = (localidad.getNombre() == null) ? null : localidad.getNombre().trim().toUpperCase(Locale.ROOT);
-
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre de la localidad es obligatorio.");
-        }
-
-        localidad.setNombre(nombre);
-
-        Optional<Localidad> existente = localidadDAO.buscarPorId(localidad.getIdLocalidad());
-        if (existente.isEmpty()) {
+        if (localidadDAO.buscarPorId(localidad.getIdLocalidad()).isEmpty()) {
             throw new IllegalArgumentException("No existe una localidad con id: " + localidad.getIdLocalidad());
         }
 
-        List<Localidad> existentesEnDistrito = localidadDAO.listarPorDistrito(localidad.getIdDistrito());
-        boolean existeDuplicado = existentesEnDistrito.stream()
-                .anyMatch(l -> l.getNombre() != null
-                        && l.getNombre().trim().equalsIgnoreCase(nombre)
-                        && l.getIdLocalidad() != null
-                        && !l.getIdLocalidad().equals(localidad.getIdLocalidad()));
-        if (existeDuplicado) {
-            throw new IllegalArgumentException("Ya existe otra localidad con el nombre: " + nombre + " para el distrito seleccionado.");
+        Optional<Localidad> porNombre = localidadDAO.buscarPorNombre(localidad.getNombre(), localidad.getIdDistrito());
+        if (porNombre.isPresent() && !porNombre.get().getIdLocalidad().equals(localidad.getIdLocalidad())) {
+            throw new IllegalArgumentException("Ya existe otra localidad con el nombre: " + localidad.getNombre() + " para el distrito seleccionado.");
         }
 
         return localidadDAO.actualizar(localidad);
@@ -97,8 +82,7 @@ public class LocalidadServiceImpl implements LocalidadService {
             throw new IllegalArgumentException("El id de la localidad debe ser válido.");
         }
 
-        Optional<Localidad> localidad = localidadDAO.buscarPorId(id);
-        if (localidad.isEmpty()) {
+        if (localidadDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe una localidad con id: " + id);
         }
 
@@ -111,8 +95,7 @@ public class LocalidadServiceImpl implements LocalidadService {
             throw new IllegalArgumentException("El id de la localidad debe ser válido.");
         }
 
-        Optional<Localidad> localidad = localidadDAO.buscarPorId(id);
-        if (localidad.isEmpty()) {
+        if (localidadDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe una localidad con id: " + id);
         }
 
@@ -128,14 +111,29 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.buscarPorId(id);
     }
 
+    /**
+     * No usar este método para Localidad.
+     * Usar buscarPorNombre(String nombre, Long idDistrito) en su lugar,
+     * ya que el nombre de una localidad solo es único dentro de un distrito.
+     */
     @Override
     public Optional<Localidad> buscarPorNombre(String nombre) {
+        throw new UnsupportedOperationException(
+            "Para localidades usa buscarPorNombre(String nombre, Long idDistrito)."
+        );
+    }
+
+    @Override
+    public Optional<Localidad> buscarPorNombre(String nombre, Long idDistrito) {
         if (nombre == null || nombre.isBlank()) {
             throw new IllegalArgumentException("El nombre de la localidad es obligatorio.");
         }
 
-        String nombreNorm = nombre.trim().toUpperCase(Locale.ROOT);
-        return localidadDAO.buscarPorNombre(nombreNorm);
+        if (idDistrito == null || idDistrito <= 0) {
+            throw new IllegalArgumentException("El id del distrito debe ser válido.");
+        }
+
+        return localidadDAO.buscarPorNombre(nombre.trim().toUpperCase(Locale.ROOT), idDistrito);
     }
 
     @Override
@@ -144,8 +142,7 @@ public class LocalidadServiceImpl implements LocalidadService {
             throw new IllegalArgumentException("El filtro no puede ser null.");
         }
 
-        String filtroNorm = filtro.trim();
-        return localidadDAO.buscarPorNombreParcial(filtroNorm);
+        return localidadDAO.buscarPorNombreParcial(filtro.trim());
     }
 
     @Override

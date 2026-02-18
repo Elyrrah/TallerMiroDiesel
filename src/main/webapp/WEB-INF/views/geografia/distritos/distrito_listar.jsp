@@ -137,7 +137,7 @@
                         <td>${di.idDistrito}</td>
                         <td>${di.nombreDepartamento}</td>
                         <td>${di.nombre}</td>
-                        
+
                         <td>
                             <c:choose>
                                 <c:when test="${di.activo}">SÍ</c:when>
@@ -146,7 +146,7 @@
                         </td>
 
                         <td>
-                            <a href="${pageContext.request.contextPath}/distritos?action=editar&id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                            <a href="${pageContext.request.contextPath}/distritos?action=editar&amp;id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&amp;idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                                 Editar
                             </a>
 
@@ -155,13 +155,13 @@
                                 <c:when test="${di.activo}">
                                     | <a class="switch on"
                                          title="Desactivar"
-                                         href="${pageContext.request.contextPath}/distritos?action=desactivar&id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                                         href="${pageContext.request.contextPath}/distritos?action=desactivar&amp;id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&amp;idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                                       </a>
                                 </c:when>
                                 <c:otherwise>
                                     | <a class="switch off"
                                          title="Activar"
-                                         href="${pageContext.request.contextPath}/distritos?action=activar&id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
+                                         href="${pageContext.request.contextPath}/distritos?action=activar&amp;id=${di.idDistrito}<c:if test='${not empty idDepartamento}'>&amp;idDepartamento=${idDepartamento}</c:if><c:if test='${not empty filtro}'>&amp;filtro=${filtro}</c:if>">
                                       </a>
                                 </c:otherwise>
                             </c:choose>
