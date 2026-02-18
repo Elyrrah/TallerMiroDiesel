@@ -14,9 +14,7 @@ public class Departamento {
     private Long idPais;
     private String nombre;
     private boolean activo;
-
-    // Campo auxiliar para mostrar el nombre del Pais con JOIN
-    private String nombrePais;
+    private String nombrePais;    // Campo auxiliar para mostrar el nombre del Pais con JOIN
 
     // Constructor vacío
     public Departamento() {

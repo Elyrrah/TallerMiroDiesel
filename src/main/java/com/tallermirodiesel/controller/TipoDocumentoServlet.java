@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import com.tallermirodiesel.model.TipoDocumento;
 import com.tallermirodiesel.model.enums.TipoDocumentoAplicaEnum;
@@ -40,13 +39,14 @@ public class TipoDocumentoServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
+                case "nuevo"      -> mostrarFormularioNuevo(req, resp);
+                case "editar"     -> mostrarFormularioEditar(req, resp);
+                case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
-                default -> listar(req, resp);
+                // CORRECCIÓN 1: "buscar" apunta directamente a listar()
+                case "buscar"     -> listar(req, resp);
+                case "listar"     -> listar(req, resp);
+                default           -> listar(req, resp);
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
@@ -69,29 +69,12 @@ public class TipoDocumentoServlet extends HttpServlet {
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
-            req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
-
-            TipoDocumento td = new TipoDocumento();
-            Long idTipoDocumento = parseLong(req.getParameter("idTipoDocumento"));
-            td.setIdTipoDocumento(idTipoDocumento);
-            td.setNombre(req.getParameter("nombre"));
-            td.setCodigo(req.getParameter("codigo"));
-
-            String aplicaA = req.getParameter("aplicaA");
-            if (aplicaA != null && !aplicaA.isBlank()) {
-                try {
-                    td.setAplicaA(TipoDocumentoAplicaEnum.valueOf(aplicaA.trim().toUpperCase()));
-                } catch (Exception ignored) {
-                }
-            }
-
-            td.setActivo("true".equals(req.getParameter("activo")));
-
-            req.setAttribute("tipoDocumento", td);
-            req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
+            // CORRECCIÓN 3: reutiliza reenviarFormularioConDatos()
+            reenviarFormularioConDatos(req, resp);
         }
     }
 
+    // LISTAR (con filtro opcional por nombre).
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -100,32 +83,21 @@ public class TipoDocumentoServlet extends HttpServlet {
             req.setAttribute("filtro", filtro);
         } else {
             req.setAttribute("tiposDocumento", tipoDocumentoService.listarTodos());
+            // CORRECCIÓN 2: siempre seteamos "filtro" para que el JSP nunca lo reciba como null
+            req.setAttribute("filtro", "");
         }
 
-        req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_listar.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_listar.jsp").forward(req, resp);
     }
 
-    private void buscar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String filtro = req.getParameter("filtro");
-
-        List<TipoDocumento> lista;
-        if (filtro == null || filtro.isBlank()) {
-            lista = tipoDocumentoService.listarTodos();
-        } else {
-            lista = tipoDocumentoService.buscarPorNombreParcial(filtro);
-        }
-
-        req.setAttribute("tiposDocumento", lista);
-        req.setAttribute("filtro", (filtro == null) ? "" : filtro);
-        req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_listar.jsp").forward(req, resp);
-    }
-
+    // FORMULARIO NUEVO.
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("tipoDocumento", new TipoDocumento());
         req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
-        req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
     }
 
+    // FORMULARIO EDITAR.
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -141,9 +113,10 @@ public class TipoDocumentoServlet extends HttpServlet {
 
         req.setAttribute("tipoDocumento", tipoDocumento.get());
         req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
-        req.getRequestDispatcher("/WEB-INF/views/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
     }
 
+    // ACTIVAR.
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -155,6 +128,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
+    // DESACTIVAR.
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -166,7 +140,23 @@ public class TipoDocumentoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
+    // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        // CORRECCIÓN 3: reutiliza construirDesdeRequest()
+        TipoDocumento td = construirDesdeRequest(req);
+
+        if (td.getIdTipoDocumento() == null) {
+            td.setActivo(true);
+            tipoDocumentoService.crear(td);
+        } else {
+            tipoDocumentoService.actualizar(td);
+        }
+
+        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
+    }
+
+    // CONSTRUIR TIPODOCUMENTO DESDE REQUEST.
+    private TipoDocumento construirDesdeRequest(HttpServletRequest req) {
         TipoDocumento td = new TipoDocumento();
 
         Long idTipoDocumento = parseLong(req.getParameter("idTipoDocumento"));
@@ -176,20 +166,27 @@ public class TipoDocumentoServlet extends HttpServlet {
 
         String aplicaA = req.getParameter("aplicaA");
         if (aplicaA != null && !aplicaA.isBlank()) {
-            td.setAplicaA(TipoDocumentoAplicaEnum.valueOf(aplicaA.trim().toUpperCase()));
+            try {
+                td.setAplicaA(TipoDocumentoAplicaEnum.valueOf(aplicaA.trim().toUpperCase()));
+            } catch (Exception ignored) {
+            }
         }
 
-        if (idTipoDocumento == null) {
-            td.setActivo(true);
-            tipoDocumentoService.crear(td);
-        } else {
+        if (idTipoDocumento != null) {
             td.setActivo("true".equals(req.getParameter("activo")));
-            tipoDocumentoService.actualizar(td);
         }
 
-        resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
+        return td;
     }
 
+    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR EN GUARDAR).
+    private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setAttribute("tipoDocumento", construirDesdeRequest(req));
+        req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
+    }
+
+    // PARSEO DE LONG SEGURO (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

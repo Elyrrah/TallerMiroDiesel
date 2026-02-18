@@ -14,7 +14,6 @@
     <title>Modelos</title>
 
     <style>
-        /* Buscador simple */
         .buscador {
             margin: 10px 0 15px 0;
         }
@@ -29,7 +28,6 @@
             margin-left: 6px;
         }
 
-        /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
             width: 46px;
@@ -62,22 +60,17 @@
         }
         .switch.off {
             background: #e74c3c;
-            border-color: #c0392b
+            border-color: #c0392b;
         }
-
-        /* Opcional: cursor de mano */
         .switch:hover {
             filter: brightness(0.95);
         }
-        
-        /* Circulito cuando está apagado */
         .switch.off::after {
             border-color: #c0392b;
         }
     </style>
 </head>
 <body>
-<!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
@@ -95,24 +88,24 @@
     </a>
 </p>
 
-<!-- Buscador / filtro -->
 <form class="buscador" method="get" action="${pageContext.request.contextPath}/modelos">
-    <input type="hidden" name="action" value="listar" />
-    
+    <%-- CORRECCIÓN: value="buscar" igual que en el patrón del repositorio --%>
+    <input type="hidden" name="action" value="buscar" />
+
     <label>Marca:</label>
     <select name="idMarca">
         <option value="">-- Todas --</option>
         <c:forEach var="marca" items="${marcas}">
-            <option value="${marca.idMarca}" 
+            <option value="${marca.idMarca}"
                     <c:if test="${idMarca == marca.idMarca}">selected</c:if>>
                 ${marca.nombre}
             </option>
         </c:forEach>
     </select>
-    
+
     <label>Buscar:</label>
     <input type="text" name="filtro" value="${filtro}" placeholder="Nombre del modelo..." />
-    
+
     <button type="submit">Filtrar</button>
     <a href="${pageContext.request.contextPath}/modelos?action=listar">Limpiar</a>
 </form>
@@ -137,7 +130,6 @@
                         Editar
                     </a>
 
-                    <!-- Toggle activar/desactivar -->
                     <c:choose>
                         <c:when test="${m.activo}">
                             | <a class="switch on"
@@ -148,8 +140,7 @@
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/modelos?action=activar&id=${m.idModelo}<c:if test='${not empty idMarca}'>&idMarca=${idMarca}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>"
-                                 >
+                                 href="${pageContext.request.contextPath}/modelos?action=activar&id=${m.idModelo}<c:if test='${not empty idMarca}'>&idMarca=${idMarca}</c:if><c:if test='${not empty filtro}'>&filtro=${filtro}</c:if>">
                               </a>
                         </c:otherwise>
                     </c:choose>

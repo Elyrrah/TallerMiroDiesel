@@ -8,29 +8,21 @@ package com.tallermirodiesel.model;
  * @author elyrr
  */
 public class Modelo {
-    
+
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idModelo;
     private Long idMarca;
     private String nombre;
     private boolean activo;
 
-// Campo auxiliar para mostrar el nombre de la marca con JOIN
+    // Campo auxiliar para mostrar el nombre de la marca con JOIN
     private String nombreMarca;
-    
+
     // Constructor vacío
     public Modelo() {
     }
-
+    
     // Constructor con parámetros
-    public Modelo(Long idModelo, Long idMarca, String nombre, boolean activo) {
-        this.idModelo = idModelo;
-        this.idMarca = idMarca;
-        this.nombre = nombre;
-        this.activo = activo;
-    }
-
-    // Constructor extendido
     public Modelo(Long idModelo, Long idMarca, String nombre, boolean activo, String nombreMarca) {
         this.idModelo = idModelo;
         this.idMarca = idMarca;

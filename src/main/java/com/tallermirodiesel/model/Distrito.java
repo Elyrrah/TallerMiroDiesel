@@ -14,9 +14,7 @@ public class Distrito {
     private Long idDepartamento;
     private String nombre;
     private boolean activo;
-    
-    // Campo auxiliar para mostrar el nombre del Departamento con JOIN
-    private String nombreDepartamento;
+    private String nombreDepartamento;    // Campo auxiliar para mostrar el nombre del Departamento con JOIN
 
     // Constructor vacío
     public Distrito() {

@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import com.tallermirodiesel.model.Marca;
 import com.tallermirodiesel.service.MarcaService;
@@ -32,20 +31,20 @@ public class MarcaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
-        
+
         if (action == null || action.isBlank()) {
             action = "listar";
         }
 
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
+                case "nuevo"      -> mostrarFormularioNuevo(req, resp);
+                case "editar"     -> mostrarFormularioEditar(req, resp);
+                case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
-                default -> listar(req, resp);
+                case "buscar"     -> listar(req, resp);
+                case "listar"     -> listar(req, resp);
+                default           -> listar(req, resp);
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
@@ -56,7 +55,7 @@ public class MarcaServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
-        
+
         if (action == null || action.isBlank()) {
             action = "guardar";
         }
@@ -76,7 +75,7 @@ public class MarcaServlet extends HttpServlet {
             marca.setActivo("true".equals(req.getParameter("activo")));
 
             req.setAttribute("marca", marca);
-            req.getRequestDispatcher("/WEB-INF/views/marcas/marca_form.jsp").forward(req, resp);
+            req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_form.jsp").forward(req, resp);
         }
     }
 
@@ -88,29 +87,15 @@ public class MarcaServlet extends HttpServlet {
             req.setAttribute("filtro", filtro);
         } else {
             req.setAttribute("marcas", marcaService.listarTodos());
+            req.setAttribute("filtro", "");
         }
 
-        req.getRequestDispatcher("/WEB-INF/views/marcas/marca_listar.jsp").forward(req, resp);
-    }
-
-    private void buscar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String filtro = req.getParameter("filtro");
-
-        List<Marca> lista;
-        if (filtro == null || filtro.isBlank()) {
-            lista = marcaService.listarTodos();
-        } else {
-            lista = marcaService.buscarPorNombreParcial(filtro);
-        }
-
-        req.setAttribute("marcas", lista);
-        req.setAttribute("filtro", (filtro == null) ? "" : filtro);
-        req.getRequestDispatcher("/WEB-INF/views/marcas/marca_listar.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_listar.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("marca", new Marca());
-        req.getRequestDispatcher("/WEB-INF/views/marcas/marca_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_form.jsp").forward(req, resp);
     }
 
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -127,7 +112,7 @@ public class MarcaServlet extends HttpServlet {
         }
 
         req.setAttribute("marca", marca.get());
-        req.getRequestDispatcher("/WEB-INF/views/marcas/marca_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_form.jsp").forward(req, resp);
     }
 
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -153,10 +138,9 @@ public class MarcaServlet extends HttpServlet {
     }
 
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String idParam = req.getParameter("idMarca");
-        Long idMarca = (idParam == null || idParam.isBlank()) ? null : Long.parseLong(idParam);
-
         Marca marca = new Marca();
+
+        Long idMarca = parseLong(req.getParameter("idMarca"));
         marca.setIdMarca(idMarca);
         marca.setNombre(req.getParameter("nombre"));
 
@@ -164,8 +148,7 @@ public class MarcaServlet extends HttpServlet {
             marca.setActivo(true);
             marcaService.crear(marca);
         } else {
-            String activoParam = req.getParameter("activo");
-            marca.setActivo("true".equals(activoParam));
+            marca.setActivo("true".equals(req.getParameter("activo")));
             marcaService.actualizar(marca);
         }
 
@@ -177,7 +160,7 @@ public class MarcaServlet extends HttpServlet {
             return null;
         }
         try {
-            return Long.parseLong(value);
+            return Long.valueOf(value);
         } catch (NumberFormatException e) {
             return null;
         }

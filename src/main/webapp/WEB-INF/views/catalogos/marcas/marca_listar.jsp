@@ -14,7 +14,6 @@
     <title>Marcas</title>
 
     <style>
-        /* Buscador simple */
         .buscador {
             margin: 10px 0 15px 0;
         }
@@ -27,7 +26,6 @@
             margin-left: 6px;
         }
 
-        /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
             width: 46px;
@@ -60,22 +58,17 @@
         }
         .switch.off {
             background: #e74c3c;
-            border-color: #c0392b
+            border-color: #c0392b;
         }
-
-        /* Opcional: cursor de mano */
         .switch:hover {
             filter: brightness(0.95);
         }
-        
-        /* Circulito cuando está apagado */
         .switch.off::after {
             border-color: #c0392b;
         }
     </style>
 </head>
 <body>
-<!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
@@ -93,9 +86,9 @@
     </a>
 </p>
 
-<!-- Buscador / filtro -->
 <form class="buscador" method="get" action="${pageContext.request.contextPath}/marcas">
-    <input type="hidden" name="action" value="listar" />
+    <%-- CORRECCIÓN: value="buscar" igual que en pais_listar.jsp --%>
+    <input type="hidden" name="action" value="buscar" />
     <label>Buscar:</label>
     <input type="text" name="filtro" value="${filtro}" placeholder="Nombre..." />
     <button type="submit">Filtrar</button>
@@ -120,7 +113,6 @@
                         Editar
                     </a>
 
-                    <!-- Toggle activar/desactivar -->
                     <c:choose>
                         <c:when test="${m.activo}">
                             | <a class="switch on"
@@ -131,8 +123,7 @@
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/marcas?action=activar&id=${m.idMarca}"
-                                 >
+                                 href="${pageContext.request.contextPath}/marcas?action=activar&id=${m.idMarca}">
                               </a>
                         </c:otherwise>
                     </c:choose>

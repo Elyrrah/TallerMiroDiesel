@@ -27,12 +27,7 @@ public class ModeloServiceImpl implements ModeloService {
         this.marcaDAO = new MarcaDAOImpl();
     }
 
-    @Override
-    public Long crear(Modelo modelo) {
-        if (modelo == null) {
-            throw new IllegalArgumentException("El modelo no puede ser null.");
-        }
-
+    private void validarCampos(Modelo modelo) {
         if (modelo.getIdMarca() == null || modelo.getIdMarca() <= 0) {
             throw new IllegalArgumentException("El id de la marca debe ser válido.");
         }
@@ -53,6 +48,16 @@ public class ModeloServiceImpl implements ModeloService {
         }
 
         modelo.setNombre(nombre);
+    }
+
+    @Override
+    public Long crear(Modelo modelo) {
+        if (modelo == null) {
+            throw new IllegalArgumentException("El modelo no puede ser null.");
+        }
+
+        validarCampos(modelo);
+
         return modeloDAO.crear(modelo);
     }
 
@@ -62,29 +67,9 @@ public class ModeloServiceImpl implements ModeloService {
             throw new IllegalArgumentException("Datos incompletos para actualizar.");
         }
 
-        if (modelo.getIdMarca() == null || modelo.getIdMarca() <= 0) {
-            throw new IllegalArgumentException("El id de la marca debe ser válido.");
-        }
+        validarCampos(modelo);
 
-        Optional<Marca> marca = marcaDAO.buscarPorId(modelo.getIdMarca());
-        if (marca.isEmpty()) {
-            throw new IllegalArgumentException("No existe una marca con id: " + modelo.getIdMarca());
-        }
-
-        if (!marca.get().isActivo()) {
-            throw new IllegalStateException("La marca con id " + modelo.getIdMarca() + " está inactiva.");
-        }
-
-        String nombre = (modelo.getNombre() == null) ? null : modelo.getNombre().trim().toUpperCase();
-
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre del modelo es obligatorio.");
-        }
-
-        modelo.setNombre(nombre);
-
-        Optional<Modelo> existente = modeloDAO.buscarPorId(modelo.getIdModelo());
-        if (existente.isEmpty()) {
+        if (modeloDAO.buscarPorId(modelo.getIdModelo()).isEmpty()) {
             throw new IllegalArgumentException("No existe un modelo con id: " + modelo.getIdModelo());
         }
 
@@ -97,8 +82,7 @@ public class ModeloServiceImpl implements ModeloService {
             throw new IllegalArgumentException("El id del modelo debe ser válido.");
         }
 
-        Optional<Modelo> modelo = modeloDAO.buscarPorId(id);
-        if (modelo.isEmpty()) {
+        if (modeloDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un modelo con id: " + id);
         }
 
@@ -111,8 +95,7 @@ public class ModeloServiceImpl implements ModeloService {
             throw new IllegalArgumentException("El id del modelo debe ser válido.");
         }
 
-        Optional<Modelo> modelo = modeloDAO.buscarPorId(id);
-        if (modelo.isEmpty()) {
+        if (modeloDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un modelo con id: " + id);
         }
 
@@ -144,8 +127,7 @@ public class ModeloServiceImpl implements ModeloService {
             throw new IllegalArgumentException("El filtro no puede ser null.");
         }
 
-        String filtroNorm = filtro.trim();
-        return modeloDAO.buscarPorNombreParcial(filtroNorm);
+        return modeloDAO.buscarPorNombreParcial(filtro.trim());
     }
 
     @Override

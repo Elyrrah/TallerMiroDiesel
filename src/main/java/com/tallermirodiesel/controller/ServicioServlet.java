@@ -11,7 +11,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 import com.tallermirodiesel.model.Servicio;
 import com.tallermirodiesel.service.ServicioService;
@@ -40,13 +39,14 @@ public class ServicioServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(req, resp);
-                case "editar" -> mostrarFormularioEditar(req, resp);
-                case "activar" -> activar(req, resp);
+                case "nuevo"      -> mostrarFormularioNuevo(req, resp);
+                case "editar"     -> mostrarFormularioEditar(req, resp);
+                case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                case "buscar" -> buscar(req, resp);
-                case "listar" -> listar(req, resp);
-                default -> listar(req, resp);
+                // CORRECCIÓN 1: "buscar" apunta directamente a listar()
+                case "buscar"     -> listar(req, resp);
+                case "listar"     -> listar(req, resp);
+                default           -> listar(req, resp);
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
@@ -69,21 +69,12 @@ public class ServicioServlet extends HttpServlet {
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
-
-            Servicio servicio = new Servicio();
-            Long idServicio = parseLong(req.getParameter("idServicio"));
-            servicio.setIdServicio(idServicio);
-            servicio.setCodigo(req.getParameter("codigo"));
-            servicio.setNombre(req.getParameter("nombre"));
-            servicio.setDescripcion(req.getParameter("descripcion"));
-            servicio.setPrecioBase(parseBigDecimal(req.getParameter("precioBase")));
-            servicio.setActivo("true".equals(req.getParameter("activo")));
-
-            req.setAttribute("servicio", servicio);
-            req.getRequestDispatcher("/WEB-INF/views/servicios/servicio_form.jsp").forward(req, resp);
+            // CORRECCIÓN 3: reutiliza reenviarFormularioConDatos()
+            reenviarFormularioConDatos(req, resp);
         }
     }
 
+    // LISTAR (con filtro opcional por nombre).
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -92,31 +83,20 @@ public class ServicioServlet extends HttpServlet {
             req.setAttribute("filtro", filtro);
         } else {
             req.setAttribute("servicios", servicioService.listarTodos());
+            // CORRECCIÓN 2: siempre seteamos "filtro" para que el JSP nunca lo reciba como null
+            req.setAttribute("filtro", "");
         }
 
-        req.getRequestDispatcher("/WEB-INF/views/servicios/servicio_listar.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_listar.jsp").forward(req, resp);
     }
 
-    private void buscar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        String filtro = req.getParameter("filtro");
-
-        List<Servicio> lista;
-        if (filtro == null || filtro.isBlank()) {
-            lista = servicioService.listarTodos();
-        } else {
-            lista = servicioService.buscarPorNombreParcial(filtro);
-        }
-
-        req.setAttribute("servicios", lista);
-        req.setAttribute("filtro", (filtro == null) ? "" : filtro);
-        req.getRequestDispatcher("/WEB-INF/views/servicios/servicio_listar.jsp").forward(req, resp);
-    }
-
+    // FORMULARIO NUEVO.
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("servicio", new Servicio());
-        req.getRequestDispatcher("/WEB-INF/views/servicios/servicio_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_form.jsp").forward(req, resp);
     }
 
+    // FORMULARIO EDITAR.
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -131,9 +111,10 @@ public class ServicioServlet extends HttpServlet {
         }
 
         req.setAttribute("servicio", servicio.get());
-        req.getRequestDispatcher("/WEB-INF/views/servicios/servicio_form.jsp").forward(req, resp);
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_form.jsp").forward(req, resp);
     }
 
+    // ACTIVAR.
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -145,6 +126,7 @@ public class ServicioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
     }
 
+    // DESACTIVAR.
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -156,7 +138,23 @@ public class ServicioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
     }
 
+    // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        // CORRECCIÓN 3: reutiliza construirDesdeRequest()
+        Servicio servicio = construirDesdeRequest(req);
+
+        if (servicio.getIdServicio() == null) {
+            servicio.setActivo(true);
+            servicioService.crear(servicio);
+        } else {
+            servicioService.actualizar(servicio);
+        }
+
+        resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
+    }
+
+    // CONSTRUIR SERVICIO DESDE REQUEST.
+    private Servicio construirDesdeRequest(HttpServletRequest req) {
         Servicio servicio = new Servicio();
 
         Long idServicio = parseLong(req.getParameter("idServicio"));
@@ -166,17 +164,20 @@ public class ServicioServlet extends HttpServlet {
         servicio.setDescripcion(req.getParameter("descripcion"));
         servicio.setPrecioBase(parseBigDecimal(req.getParameter("precioBase")));
 
-        if (idServicio == null) {
-            servicio.setActivo(true);
-            servicioService.crear(servicio);
-        } else {
+        if (idServicio != null) {
             servicio.setActivo("true".equals(req.getParameter("activo")));
-            servicioService.actualizar(servicio);
         }
 
-        resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
+        return servicio;
     }
 
+    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR EN GUARDAR).
+    private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        req.setAttribute("servicio", construirDesdeRequest(req));
+        req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_form.jsp").forward(req, resp);
+    }
+
+    // PARSEO DE LONG SEGURO (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -188,6 +189,7 @@ public class ServicioServlet extends HttpServlet {
         }
     }
 
+    // PARSEO DE BIGDECIMAL SEGURO (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
     private BigDecimal parseBigDecimal(String value) {
         if (value == null || value.isBlank()) {
             return null;

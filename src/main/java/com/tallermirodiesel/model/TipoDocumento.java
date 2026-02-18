@@ -1,14 +1,12 @@
 /*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt
- * to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java
- * to edit this template
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.tallermirodiesel.model;
 
 import com.tallermirodiesel.model.enums.TipoDocumentoAplicaEnum;
+
 /**
- *
  * @author elyrr
  */
 public class TipoDocumento {
@@ -23,7 +21,7 @@ public class TipoDocumento {
     // Constructor vacío
     public TipoDocumento() {
     }
-
+    
     // Constructor con parámetros
     public TipoDocumento(Long idTipoDocumento, String nombre, String codigo, TipoDocumentoAplicaEnum aplicaA, boolean activo) {
         this.idTipoDocumento = idTipoDocumento;

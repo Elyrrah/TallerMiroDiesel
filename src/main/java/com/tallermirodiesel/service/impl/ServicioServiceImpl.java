@@ -22,14 +22,9 @@ public class ServicioServiceImpl implements ServicioService {
         this.servicioDAO = new ServicioDAOImpl();
     }
 
-    @Override
-    public Long crear(Servicio servicio) {
-        if (servicio == null) {
-            throw new IllegalArgumentException("El servicio no puede ser null.");
-        }
-
-        String codigo = servicio.getCodigo() == null ? null : servicio.getCodigo().trim().toUpperCase();
-        String nombre = servicio.getNombre() == null ? null : servicio.getNombre().trim().toUpperCase();
+    private void validarCampos(Servicio servicio) {
+        String codigo      = servicio.getCodigo()      == null ? null : servicio.getCodigo().trim().toUpperCase();
+        String nombre      = servicio.getNombre()      == null ? null : servicio.getNombre().trim().toUpperCase();
         String descripcion = servicio.getDescripcion() == null ? null : servicio.getDescripcion().trim();
 
         if (codigo == null || codigo.isBlank()) {
@@ -48,10 +43,18 @@ public class ServicioServiceImpl implements ServicioService {
         servicio.setCodigo(codigo);
         servicio.setNombre(nombre);
         servicio.setDescripcion(descripcion);
+    }
 
-        Optional<Servicio> existente = servicioDAO.buscarPorCodigo(codigo);
-        if (existente.isPresent()) {
-            throw new IllegalArgumentException("Ya existe un servicio con código: " + codigo);
+    @Override
+    public Long crear(Servicio servicio) {
+        if (servicio == null) {
+            throw new IllegalArgumentException("El servicio no puede ser null.");
+        }
+
+        validarCampos(servicio);
+
+        if (servicioDAO.buscarPorCodigo(servicio.getCodigo()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un servicio con código: " + servicio.getCodigo());
         }
 
         return servicioDAO.crear(servicio);
@@ -63,35 +66,15 @@ public class ServicioServiceImpl implements ServicioService {
             throw new IllegalArgumentException("Datos incompletos para actualizar.");
         }
 
-        String codigo = servicio.getCodigo() == null ? null : servicio.getCodigo().trim().toUpperCase();
-        String nombre = servicio.getNombre() == null ? null : servicio.getNombre().trim().toUpperCase();
-        String descripcion = servicio.getDescripcion() == null ? null : servicio.getDescripcion().trim();
+        validarCampos(servicio);
 
-        if (codigo == null || codigo.isBlank()) {
-            throw new IllegalArgumentException("El código del servicio es obligatorio.");
-        }
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre del servicio es obligatorio.");
-        }
-        if (servicio.getPrecioBase() == null) {
-            throw new IllegalArgumentException("El precio base del servicio es obligatorio.");
-        }
-        if (servicio.getPrecioBase().signum() < 0) {
-            throw new IllegalArgumentException("El precio base del servicio no puede ser negativo.");
-        }
-
-        servicio.setCodigo(codigo);
-        servicio.setNombre(nombre);
-        servicio.setDescripcion(descripcion);
-
-        Optional<Servicio> existente = servicioDAO.buscarPorId(servicio.getIdServicio());
-        if (existente.isEmpty()) {
+        if (servicioDAO.buscarPorId(servicio.getIdServicio()).isEmpty()) {
             throw new IllegalArgumentException("No existe un servicio con id: " + servicio.getIdServicio());
         }
 
-        Optional<Servicio> porCodigo = servicioDAO.buscarPorCodigo(codigo);
+        Optional<Servicio> porCodigo = servicioDAO.buscarPorCodigo(servicio.getCodigo());
         if (porCodigo.isPresent() && !porCodigo.get().getIdServicio().equals(servicio.getIdServicio())) {
-            throw new IllegalArgumentException("Ya existe otro servicio con el código: " + codigo);
+            throw new IllegalArgumentException("Ya existe otro servicio con el código: " + servicio.getCodigo());
         }
 
         return servicioDAO.actualizar(servicio);
@@ -103,8 +86,7 @@ public class ServicioServiceImpl implements ServicioService {
             throw new IllegalArgumentException("El id del servicio debe ser válido.");
         }
 
-        Optional<Servicio> servicio = servicioDAO.buscarPorId(id);
-        if (servicio.isEmpty()) {
+        if (servicioDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un servicio con id: " + id);
         }
 
@@ -117,8 +99,7 @@ public class ServicioServiceImpl implements ServicioService {
             throw new IllegalArgumentException("El id del servicio debe ser válido.");
         }
 
-        Optional<Servicio> servicio = servicioDAO.buscarPorId(id);
-        if (servicio.isEmpty()) {
+        if (servicioDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un servicio con id: " + id);
         }
 
@@ -149,8 +130,7 @@ public class ServicioServiceImpl implements ServicioService {
             throw new IllegalArgumentException("El nombre del servicio es obligatorio.");
         }
 
-        String nombreNorm = nombre.trim().toUpperCase();
-        return servicioDAO.buscarPorNombre(nombreNorm);
+        return servicioDAO.buscarPorNombre(nombre.trim().toUpperCase());
     }
 
     @Override
@@ -159,8 +139,7 @@ public class ServicioServiceImpl implements ServicioService {
             throw new IllegalArgumentException("El filtro no puede ser null.");
         }
 
-        String filtroNorm = filtro.trim();
-        return servicioDAO.buscarPorNombreParcial(filtroNorm);
+        return servicioDAO.buscarPorNombreParcial(filtro.trim());
     }
 
     @Override

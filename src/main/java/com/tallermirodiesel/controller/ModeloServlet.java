@@ -42,13 +42,14 @@ public class ModeloServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(request, response);
-                case "editar" -> mostrarFormularioEditar(request, response);
-                case "activar" -> activar(request, response);
+                case "nuevo"      -> mostrarFormularioNuevo(request, response);
+                case "editar"     -> mostrarFormularioEditar(request, response);
+                case "activar"    -> activar(request, response);
                 case "desactivar" -> desactivar(request, response);
-                case "buscar" -> buscar(request, response);
-                case "listar" -> listar(request, response);
-                default -> listar(request, response);
+                // CORRECCIÓN 1: "buscar" apunta directamente a listar(), el método buscar() sobra
+                case "buscar"     -> listar(request, response);
+                case "listar"     -> listar(request, response);
+                default           -> listar(request, response);
             }
         } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
@@ -75,6 +76,7 @@ public class ModeloServlet extends HttpServlet {
         }
     }
 
+    // LISTAR (con filtro por marca y búsqueda por nombre).
     private void listar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         cargarMarcas(request);
 
@@ -84,117 +86,124 @@ public class ModeloServlet extends HttpServlet {
             filtro = request.getParameter("q");
         }
 
-        request.setAttribute("idMarca", idMarca);
-        request.setAttribute("filtro", filtro);
+        request.setAttribute("idMarca", idMarca != null ? idMarca : "");
+        request.setAttribute("filtro", filtro != null ? filtro : "");
 
         List<Modelo> listaBase = (idMarca == null)
                 ? modeloService.listarTodos()
                 : modeloService.listarPorMarca(idMarca);
 
         if (idMarca == null && filtro != null && !filtro.isBlank()) {
-            List<Modelo> listaSql = modeloService.buscarPorNombreParcial(filtro);
-            request.setAttribute("listaModelos", listaSql);
-            request.getRequestDispatcher("/WEB-INF/views/modelos/modelo_listar.jsp").forward(request, response);
+            request.setAttribute("listaModelos", modeloService.buscarPorNombreParcial(filtro));
+            request.getRequestDispatcher("/WEB-INF/views/catalogos/modelos/modelo_listar.jsp").forward(request, response);
             return;
         }
 
-        if (filtro != null) {
-            String f = filtro.trim();
-            if (!f.isBlank()) {
-                String needle = f.toUpperCase(Locale.ROOT);
-                listaBase = listaBase.stream()
-                        .filter(m -> m.getNombre() != null && m.getNombre().toUpperCase(Locale.ROOT).contains(needle))
-                        .collect(Collectors.toList());
-            }
+        if (filtro != null && !filtro.isBlank()) {
+            String needle = filtro.trim().toUpperCase(Locale.ROOT);
+            listaBase = listaBase.stream()
+                    .filter(m -> m.getNombre() != null && m.getNombre().toUpperCase(Locale.ROOT).contains(needle))
+                    .collect(Collectors.toList());
         }
 
         request.setAttribute("listaModelos", listaBase);
-        request.getRequestDispatcher("/WEB-INF/views/modelos/modelo_listar.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/catalogos/modelos/modelo_listar.jsp").forward(request, response);
     }
 
-    private void buscar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        listar(request, response);
-    }
-
+    // FORMULARIO NUEVO.
     private void mostrarFormularioNuevo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         cargarMarcas(request);
         request.setAttribute("modelo", new Modelo());
-        request.getRequestDispatcher("/WEB-INF/views/modelos/modelo_form.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/catalogos/modelos/modelo_form.jsp").forward(request, response);
     }
 
+    // FORMULARIO EDITAR.
     private void mostrarFormularioEditar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         cargarMarcas(request);
 
         Long id = parseLong(request.getParameter("id"));
 
         Optional<Modelo> opt = modeloService.buscarPorId(id);
-
         if (opt.isEmpty()) {
             throw new IllegalArgumentException("No existe un modelo con id: " + id);
         }
 
         request.setAttribute("modelo", opt.get());
-        request.getRequestDispatcher("/WEB-INF/views/modelos/modelo_form.jsp").forward(request, response);
+        request.getRequestDispatcher("/WEB-INF/views/catalogos/modelos/modelo_form.jsp").forward(request, response);
     }
 
+    // ACTIVAR.
     private void activar(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = parseLong(request.getParameter("id"));
         modeloService.activar(id);
-
-        String url = request.getContextPath() + "/modelos?action=listar";
-
-        Long idMarca = parseLongNullable(request.getParameter("idMarca"));
-        if (idMarca != null) url += "&idMarca=" + idMarca;
-
-        String filtro = request.getParameter("filtro");
-        if (filtro == null) filtro = request.getParameter("q");
-        if (filtro != null && !filtro.isBlank()) {
-            url += "&filtro=" + URLEncoder.encode(filtro, StandardCharsets.UTF_8);
-        }
-
-        response.sendRedirect(url);
+        // CORRECCIÓN 2: reutiliza construirUrlRetornoListado() en lugar de duplicar la lógica
+        response.sendRedirect(construirUrlRetornoListado(request));
     }
 
+    // DESACTIVAR.
     private void desactivar(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = parseLong(request.getParameter("id"));
         modeloService.desactivar(id);
-
-        String url = request.getContextPath() + "/modelos?action=listar";
-
-        Long idMarca = parseLongNullable(request.getParameter("idMarca"));
-        if (idMarca != null) url += "&idMarca=" + idMarca;
-
-        String filtro = request.getParameter("filtro");
-        if (filtro == null) filtro = request.getParameter("q");
-        if (filtro != null && !filtro.isBlank()) {
-            url += "&filtro=" + URLEncoder.encode(filtro, StandardCharsets.UTF_8);
-        }
-
-        response.sendRedirect(url);
+        // CORRECCIÓN 2: reutiliza construirUrlRetornoListado() en lugar de duplicar la lógica
+        response.sendRedirect(construirUrlRetornoListado(request));
     }
 
+    // GUARDAR (CREAR O ACTUALIZAR).
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Long idModelo = parseLongNullable(request.getParameter("idModelo"));
-        Long idMarca = parseLong(request.getParameter("idMarca"));
-        String nombre = request.getParameter("nombre");
-        boolean activo = parseBooleanDefaultTrue(request.getParameter("activo"));
+        // CORRECCIÓN 3: reutiliza construirDesdeRequest() en lugar de duplicar la lógica
+        Modelo m = construirDesdeRequest(request);
 
-        Modelo m = new Modelo();
-        m.setIdModelo(idModelo);
-        m.setIdMarca(idMarca);
-        m.setNombre(nombre);
-        m.setActivo(activo);
-
-        if (idModelo == null) {
+        if (m.getIdModelo() == null) {
             modeloService.crear(m);
         } else {
             modeloService.actualizar(m);
         }
 
+        response.sendRedirect(construirUrlRetornoListado(request));
+    }
+
+    // CONSTRUIR MODELO DESDE REQUEST.
+    private Modelo construirDesdeRequest(HttpServletRequest request) {
+        Modelo m = new Modelo();
+
+        Long idModelo = parseLongNullable(request.getParameter("idModelo"));
+        m.setIdModelo(idModelo);
+
+        Long idMarca = parseLongNullable(request.getParameter("idMarca"));
+        m.setIdMarca(idMarca);
+
+        m.setNombre(request.getParameter("nombre"));
+
+        String activoParam = request.getParameter("activo");
+        if (idModelo == null) {
+            m.setActivo(true);
+        } else {
+            m.setActivo("true".equals(activoParam));
+        }
+
+        return m;
+    }
+
+    // CARGAR MARCAS (COMBO/FILTRO).
+    private void cargarMarcas(HttpServletRequest request) {
+        List<Marca> marcas = marcaService.listarActivos();
+        request.setAttribute("marcas", marcas);
+    }
+
+    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR EN GUARDAR).
+    private void reenviarFormularioConDatos(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // CORRECCIÓN 3: reutiliza construirDesdeRequest() en lugar de duplicar la lógica
+        cargarMarcas(request);
+        request.setAttribute("modelo", construirDesdeRequest(request));
+        request.getRequestDispatcher("/WEB-INF/views/catalogos/modelos/modelo_form.jsp").forward(request, response);
+    }
+
+    // ARMAR URL DE RETORNO PRESERVANDO FILTROS.
+    private String construirUrlRetornoListado(HttpServletRequest request) {
         String url = request.getContextPath() + "/modelos?action=listar";
 
-        Long idMarcaFiltro = parseLongNullable(request.getParameter("idMarcaFiltro"));
-        if (idMarcaFiltro != null) url += "&idMarca=" + idMarcaFiltro;
+        Long idMarca = parseLongNullable(request.getParameter("idMarca"));
+        if (idMarca != null) url += "&idMarca=" + idMarca;
 
         String filtro = request.getParameter("filtro");
         if (filtro == null) filtro = request.getParameter("q");
@@ -202,32 +211,10 @@ public class ModeloServlet extends HttpServlet {
             url += "&filtro=" + URLEncoder.encode(filtro, StandardCharsets.UTF_8);
         }
 
-        response.sendRedirect(url);
+        return url;
     }
 
-    private void cargarMarcas(HttpServletRequest request) {
-        List<Marca> marcas = marcaService.listarActivos();
-        request.setAttribute("marcas", marcas);
-    }
-
-    private void reenviarFormularioConDatos(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        cargarMarcas(request);
-
-        Long idModelo = parseLongNullable(request.getParameter("idModelo"));
-        Long idMarca = parseLongNullable(request.getParameter("idMarca"));
-        String nombre = request.getParameter("nombre");
-        boolean activo = parseBooleanDefaultTrue(request.getParameter("activo"));
-
-        Modelo m = new Modelo();
-        m.setIdModelo(idModelo);
-        m.setIdMarca(idMarca);
-        m.setNombre(nombre);
-        m.setActivo(activo);
-
-        request.setAttribute("modelo", m);
-        request.getRequestDispatcher("/WEB-INF/views/modelos/modelo_form.jsp").forward(request, response);
-    }
-
+    // PARSEO DE LONG OBLIGATORIO.
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Parámetro numérico obligatorio.");
@@ -243,6 +230,7 @@ public class ModeloServlet extends HttpServlet {
         }
     }
 
+    // PARSEO DE LONG OPCIONAL (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
     private Long parseLongNullable(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -258,6 +246,7 @@ public class ModeloServlet extends HttpServlet {
         }
     }
 
+    // PARSEO DE BOOLEAN (POR DEFECTO TRUE SI ES NULL).
     private boolean parseBooleanDefaultTrue(String value) {
         if (value == null) {
             return true;

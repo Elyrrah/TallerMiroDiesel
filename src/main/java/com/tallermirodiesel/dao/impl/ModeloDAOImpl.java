@@ -26,13 +26,8 @@ public class ModeloDAOImpl implements ModeloDAO {
         m.setIdMarca(rs.getLong("id_marca"));
         m.setNombre(rs.getString("nombre"));
         m.setActivo(rs.getBoolean("activo"));
-
-        try {
-            m.setNombreMarca(rs.getString("nombre_marca"));
-        } catch (SQLException ignore) {
-            m.setNombreMarca(null);
-        }
-
+        // CORRECCIÓN 1: eliminado el try-catch innecesario, igual que en LocalidadDAOImpl
+        m.setNombreMarca(rs.getString("nombre_marca"));
         return m;
     }
 
@@ -106,10 +101,10 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public boolean activar(Long id) {
         String sql = """
-            UPDATE public.modelos
-            SET activo = true
-            WHERE id_modelo = ?
-        """;
+                UPDATE public.modelos
+                SET activo = true
+                WHERE id_modelo = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -144,11 +139,11 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public Optional<Modelo> buscarPorId(Long id) {
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE mo.id_modelo = ?
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                WHERE mo.id_modelo = ?
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -167,11 +162,11 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public Optional<Modelo> buscarPorNombre(String nombre) {
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE UPPER(TRIM(mo.nombre)) = UPPER(TRIM(?))
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                WHERE UPPER(TRIM(mo.nombre)) = UPPER(TRIM(?))
+                """;
 
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -191,12 +186,12 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public List<Modelo> buscarPorNombreParcial(String filtro) {
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE UPPER(mo.nombre) LIKE UPPER(?)
-            ORDER BY ma.nombre ASC, mo.nombre ASC
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                WHERE UPPER(mo.nombre) LIKE UPPER(?)
+                ORDER BY ma.nombre ASC, mo.nombre ASC
+                """;
 
         List<Modelo> lista = new ArrayList<>();
 
@@ -222,11 +217,11 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public List<Modelo> listarTodos() {
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            ORDER BY ma.nombre ASC, mo.nombre ASC
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                ORDER BY ma.nombre ASC, mo.nombre ASC
+                """;
 
         List<Modelo> lista = new ArrayList<>();
 
@@ -248,12 +243,12 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public List<Modelo> listarActivos() {
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE mo.activo = true
-            ORDER BY ma.nombre ASC, mo.nombre ASC
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                WHERE mo.activo = true
+                ORDER BY ma.nombre ASC, mo.nombre ASC
+                """;
 
         List<Modelo> lista = new ArrayList<>();
 
@@ -275,12 +270,12 @@ public class ModeloDAOImpl implements ModeloDAO {
     @Override
     public List<Modelo> listarInactivos() {
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE mo.activo = false
-            ORDER BY ma.nombre ASC, mo.nombre ASC
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                WHERE mo.activo = false
+                ORDER BY ma.nombre ASC, mo.nombre ASC
+                """;
 
         List<Modelo> lista = new ArrayList<>();
 
@@ -301,13 +296,18 @@ public class ModeloDAOImpl implements ModeloDAO {
 
     @Override
     public List<Modelo> listarPorMarca(Long idMarca) {
+        // CORRECCIÓN 2: validación de null igual que listarPorDistrito() en LocalidadDAOImpl
+        if (idMarca == null) {
+            return List.of();
+        }
+
         String sql = """
-            SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-            FROM public.modelos mo
-            JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-            WHERE mo.id_marca = ?
-            ORDER BY mo.nombre ASC
-            """;
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
+                WHERE mo.id_marca = ?
+                ORDER BY mo.nombre ASC
+                """;
 
         List<Modelo> lista = new ArrayList<>();
 

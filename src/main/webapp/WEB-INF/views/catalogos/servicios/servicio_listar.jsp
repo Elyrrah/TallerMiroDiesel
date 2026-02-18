@@ -15,7 +15,6 @@
     <title>Servicios</title>
 
     <style>
-        /* Buscador simple */
         .buscador {
             margin: 10px 0 15px 0;
         }
@@ -28,7 +27,6 @@
             margin-left: 6px;
         }
 
-        /* Toggle tipo switch (link) */
         .switch {
             display: inline-block;
             width: 46px;
@@ -61,20 +59,15 @@
         }
         .switch.off {
             background: #e74c3c;
-            border-color: #c0392b
+            border-color: #c0392b;
         }
-
-        /* Opcional: cursor de mano */
         .switch:hover {
             filter: brightness(0.95);
         }
-        
-        /* Circulito cuando está apagado */
         .switch.off::after {
             border-color: #c0392b;
         }
 
-        /* Precio: símbolo fijo a la izquierda, monto alineado a la derecha */
         .precio {
             display: flex;
             justify-content: space-between;
@@ -92,7 +85,6 @@
 </head>
 <body>
 
-<!-- Volver a la página principal -->
 <p>
     <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
 </p>
@@ -111,9 +103,9 @@
     </a>
 </p>
 
-<!-- Buscador / filtro -->
 <form class="buscador" method="get" action="${pageContext.request.contextPath}/servicios">
-    <input type="hidden" name="action" value="listar" />
+    <%-- CORRECCIÓN: value="buscar" igual que el patrón del repositorio --%>
+    <input type="hidden" name="action" value="buscar" />
     <label>Buscar:</label>
     <input type="text" name="filtro" value="${filtro}" placeholder="Código o nombre..." />
     <button type="submit">Filtrar</button>
@@ -151,7 +143,6 @@
                         Editar
                     </a>
 
-                    <!-- Toggle activar/desactivar (switch) -->
                     <c:choose>
                         <c:when test="${s.activo}">
                             | <a class="switch on"
@@ -162,8 +153,7 @@
                         <c:otherwise>
                             | <a class="switch off"
                                  title="Activar"
-                                 href="${pageContext.request.contextPath}/servicios?action=activar&id=${s.idServicio}&filtro=${filtro}"
-                                 >
+                                 href="${pageContext.request.contextPath}/servicios?action=activar&id=${s.idServicio}&filtro=${filtro}">
                               </a>
                         </c:otherwise>
                     </c:choose>

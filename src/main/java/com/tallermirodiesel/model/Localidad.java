@@ -3,20 +3,23 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 package com.tallermirodiesel.model;
+
 /**
  * @author elyrr
  */
 public class Localidad {
+    
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idLocalidad;
     private Long idDistrito;
     private String nombre;
     private boolean activo;
-    // Campo auxiliar para mostrar el nombre del distrito con JOIN
-    private String nombreDistrito;
+    private String nombreDistrito;    // Campo auxiliar para mostrar el nombre del distrito con JOIN
+
     // Constructor vacío
     public Localidad() {
     }
+    
     // Constructor con parámetros
     public Localidad(Long idLocalidad, Long idDistrito, String nombre, boolean activo) {
         this.idLocalidad = idLocalidad;

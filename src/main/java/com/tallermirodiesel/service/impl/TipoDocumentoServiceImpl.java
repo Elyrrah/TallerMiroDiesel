@@ -23,14 +23,9 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         this.tipoDocumentoDAO = new TipoDocumentoDAOImpl();
     }
 
-    @Override
-    public Long crear(TipoDocumento tipoDocumento) {
-        if (tipoDocumento == null) {
-            throw new IllegalArgumentException("El TipoDocumento no puede ser null.");
-        }
-
-        String nombre = tipoDocumento.getNombre() == null ? null : tipoDocumento.getNombre().trim().toUpperCase();
-        String codigo = tipoDocumento.getCodigo() == null ? null : tipoDocumento.getCodigo().trim().toUpperCase();
+    private void validarCampos(TipoDocumento tipoDocumento) {
+        String nombre  = tipoDocumento.getNombre() == null ? null : tipoDocumento.getNombre().trim().toUpperCase();
+        String codigo  = tipoDocumento.getCodigo() == null ? null : tipoDocumento.getCodigo().trim().toUpperCase();
         TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
 
         if (nombre == null || nombre.isBlank()) {
@@ -49,9 +44,18 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         tipoDocumento.setNombre(nombre);
         tipoDocumento.setCodigo(codigo);
         tipoDocumento.setAplicaA(aplicaA);
+    }
 
-        if (tipoDocumentoDAO.buscarPorCodigo(codigo).isPresent()) {
-            throw new IllegalArgumentException("Ya existe un TipoDocumento con el código: " + codigo);
+    @Override
+    public Long crear(TipoDocumento tipoDocumento) {
+        if (tipoDocumento == null) {
+            throw new IllegalArgumentException("El TipoDocumento no puede ser null.");
+        }
+
+        validarCampos(tipoDocumento);
+
+        if (tipoDocumentoDAO.buscarPorCodigo(tipoDocumento.getCodigo()).isPresent()) {
+            throw new IllegalArgumentException("Ya existe un TipoDocumento con el código: " + tipoDocumento.getCodigo());
         }
 
         return tipoDocumentoDAO.crear(tipoDocumento);
@@ -63,35 +67,15 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
             throw new IllegalArgumentException("Datos incompletos para actualizar.");
         }
 
-        String nombre = tipoDocumento.getNombre() == null ? null : tipoDocumento.getNombre().trim().toUpperCase();
-        String codigo = tipoDocumento.getCodigo() == null ? null : tipoDocumento.getCodigo().trim().toUpperCase();
-        TipoDocumentoAplicaEnum aplicaA = tipoDocumento.getAplicaA();
+        validarCampos(tipoDocumento);
 
-        if (nombre == null || nombre.isBlank()) {
-            throw new IllegalArgumentException("El nombre del TipoDocumento es obligatorio.");
-        }
-        if (codigo == null || codigo.isBlank()) {
-            throw new IllegalArgumentException("El código del TipoDocumento es obligatorio.");
-        }
-        if (codigo.length() > 20) {
-            throw new IllegalArgumentException("El código no puede tener más de 20 caracteres.");
-        }
-        if (aplicaA == null) {
-            throw new IllegalArgumentException("El campo AplicaA es obligatorio.");
-        }
-
-        tipoDocumento.setNombre(nombre);
-        tipoDocumento.setCodigo(codigo);
-        tipoDocumento.setAplicaA(aplicaA);
-
-        Optional<TipoDocumento> existente = tipoDocumentoDAO.buscarPorId(tipoDocumento.getIdTipoDocumento());
-        if (existente.isEmpty()) {
+        if (tipoDocumentoDAO.buscarPorId(tipoDocumento.getIdTipoDocumento()).isEmpty()) {
             throw new IllegalArgumentException("No existe un TipoDocumento con id: " + tipoDocumento.getIdTipoDocumento());
         }
 
-        Optional<TipoDocumento> porCodigo = tipoDocumentoDAO.buscarPorCodigo(codigo);
+        Optional<TipoDocumento> porCodigo = tipoDocumentoDAO.buscarPorCodigo(tipoDocumento.getCodigo());
         if (porCodigo.isPresent() && !porCodigo.get().getIdTipoDocumento().equals(tipoDocumento.getIdTipoDocumento())) {
-            throw new IllegalArgumentException("Ya existe otro TipoDocumento con el código: " + codigo);
+            throw new IllegalArgumentException("Ya existe otro TipoDocumento con el código: " + tipoDocumento.getCodigo());
         }
 
         return tipoDocumentoDAO.actualizar(tipoDocumento);
@@ -103,8 +87,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
             throw new IllegalArgumentException("El id del TipoDocumento debe ser válido.");
         }
 
-        Optional<TipoDocumento> tipoDocumento = tipoDocumentoDAO.buscarPorId(id);
-        if (tipoDocumento.isEmpty()) {
+        if (tipoDocumentoDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un TipoDocumento con id: " + id);
         }
 
@@ -117,8 +100,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
             throw new IllegalArgumentException("El id del TipoDocumento debe ser válido.");
         }
 
-        Optional<TipoDocumento> tipoDocumento = tipoDocumentoDAO.buscarPorId(id);
-        if (tipoDocumento.isEmpty()) {
+        if (tipoDocumentoDAO.buscarPorId(id).isEmpty()) {
             throw new IllegalArgumentException("No existe un TipoDocumento con id: " + id);
         }
 
@@ -140,8 +122,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
             throw new IllegalArgumentException("El nombre del TipoDocumento es obligatorio.");
         }
 
-        String nombreNorm = nombre.trim().toUpperCase();
-        return tipoDocumentoDAO.buscarPorNombre(nombreNorm);
+        return tipoDocumentoDAO.buscarPorNombre(nombre.trim().toUpperCase());
     }
 
     @Override
@@ -159,8 +140,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
             throw new IllegalArgumentException("El filtro no puede ser null.");
         }
 
-        String filtroNorm = filtro.trim();
-        return tipoDocumentoDAO.buscarPorNombreParcial(filtroNorm);
+        return tipoDocumentoDAO.buscarPorNombreParcial(filtro.trim());
     }
 
     @Override
