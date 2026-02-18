@@ -6,7 +6,6 @@
 -- =============================================================================
 -- ORDENES DE TRABAJO
 -- =============================================================================
-
 -- Tipo de ingreso de la orden
 DO $$
 BEGIN
@@ -66,7 +65,6 @@ END $$;
 -- =============================================================================
 -- PLANES DE PAGO
 -- =============================================================================
-
 -- Estado del plan de pago
 DO $$
 BEGIN
@@ -109,7 +107,6 @@ END $$;
 -- =============================================================================
 -- PAGOS
 -- =============================================================================
-
 -- Forma de pago
 DO $$
 BEGIN
@@ -124,8 +121,30 @@ BEGIN
             'EFECTIVO',
             'TRANSFERENCIA',
             'CHEQUE',
-            'TARJETA',
+            'TARJETA_CREDITO',
+            'TARJETA_DEBITO',
             'OTRO'
+        );
+    END IF;
+END $$;
+
+-- =============================================================================
+-- CLIENTES
+-- =============================================================================
+-- Fuente de referencia del cliente en la orden de trabajo
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'fuente_referencia_enum'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.fuente_referencia_enum AS ENUM (
+            'NINGUNA',
+            'CLIENTE',
+            'MECANICO'
         );
     END IF;
 END $$;

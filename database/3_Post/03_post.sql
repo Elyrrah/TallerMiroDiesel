@@ -168,7 +168,7 @@ DECLARE
     v_prefix text;
     v_ultimo integer;
 BEGIN
-    IF NEW.estado IS NULL OR NEW.estado = '' THEN
+    IF NEW.estado IS NULL THEN
         NEW.estado := 'ABIERTA';
     END IF;
 
@@ -279,7 +279,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 8) Impide borrar clientes que tengan OT abiertas
+-- 6) Impide borrar clientes que tengan OT abiertas
 CREATE OR REPLACE FUNCTION public.fn_clientes_no_borrar_ot()
 RETURNS trigger AS $$
 BEGIN
@@ -300,6 +300,7 @@ $$ LANGUAGE plpgsql;
 -- TRIGGERS
 -- =============================================================================
 
+-- Asigna estado inicial ABIERTA y genera número correlativo mensual al crear una OT
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -313,6 +314,7 @@ BEGIN
     END IF;
 END $$;
 
+-- Completa el precio unitario desde el catálogo de servicios y calcula el subtotal del detalle
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -326,6 +328,7 @@ BEGIN
     END IF;
 END $$;
 
+-- Registra fecha_fin al pasar la OT a FINALIZADA y la limpia si se revierte ese estado
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -339,6 +342,7 @@ BEGIN
     END IF;
 END $$;
 
+-- Valida que el modelo del vehículo pertenezca a la marca indicada
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -352,6 +356,7 @@ BEGIN
     END IF;
 END $$;
 
+-- Valida que el modelo del componente pertenezca a la marca indicada
 DO $$
 BEGIN
     IF NOT EXISTS (
@@ -365,6 +370,7 @@ BEGIN
     END IF;
 END $$;
 
+-- Bloquea el borrado de clientes que tengan órdenes de trabajo activas
 DO $$
 BEGIN
     IF NOT EXISTS (
