@@ -5,7 +5,6 @@
 package com.tallermirodiesel.model;
 
 import java.time.LocalDateTime;
-import com.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 
 /**
  * @author elyrr
@@ -14,10 +13,9 @@ public class Cliente {
 
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idCliente;
+    private Long idUsuarioCreador;
     private Long idDistrito;
     private Long idLocalidad;
-    private Long idClienteReferidor;
-    private FuenteReferenciaClienteEnum fuenteReferencia;
     private String telefono;
     private boolean activo;
     private LocalDateTime fechaCreacion;
@@ -27,12 +25,11 @@ public class Cliente {
     }
 
     // Constructor con parámetros
-    public Cliente(Long idCliente, Long idDistrito, Long idLocalidad, Long idClienteReferidor, FuenteReferenciaClienteEnum fuenteReferencia, String telefono, boolean activo, LocalDateTime fechaCreacion) {
+    public Cliente(Long idCliente, Long idUsuarioCreador, Long idDistrito, Long idLocalidad, String telefono, boolean activo, LocalDateTime fechaCreacion) {
         this.idCliente = idCliente;
+        this.idUsuarioCreador = idUsuarioCreador;
         this.idDistrito = idDistrito;
         this.idLocalidad = idLocalidad;
-        this.idClienteReferidor = idClienteReferidor;
-        this.fuenteReferencia = fuenteReferencia;
         this.telefono = telefono;
         this.activo = activo;
         this.fechaCreacion = fechaCreacion;
@@ -45,49 +42,42 @@ public class Cliente {
     public void setIdCliente(Long idCliente) {
         this.idCliente = idCliente;
     }
-    //
+//
+    public Long getIdUsuarioCreador() {
+        return idUsuarioCreador;
+    }
+    public void setIdUsuarioCreador(Long idUsuarioCreador) {
+        this.idUsuarioCreador = idUsuarioCreador;
+    }
+//
     public Long getIdDistrito() {
         return idDistrito;
     }
     public void setIdDistrito(Long idDistrito) {
         this.idDistrito = idDistrito;
     }
-    //
+//
     public Long getIdLocalidad() {
         return idLocalidad;
     }
     public void setIdLocalidad(Long idLocalidad) {
         this.idLocalidad = idLocalidad;
     }
-    //
-    public Long getIdClienteReferidor() {
-        return idClienteReferidor;
-    }
-    public void setIdClienteReferidor(Long idClienteReferidor) {
-        this.idClienteReferidor = idClienteReferidor;
-    }
-    //
-    public FuenteReferenciaClienteEnum getFuenteReferencia() {
-        return fuenteReferencia;
-    }
-    public void setFuenteReferencia(FuenteReferenciaClienteEnum fuenteReferencia) {
-        this.fuenteReferencia = fuenteReferencia;
-    }
-    //
+//
     public String getTelefono() {
         return telefono;
     }
     public void setTelefono(String telefono) {
         this.telefono = telefono;
     }
-    //
+//
     public boolean isActivo() {
         return activo;
     }
     public void setActivo(boolean activo) {
         this.activo = activo;
     }
-    //
+//
     public LocalDateTime getFechaCreacion() {
         return fechaCreacion;
     }

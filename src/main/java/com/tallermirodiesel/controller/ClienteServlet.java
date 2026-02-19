@@ -12,10 +12,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.LinkedHashMap;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import com.tallermirodiesel.dto.ClienteEmpresaListadoDTO;
 import com.tallermirodiesel.dto.ClientePersonaListadoDTO;
@@ -25,8 +23,8 @@ import com.tallermirodiesel.model.ClienteEmpresa;
 import com.tallermirodiesel.model.ClientePersona;
 import com.tallermirodiesel.model.Distrito;
 import com.tallermirodiesel.model.Localidad;
+import com.tallermirodiesel.model.SesionDeUsuario;
 import com.tallermirodiesel.model.TipoDocumento;
-import com.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 import com.tallermirodiesel.service.ClienteDocumentoService;
 import com.tallermirodiesel.service.ClienteEmpresaService;
 import com.tallermirodiesel.service.ClienteListadoService;
@@ -73,13 +71,12 @@ public class ClienteServlet extends HttpServlet {
         try {
             // Switch para manejar las diferentes acciones GET
             switch (action) {
-                case "nuevo" -> mostrarFormularioNuevo(request, response);
+                case "nuevo"  -> mostrarFormularioNuevo(request, response);
                 case "buscar" -> listar(request, response);
                 case "listar" -> listar(request, response);
-                default -> listar(request, response);
+                default       -> listar(request, response);
             }
         } catch (RuntimeException e) {
-            // Si hay error, lo muestra en la página de listado
             request.setAttribute("error", e.getMessage());
             listar(request, response);
         }
@@ -98,12 +95,11 @@ public class ClienteServlet extends HttpServlet {
         try {
             // Switch para manejar las diferentes acciones POST
             switch (action) {
-                case "guardar" -> guardar(request, response);
+                case "guardar"      -> guardar(request, response);
                 case "toggleActivo" -> cambiarEstadoActivo(request, response);
-                default -> response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
+                default             -> response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
             }
         } catch (RuntimeException e) {
-            // Si hay error al guardar, maneja según el tipo de acción
             request.setAttribute("error", e.getMessage());
 
             // Si hay una causa subyacente, la muestra también
@@ -158,7 +154,7 @@ public class ClienteServlet extends HttpServlet {
      * Muestra el formulario para crear un nuevo cliente
      */
     private void mostrarFormularioNuevo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Carga los combos necesarios (distritos, localidades, tipos de documento, etc.)
+        // Carga los combos necesarios (distritos, localidades, tipos de documento)
         cargarCombos(request);
         // Crea un objeto Cliente vacío para el formulario
         request.setAttribute("cliente", new Cliente());
@@ -193,32 +189,25 @@ public class ClienteServlet extends HttpServlet {
             throw new IllegalArgumentException("Debe seleccionar un tipo de cliente (PERSONA o EMPRESA).");
         }
 
-        // 2. Crea el objeto Cliente base con datos comunes
+        // 2. Lee el usuario logueado desde la sesión
+        HttpSession sesion = request.getSession(false);
+        SesionDeUsuario usuarioSesion = (SesionDeUsuario) sesion.getAttribute("usuarioSesion");
+
+        // 3. Crea el objeto Cliente base con datos comunes
         Cliente c = new Cliente();
+        c.setIdUsuarioCreador(usuarioSesion.getIdUsuario());
         c.setTelefono(request.getParameter("telefono"));
         c.setIdDistrito(parseLongNullableEstricto(request.getParameter("id_distrito")));
         c.setIdLocalidad(parseLongNullableEstricto(request.getParameter("id_localidad")));
-        c.setIdClienteReferidor(parseLongNullableEstricto(request.getParameter("id_cliente_referidor")));
-
-        // Convierte el enum de fuente de referencia
-        String fuente = request.getParameter("fuente_referencia");
-        if (fuente != null && !fuente.isBlank()) {
-            try {
-                c.setFuenteReferencia(FuenteReferenciaClienteEnum.valueOf(fuente.trim().toUpperCase(Locale.ROOT)));
-            } catch (Exception ex) {
-                c.setFuenteReferencia(null);
-            }
-        }
-
         c.setActivo(true); // Los nuevos clientes siempre están activos
 
-        // 3. Guarda el cliente base y obtiene el ID generado
+        // 4. Guarda el cliente base y obtiene el ID generado
         Long idCreado = clienteService.guardar(c);
         if (idCreado == null) {
             throw new RuntimeException("No se pudo guardar el cliente.");
         }
 
-        // 4. Guarda los datos específicos según el tipo de cliente
+        // 5. Guarda los datos específicos según el tipo de cliente
         if ("PERSONA".equalsIgnoreCase(tipo)) {
             // Valida campos obligatorios para personas
             String nombre = request.getParameter("nombre");
@@ -268,7 +257,7 @@ public class ClienteServlet extends HttpServlet {
             throw new IllegalArgumentException("Tipo inválido. Use PERSONA o EMPRESA.");
         }
 
-        // 5. Si se proporcionó documento, lo guarda
+        // 6. Si se proporcionó documento, lo guarda
         Long idTipoDocumento = parseLongNullableEstricto(request.getParameter("id_tipo_documento"));
         String numeroDocumento = request.getParameter("numero_documento");
 
@@ -297,7 +286,7 @@ public class ClienteServlet extends HttpServlet {
             }
         }
 
-        // 6. Redirige al listado después de guardar
+        // 7. Redirige al listado después de guardar
         response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
     }
 
@@ -316,32 +305,6 @@ public class ClienteServlet extends HttpServlet {
         // Carga tipos de documento activos
         List<TipoDocumento> tiposDocumento = tipoDocumentoService.listarActivos();
         request.setAttribute("tiposDocumento", tiposDocumento);
-
-        // Carga opciones del enum de fuentes de referencia
-        request.setAttribute("fuentesReferencia", FuenteReferenciaClienteEnum.values());
-
-        // Carga clientes activos que pueden ser referidores
-        List<Cliente> clientesReferidores = clienteService.listarActivos();
-
-        // Construye un mapa con ID y nombre del cliente para el combo
-        Map<Long, String> clientesReferidoresMap = new LinkedHashMap<>();
-        for (Cliente cRef : clientesReferidores) {
-            Long idRef = cRef.getIdCliente();
-
-            // Resuelve el nombre del cliente (persona o empresa)
-            String nombre = resolverNombreCliente(idRef);
-            if (nombre == null || nombre.isBlank()) {
-                // Si no tiene nombre, usa el teléfono o un identificador genérico
-                if (cRef.getTelefono() != null && !cRef.getTelefono().trim().isBlank()) {
-                    nombre = cRef.getTelefono().trim();
-                } else {
-                    nombre = "Cliente #" + idRef;
-                }
-            }
-
-            clientesReferidoresMap.put(idRef, nombre);
-        }
-        request.setAttribute("clientesReferidoresMap", clientesReferidoresMap);
     }
 
     /**
@@ -356,16 +319,6 @@ public class ClienteServlet extends HttpServlet {
         c.setTelefono(request.getParameter("telefono"));
         c.setIdDistrito(parseLongNullableEstricto(request.getParameter("id_distrito")));
         c.setIdLocalidad(parseLongNullableEstricto(request.getParameter("id_localidad")));
-        c.setIdClienteReferidor(parseLongNullableEstricto(request.getParameter("id_cliente_referidor")));
-
-        String fuente = request.getParameter("fuente_referencia");
-        if (fuente != null && !fuente.isBlank()) {
-            try {
-                c.setFuenteReferencia(FuenteReferenciaClienteEnum.valueOf(fuente.trim().toUpperCase(Locale.ROOT)));
-            } catch (Exception ex) {
-                c.setFuenteReferencia(null);
-            }
-        }
 
         request.setAttribute("cliente", c);
 
@@ -448,7 +401,6 @@ public class ClienteServlet extends HttpServlet {
 
             if (!full.isBlank()) return full;
 
-            // Si no tiene nombre/apellido, usa el apodo
             if (p.getApodo() != null && !p.getApodo().trim().isBlank()) {
                 return p.getApodo().trim();
             }
@@ -460,7 +412,6 @@ public class ClienteServlet extends HttpServlet {
         if (eOpt.isPresent()) {
             ClienteEmpresa e = eOpt.get();
 
-            // Prioriza el nombre de fantasía sobre la razón social
             if (e.getNombreFantasia() != null && !e.getNombreFantasia().trim().isBlank()) {
                 return e.getNombreFantasia().trim();
             }

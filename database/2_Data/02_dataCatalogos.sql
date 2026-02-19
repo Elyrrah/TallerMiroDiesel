@@ -94,26 +94,27 @@ INSERT INTO public.servicios (codigo, nombre, descripcion, precio_base, activo) 
 ('REPA-BI',  'REPARACION DE BOMBA INYECTORA',      NULL, 4000000, true),
 ('REPA-BP',  'REPARACION DE BOMBA Y PICO',         NULL, 4000000, true)
 ON CONFLICT (codigo) DO UPDATE
-SET nombre = EXCLUDED.nombre,
+SET nombre      = EXCLUDED.nombre,
     descripcion = EXCLUDED.descripcion,
     precio_base = EXCLUDED.precio_base,
-    activo = EXCLUDED.activo;
+    activo      = EXCLUDED.activo;
 
 -- =============================================================================
 -- TIPOS DE DOCUMENTO
 -- =============================================================================
-INSERT INTO public.tipos_documento (abreviatura, nombre, activo) VALUES
-('CI',        'CEDULA DE IDENTIDAD',                      true),
-('DNI',       'DOCUMENTO NACIONAL DE IDENTIDAD',          true),
-('CPF',       'CADASTRO DE PESSOAS FISICAS',              true),
-('PASAPORTE', 'PASAPORTE',                                true),
-('RUC',       'REGISTRO UNICO DEL CONTRIBUYENTE',         true),
-('CNPJ',      'CADASTRO NACIONAL DA PESSOA JURIDICA',     true),
-('CUIT',      'CLAVE UNICA DE IDENTIFICACION TRIBUTARIA', true),
-('NIT',       'NUMERO DE IDENTIFICACION TRIBUTARIA',      true)
-ON CONFLICT (abreviatura) DO UPDATE
-SET nombre = EXCLUDED.nombre,
-    activo = EXCLUDED.activo;
+INSERT INTO public.tipos_documento (codigo, nombre, aplica_a, activo) VALUES
+('CI',        'CEDULA DE IDENTIDAD',                       'PERSONA', true),
+('RUC',       'REGISTRO UNICO DEL CONTRIBUYENTE',          'EMPRESA', true),
+('DNI',       'DOCUMENTO NACIONAL DE IDENTIDAD',           'PERSONA', true),
+('CPF',       'CADASTRO DE PESSOAS FISICAS',               'PERSONA', true),
+('CNPJ',      'CADASTRO NACIONAL DA PESSOA JURIDICA',      'EMPRESA', true),
+('CUIT',      'CLAVE UNICA DE IDENTIFICACION TRIBUTARIA',  'AMBOS',   true),
+('NIT',       'NUMERO DE IDENTIFICACION TRIBUTARIA',       'AMBOS',   true),
+('PASAPORTE', 'PASAPORTE',                                 'PERSONA', true)
+ON CONFLICT (codigo) DO UPDATE
+SET nombre   = EXCLUDED.nombre,
+    aplica_a = EXCLUDED.aplica_a,
+    activo   = EXCLUDED.activo;
 
 -- =============================================================================
 -- ROLES
@@ -209,7 +210,7 @@ WHERE r.nombre = 'OPERADOR'
 ON CONFLICT (id_rol, id_permiso) DO NOTHING;
 
 -- =============================================================================
--- USUARIO INICIAL DEL SISTEMA (tu tabla usuarios: username, password, ..., id_rol)
+-- USUARIO INICIAL DEL SISTEMA
 -- =============================================================================
 INSERT INTO public.usuarios (
     username,
@@ -236,7 +237,7 @@ SELECT
     true
 FROM public.tipos_documento td
 JOIN public.roles r ON r.nombre = 'DESARROLLADOR'
-WHERE td.abreviatura = 'CI'
+WHERE td.codigo = 'CI'  -- CORRECCIÓN: era td.abreviatura = 'CI'
 ON CONFLICT (username) DO NOTHING;
 
 COMMIT;

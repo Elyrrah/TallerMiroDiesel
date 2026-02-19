@@ -37,6 +37,34 @@
         </div>
     </c:if>
 
+    <%-- ===============================================================
+         DATOS COMPLETOS DE DISTRITOS Y LOCALIDADES EMBEBIDOS EN JS
+         Para que el datalist pueda filtrar localidades por distrito
+         sin hacer llamadas al servidor.
+         =============================================================== --%>
+    <script>
+        // Mapa: id_distrito → nombre del distrito
+        const distritos = {
+            <c:forEach var="d" items="${distritos}" varStatus="st">
+            "${d.idDistrito}": "${d.nombre}"<c:if test="${!st.last}">,</c:if>
+            </c:forEach>
+        };
+
+        // Lista completa de localidades con su distrito asociado
+        const localidades = [
+            <c:forEach var="l" items="${localidades}" varStatus="st">
+            { id: "${l.idLocalidad}", nombre: "${l.nombre}", idDistrito: "${l.idDistrito}" }<c:if test="${!st.last}">,</c:if>
+            </c:forEach>
+        ];
+
+        // Tipos de documento
+        const tiposDocumento = {
+            <c:forEach var="td" items="${tiposDocumento}" varStatus="st">
+            "${td.idTipoDocumento}": "${td.nombre}"<c:if test="${!st.last}">,</c:if>
+            </c:forEach>
+        };
+    </script>
+
     <form method="post" action="${pageContext.request.contextPath}/clientes">
         <input type="hidden" name="action" value="guardar"/>
 
@@ -67,63 +95,35 @@
             <input type="text" name="telefono" value="${cliente.telefono}"/><br/><br/>
 
             <!-- ========== DISTRITO ========== -->
+            <%-- El input visible es solo para el datalist.
+                 El hidden es el que realmente se envía al servidor con el ID. --%>
             Distrito:<br/>
-            <input type="text" id="buscaDistrito" placeholder="Filtrar distrito..." style="width:260px;"/><br/>
-            <select name="id_distrito" id="selectDistrito" style="width:270px;">
-                <option value="">-- Seleccione Distrito --</option>
+            <input type="text" id="inputDistrito" list="listDistritos"
+                   placeholder="Escribí para buscar..." style="width:300px;"
+                   autocomplete="off"/>
+            <datalist id="listDistritos">
                 <c:forEach var="d" items="${distritos}">
-                    <option value="${d.idDistrito}"
-                            data-text="${d.nombre}"
-                            <c:if test="${cliente.idDistrito == d.idDistrito}">selected</c:if>>
-                        ${d.nombre}
-                    </option>
+                    <option value="${d.nombre}" data-id="${d.idDistrito}"></option>
                 </c:forEach>
-            </select>
+            </datalist>
+            <input type="hidden" name="id_distrito" id="hiddenDistrito"/>
             <br/><br/>
 
             <!-- ========== LOCALIDAD ========== -->
             Localidad:<br/>
-            <input type="text" id="buscaLocalidad" placeholder="Filtrar localidad..." style="width:260px;"/><br/>
-            <select name="id_localidad" id="selectLocalidad" style="width:270px;">
-                <option value="">-- Seleccione Localidad --</option>
+            <input type="text" id="inputLocalidad" list="listLocalidades"
+                   placeholder="Escribí para buscar..." style="width:300px;"
+                   autocomplete="off"/>
+            <datalist id="listLocalidades">
+                <%-- Se llena con todas las localidades por defecto.
+                     Si el usuario elige un distrito, el JS filtra solo las de ese distrito. --%>
                 <c:forEach var="l" items="${localidades}">
-                    <option value="${l.idLocalidad}"
-                            data-text="${l.nombre}"
-                            <c:if test="${cliente.idLocalidad == l.idLocalidad}">selected</c:if>>
-                        ${l.nombre}
-                    </option>
+                    <option value="${l.nombre}" data-id="${l.idLocalidad}" data-distrito="${l.idDistrito}"></option>
                 </c:forEach>
-            </select>
+            </datalist>
+            <input type="hidden" name="id_localidad" id="hiddenLocalidad"/>
             <br/><br/>
 
-            <!-- ========== CLIENTE REFERIDOR ========== -->
-            Cliente Referidor:<br/>
-            <input type="text" id="buscaReferidor" placeholder="Filtrar referidor..." style="width:260px;"/><br/>
-            <select name="id_cliente_referidor" id="selectReferidor" style="width:270px;">
-                <option value="" data-text="">-- Sin referidor --</option>
-
-                <c:forEach var="entry" items="${clientesReferidoresMap}">
-                    <option value="${entry.key}"
-                            data-text="${entry.value}"
-                            <c:if test="${cliente.idClienteReferidor == entry.key}">selected</c:if>>
-                        ${entry.value}
-                    </option>
-                </c:forEach>
-            </select>
-            <br/><br/>
-
-            Fuente Referencia:<br/>
-            <select name="fuente_referencia">
-                <option value="">-- Seleccione --</option>
-                <option value="RECOMENDACION"
-                        <c:if test="${cliente.fuenteReferencia == 'RECOMENDACION'}">selected</c:if>>
-                    RECOMENDACION
-                </option>
-                <option value="MECANICO"
-                        <c:if test="${cliente.fuenteReferencia == 'MECANICO'}">selected</c:if>>
-                    MECANICO
-                </option>
-            </select>
         </fieldset>
 
         <!-- ================= PERSONA ================= -->
@@ -156,18 +156,15 @@
             <legend>Documento (opcional)</legend>
 
             Tipo Documento:<br/>
-            <input type="text" id="buscaTipoDocumento" placeholder="Filtrar tipo documento..." style="width:260px;"/><br/>
-            <select name="id_tipo_documento" id="selectTipoDocumento" style="width:270px;">
-                <option value="">-- Seleccione Tipo Documento --</option>
-
+            <input type="text" id="inputTipoDocumento" list="listTiposDocumento"
+                   placeholder="Escribí para buscar..." style="width:300px;"
+                   autocomplete="off"/>
+            <datalist id="listTiposDocumento">
                 <c:forEach var="td" items="${tiposDocumento}">
-                    <option value="${td.idTipoDocumento}"
-                            data-text="${td.nombre}"
-                            <c:if test="${id_tipo_documento == td.idTipoDocumento}">selected</c:if>>
-                        ${td.nombre}
-                    </option>
+                    <option value="${td.nombre}" data-id="${td.idTipoDocumento}"></option>
                 </c:forEach>
-            </select>
+            </datalist>
+            <input type="hidden" name="id_tipo_documento" id="hiddenTipoDocumento"/>
             <br/><br/>
 
             Número:<br/>
@@ -184,47 +181,113 @@
     </form>
 
     <script>
-        // Mostrar / ocultar secciones Persona / Empresa
+        // ===============================================================
+        // TOGGLE PERSONA / EMPRESA
+        // ===============================================================
         function toggleTipo(tipo) {
             document.getElementById('fsPersona').style.display = (tipo === 'PERSONA') ? 'block' : 'none';
             document.getElementById('fsEmpresa').style.display = (tipo === 'EMPRESA') ? 'block' : 'none';
         }
 
-        // Filtro tipo JComboBox editable
-        function wireFilter(inputId, selectId) {
-            const input = document.getElementById(inputId);
-            const select = document.getElementById(selectId);
+        // ===============================================================
+        // LÓGICA DE DATALIST CON HIDDEN INPUT
+        // Conecta un input visible con su hidden que guarda el ID real.
+        // ===============================================================
 
-            const options = Array.from(select.options).map(o => ({
-                el: o,
-                text: ((o.getAttribute("data-text") || o.text || "").toLowerCase()),
-                placeholder: o.value === ""
-            }));
+        // Cuando el usuario termina de escribir en el input de distrito:
+        // 1. Busca si lo que escribió coincide exactamente con alguna opción
+        // 2. Si coincide, guarda el ID en el hidden y filtra las localidades
+        // 3. Si no coincide, limpia el hidden y restaura todas las localidades
+        document.getElementById('inputDistrito').addEventListener('change', function () {
+            const texto = this.value.trim().toUpperCase();
+            const match = Object.entries(distritos).find(([id, nombre]) => nombre === texto);
 
-            input.addEventListener("input", function () {
-                const q = (input.value || "").trim().toLowerCase();
-                options.forEach(o => {
-                    if (o.placeholder) return;
-                    o.el.hidden = (q && !o.text.includes(q));
+            if (match) {
+                const idDistrito = match[0];
+                document.getElementById('hiddenDistrito').value = idDistrito;
+
+                // Filtra el datalist de localidades para mostrar solo las de este distrito
+                const datalist = document.getElementById('listLocalidades');
+                datalist.innerHTML = '';
+                localidades
+                    .filter(l => l.idDistrito === idDistrito)
+                    .forEach(l => {
+                        const opt = document.createElement('option');
+                        opt.value = l.nombre;
+                        opt.setAttribute('data-id', l.id);
+                        opt.setAttribute('data-distrito', l.idDistrito);
+                        datalist.appendChild(opt);
+                    });
+
+                // Limpia la localidad elegida porque puede no pertenecer a este distrito
+                document.getElementById('inputLocalidad').value = '';
+                document.getElementById('hiddenLocalidad').value = '';
+
+            } else {
+                // El texto no coincide con ningún distrito conocido, limpia el hidden
+                document.getElementById('hiddenDistrito').value = '';
+
+                // Restaura todas las localidades en el datalist
+                const datalist = document.getElementById('listLocalidades');
+                datalist.innerHTML = '';
+                localidades.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.nombre;
+                    opt.setAttribute('data-id', l.id);
+                    opt.setAttribute('data-distrito', l.idDistrito);
+                    datalist.appendChild(opt);
                 });
+            }
+        });
 
-                const sel = select.options[select.selectedIndex];
-                if (sel && sel.hidden) select.value = "";
-            });
-        }
+        // Cuando el usuario elige una localidad:
+        // 1. Busca si lo que escribió coincide exactamente con alguna opción
+        // 2. Si coincide, guarda el ID en el hidden
+        // 3. Si la localidad tiene un distrito asociado y el campo distrito está vacío,
+        //    lo autocompleta automáticamente
+        document.getElementById('inputLocalidad').addEventListener('change', function () {
+            const texto = this.value.trim().toUpperCase();
 
-        // Inicialización
+            // Busca en la lista actual del datalist (puede estar filtrada por distrito)
+            const datalist = document.getElementById('listLocalidades');
+            const opciones = Array.from(datalist.options);
+            const match = opciones.find(o => o.value.toUpperCase() === texto);
+
+            if (match) {
+                document.getElementById('hiddenLocalidad').value = match.getAttribute('data-id');
+
+                // Si el campo distrito estaba vacío, lo autocompleta
+                const idDistrito = match.getAttribute('data-distrito');
+                const hiddenDistrito = document.getElementById('hiddenDistrito');
+                if (!hiddenDistrito.value && idDistrito && distritos[idDistrito]) {
+                    document.getElementById('inputDistrito').value = distritos[idDistrito];
+                    hiddenDistrito.value = idDistrito;
+                }
+            } else {
+                document.getElementById('hiddenLocalidad').value = '';
+            }
+        });
+
+        // Cuando el usuario elige un tipo de documento:
+        // Busca el ID correspondiente y lo guarda en el hidden
+        document.getElementById('inputTipoDocumento').addEventListener('change', function () {
+            const texto = this.value.trim().toUpperCase();
+            const match = Object.entries(tiposDocumento).find(([id, nombre]) => nombre.toUpperCase() === texto);
+
+            if (match) {
+                document.getElementById('hiddenTipoDocumento').value = match[0];
+            } else {
+                document.getElementById('hiddenTipoDocumento').value = '';
+            }
+        });
+
+        // ===============================================================
+        // INICIALIZACIÓN
+        // ===============================================================
         (function init() {
             var tipo = '${tipo}';
             if (!tipo) tipo = 'PERSONA';
             toggleTipo(tipo);
-
-            wireFilter("buscaDistrito", "selectDistrito");
-            wireFilter("buscaLocalidad", "selectLocalidad");
-            wireFilter("buscaReferidor", "selectReferidor");
-
-            // Documento
-            wireFilter("buscaTipoDocumento", "selectTipoDocumento");
         })();
     </script>
 

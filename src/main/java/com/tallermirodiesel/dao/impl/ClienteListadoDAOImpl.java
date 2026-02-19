@@ -15,7 +15,6 @@ import java.util.List;
 import com.tallermirodiesel.dao.ClienteListadoDAO;
 import com.tallermirodiesel.dto.ClienteEmpresaListadoDTO;
 import com.tallermirodiesel.dto.ClientePersonaListadoDTO;
-import com.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 import com.tallermirodiesel.util.DatabaseConnection;
 
 /**
@@ -28,8 +27,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
             c.id_cliente,
             c.id_localidad,
             c.id_distrito,
-            c.id_cliente_referidor,
-            c.fuente_referencia,
             c.telefono,
             c.activo,
             c.fecha_creacion,
@@ -41,18 +38,13 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
             d.nombre  AS nombre_distrito,
             l.nombre  AS nombre_localidad,
 
-            COALESCE(
-                NULLIF(TRIM(COALESCE(cp_ref.nombre,'') || ' ' || COALESCE(cp_ref.apellido,'')), ''),
-                NULLIF(TRIM(ce_ref.nombre_fantasia), ''),
-                NULLIF(TRIM(ce_ref.razon_social), '')
-            ) AS nombre_referidor
+            TRIM(u.nombre || ' ' || u.apellido) AS nombre_usuario_creador
 
         FROM public.clientes c
         JOIN public.clientes_persona cp ON cp.id_cliente = c.id_cliente
         LEFT JOIN public.distritos d ON d.id_distrito = c.id_distrito
         LEFT JOIN public.localidades l ON l.id_localidad = c.id_localidad
-        LEFT JOIN public.clientes_persona cp_ref ON cp_ref.id_cliente = c.id_cliente_referidor
-        LEFT JOIN public.clientes_empresa ce_ref ON ce_ref.id_cliente = c.id_cliente_referidor
+        LEFT JOIN public.usuarios u ON u.id_usuario = c.id_usuario_creador
         WHERE ( ? IS NULL OR (cp.nombre ILIKE '%'||?||'%' OR cp.apellido ILIKE '%'||?||'%' OR c.telefono ILIKE '%'||?||'%') )
           AND ( ? IS NULL OR c.activo = ? )
         ORDER BY c.id_cliente ASC
@@ -63,8 +55,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
             c.id_cliente,
             c.id_localidad,
             c.id_distrito,
-            c.id_cliente_referidor,
-            c.fuente_referencia,
             c.telefono,
             c.activo,
             c.fecha_creacion,
@@ -75,18 +65,13 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
             d.nombre  AS nombre_distrito,
             l.nombre  AS nombre_localidad,
 
-            COALESCE(
-                NULLIF(TRIM(COALESCE(cp_ref.nombre,'') || ' ' || COALESCE(cp_ref.apellido,'')), ''),
-                NULLIF(TRIM(ce_ref.nombre_fantasia), ''),
-                NULLIF(TRIM(ce_ref.razon_social), '')
-            ) AS nombre_referidor
+            TRIM(u.nombre || ' ' || u.apellido) AS nombre_usuario_creador
 
         FROM public.clientes c
         JOIN public.clientes_empresa ce ON ce.id_cliente = c.id_cliente
         LEFT JOIN public.distritos d ON d.id_distrito = c.id_distrito
         LEFT JOIN public.localidades l ON l.id_localidad = c.id_localidad
-        LEFT JOIN public.clientes_persona cp_ref ON cp_ref.id_cliente = c.id_cliente_referidor
-        LEFT JOIN public.clientes_empresa ce_ref ON ce_ref.id_cliente = c.id_cliente_referidor
+        LEFT JOIN public.usuarios u ON u.id_usuario = c.id_usuario_creador
         WHERE ( ? IS NULL OR (ce.razon_social ILIKE '%'||?||'%' OR ce.nombre_fantasia ILIKE '%'||?||'%' OR c.telefono ILIKE '%'||?||'%') )
           AND ( ? IS NULL OR c.activo = ? )
         ORDER BY c.id_cliente ASC
@@ -168,11 +153,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         dto.setIdCliente(rs.getLong("id_cliente"));
         dto.setIdLocalidad((Long) rs.getObject("id_localidad"));
         dto.setIdDistrito((Long) rs.getObject("id_distrito"));
-        dto.setIdClienteReferidor((Long) rs.getObject("id_cliente_referidor"));
-
-        String fuente = rs.getString("fuente_referencia");
-        dto.setFuenteReferencia(fuente != null ? FuenteReferenciaClienteEnum.valueOf(fuente) : FuenteReferenciaClienteEnum.NINGUNA);
-
         dto.setTelefono(rs.getString("telefono"));
         dto.setActivo(rs.getBoolean("activo"));
 
@@ -185,7 +165,7 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
 
         dto.setNombreDistrito(rs.getString("nombre_distrito"));
         dto.setNombreLocalidad(rs.getString("nombre_localidad"));
-        dto.setNombreReferidor(rs.getString("nombre_referidor"));
+        dto.setNombreUsuarioCreador(rs.getString("nombre_usuario_creador"));
 
         return dto;
     }
@@ -196,11 +176,6 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         dto.setIdCliente(rs.getLong("id_cliente"));
         dto.setIdLocalidad((Long) rs.getObject("id_localidad"));
         dto.setIdDistrito((Long) rs.getObject("id_distrito"));
-        dto.setIdClienteReferidor((Long) rs.getObject("id_cliente_referidor"));
-
-        String fuente = rs.getString("fuente_referencia");
-        dto.setFuenteReferencia(fuente != null ? FuenteReferenciaClienteEnum.valueOf(fuente) : FuenteReferenciaClienteEnum.NINGUNA);
-
         dto.setTelefono(rs.getString("telefono"));
         dto.setActivo(rs.getBoolean("activo"));
 
@@ -212,7 +187,7 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
 
         dto.setNombreDistrito(rs.getString("nombre_distrito"));
         dto.setNombreLocalidad(rs.getString("nombre_localidad"));
-        dto.setNombreReferidor(rs.getString("nombre_referidor"));
+        dto.setNombreUsuarioCreador(rs.getString("nombre_usuario_creador"));
 
         return dto;
     }

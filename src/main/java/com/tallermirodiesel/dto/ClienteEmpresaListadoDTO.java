@@ -7,7 +7,6 @@ package com.tallermirodiesel.dto;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
-import com.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 
 /**
  * @author elyrr
@@ -21,8 +20,6 @@ public class ClienteEmpresaListadoDTO {
     private Long idCliente;
     private Long idLocalidad;
     private Long idDistrito;
-    private Long idClienteReferidor;
-    private FuenteReferenciaClienteEnum fuenteReferencia;
     private String telefono;
     private boolean activo;
     private LocalDateTime fechaCreacion;
@@ -38,51 +35,51 @@ public class ClienteEmpresaListadoDTO {
     // =========================
     private String nombreDistrito;
     private String nombreLocalidad;
-    private String nombreReferidor;
+    private String nombreUsuarioCreador;
 
     public ClienteEmpresaListadoDTO() {}
 
-    // Base
+    // =========================
+    // BLOQUE: Getters/setters base
+    // =========================
     public Long getIdCliente() { return idCliente; }
     public void setIdCliente(Long idCliente) { this.idCliente = idCliente; }
-
+//
     public Long getIdLocalidad() { return idLocalidad; }
     public void setIdLocalidad(Long idLocalidad) { this.idLocalidad = idLocalidad; }
-
+//
     public Long getIdDistrito() { return idDistrito; }
     public void setIdDistrito(Long idDistrito) { this.idDistrito = idDistrito; }
-
-    public Long getIdClienteReferidor() { return idClienteReferidor; }
-    public void setIdClienteReferidor(Long idClienteReferidor) { this.idClienteReferidor = idClienteReferidor; }
-
-    public FuenteReferenciaClienteEnum getFuenteReferencia() { return fuenteReferencia; }
-    public void setFuenteReferencia(FuenteReferenciaClienteEnum fuenteReferencia) { this.fuenteReferencia = fuenteReferencia; }
-
+//
     public String getTelefono() { return telefono; }
     public void setTelefono(String telefono) { this.telefono = telefono; }
-
+//
     public boolean isActivo() { return activo; }
     public void setActivo(boolean activo) { this.activo = activo; }
-
+//
     public LocalDateTime getFechaCreacion() { return fechaCreacion; }
     public void setFechaCreacion(LocalDateTime fechaCreacion) { this.fechaCreacion = fechaCreacion; }
 
-    // Empresa
+    // =========================
+    // BLOQUE: Getters/setters empresa
+    // =========================
     public String getRazonSocial() { return razonSocial; }
     public void setRazonSocial(String razonSocial) { this.razonSocial = razonSocial; }
-
+//
     public String getNombreFantasia() { return nombreFantasia; }
     public void setNombreFantasia(String nombreFantasia) { this.nombreFantasia = nombreFantasia; }
 
-    // Nombres JOIN
+    // =========================
+    // BLOQUE: Getters/setters nombres (JOIN)
+    // =========================
     public String getNombreDistrito() { return nombreDistrito; }
     public void setNombreDistrito(String nombreDistrito) { this.nombreDistrito = nombreDistrito; }
-
+//
     public String getNombreLocalidad() { return nombreLocalidad; }
     public void setNombreLocalidad(String nombreLocalidad) { this.nombreLocalidad = nombreLocalidad; }
-
-    public String getNombreReferidor() { return nombreReferidor; }
-    public void setNombreReferidor(String nombreReferidor) { this.nombreReferidor = nombreReferidor; }
+//
+    public String getNombreUsuarioCreador() { return nombreUsuarioCreador; }
+    public void setNombreUsuarioCreador(String nombreUsuarioCreador) { this.nombreUsuarioCreador = nombreUsuarioCreador; }
 
     // Helper opcional: nombre principal para mostrar
     public String getNombre() {
@@ -90,7 +87,7 @@ public class ClienteEmpresaListadoDTO {
         if (razonSocial != null && !razonSocial.trim().isBlank()) return razonSocial.trim();
         return "";
     }
-    
+
     // Método helper para JSTL
     public Date getFechaCreacionAsDate() {
         if (fechaCreacion == null) return null;

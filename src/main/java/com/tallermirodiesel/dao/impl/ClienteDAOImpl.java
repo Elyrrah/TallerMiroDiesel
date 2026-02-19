@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 import com.tallermirodiesel.dao.ClienteDAO;
 import com.tallermirodiesel.model.Cliente;
-import com.tallermirodiesel.model.enums.FuenteReferenciaClienteEnum;
 import com.tallermirodiesel.util.DatabaseConnection;
 
 /**
@@ -25,14 +24,13 @@ public class ClienteDAOImpl implements ClienteDAO {
 
     private static final String SQL_INSERT =
         "INSERT INTO clientes (" +
-        "id_localidad, id_distrito, id_cliente_referidor, fuente_referencia, telefono, activo" +
-        ") VALUES (?, ?, ?, ?::fuente_referencia_cliente_enum, ?, ?) " +
+        "id_usuario_creador, id_localidad, id_distrito, telefono, activo" +
+        ") VALUES (?, ?, ?, ?, ?) " +
         "RETURNING id_cliente";
 
     private static final String SQL_UPDATE =
         "UPDATE clientes SET " +
-        "id_localidad = ?, id_distrito = ?, " +
-        "id_cliente_referidor = ?, fuente_referencia = ?::fuente_referencia_cliente_enum, telefono = ? " +
+        "id_localidad = ?, id_distrito = ?, telefono = ? " +
         "WHERE id_cliente = ?";
 
     private static final String SQL_EXISTE_ID =
@@ -118,7 +116,7 @@ public class ClienteDAOImpl implements ClienteDAO {
             return Optional.empty();
 
         } catch (SQLException e) {
-            throw new RuntimeException("Error en BD al buscar cliente: " + e.getMessage(), e);
+            throw new RuntimeException("Error en BD al buscar cliente por ID: " + e.getMessage(), e);
         }
     }
 
@@ -141,7 +139,7 @@ public class ClienteDAOImpl implements ClienteDAO {
     public List<Cliente> buscar(String q, Boolean activo) {
         List<Cliente> lista = new ArrayList<>();
 
-        String qNormalizado = (q == null || q.trim().isEmpty()) ? null : q.trim();
+        String qNormalizado = (q == null || q.trim().isBlank()) ? null : q.trim();
 
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_BUSCAR_BASE)) {
@@ -173,14 +171,11 @@ public class ClienteDAOImpl implements ClienteDAO {
     private Long insertar(Connection conn, Cliente cliente) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
-            ps.setObject(1, cliente.getIdLocalidad(), Types.BIGINT);
-            ps.setObject(2, cliente.getIdDistrito(), Types.BIGINT);
-            ps.setObject(3, cliente.getIdClienteReferidor(), Types.BIGINT);
-
-            ps.setString(4, cliente.getFuenteReferencia() != null ? cliente.getFuenteReferencia().name() : null);
-
-            ps.setString(5, cliente.getTelefono());
-            ps.setBoolean(6, cliente.isActivo());
+            ps.setLong(1, cliente.getIdUsuarioCreador());
+            ps.setObject(2, cliente.getIdLocalidad(), Types.BIGINT);
+            ps.setObject(3, cliente.getIdDistrito(), Types.BIGINT);
+            ps.setString(4, cliente.getTelefono());
+            ps.setBoolean(5, cliente.isActivo());
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getLong("id_cliente") : null;
@@ -193,12 +188,8 @@ public class ClienteDAOImpl implements ClienteDAO {
 
             ps.setObject(1, cliente.getIdLocalidad(), Types.BIGINT);
             ps.setObject(2, cliente.getIdDistrito(), Types.BIGINT);
-            ps.setObject(3, cliente.getIdClienteReferidor(), Types.BIGINT);
-
-            ps.setString(4, cliente.getFuenteReferencia() != null ? cliente.getFuenteReferencia().name() : null);
-
-            ps.setString(5, cliente.getTelefono());
-            ps.setLong(6, cliente.getIdCliente());
+            ps.setString(3, cliente.getTelefono());
+            ps.setLong(4, cliente.getIdCliente());
 
             return ps.executeUpdate() > 0;
         }
@@ -226,19 +217,10 @@ public class ClienteDAOImpl implements ClienteDAO {
         Cliente c = new Cliente();
 
         c.setIdCliente(rs.getLong("id_cliente"));
+        c.setIdUsuarioCreador(rs.getLong("id_usuario_creador"));
         c.setTelefono(rs.getString("telefono"));
-
         c.setIdDistrito((Long) rs.getObject("id_distrito"));
         c.setIdLocalidad((Long) rs.getObject("id_localidad"));
-        c.setIdClienteReferidor((Long) rs.getObject("id_cliente_referidor"));
-
-        String fuente = rs.getString("fuente_referencia");
-        if (fuente != null) {
-            c.setFuenteReferencia(FuenteReferenciaClienteEnum.valueOf(fuente));
-        } else {
-            c.setFuenteReferencia(FuenteReferenciaClienteEnum.NINGUNA);
-        }
-
         c.setActivo(rs.getBoolean("activo"));
 
         Timestamp ts = rs.getTimestamp("fecha_creacion");

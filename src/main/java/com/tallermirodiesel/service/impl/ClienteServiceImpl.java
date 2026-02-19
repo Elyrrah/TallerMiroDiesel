@@ -32,6 +32,11 @@ public class ClienteServiceImpl implements ClienteService {
             throw new IllegalArgumentException("El cliente no puede ser null");
         }
 
+        // Valida que siempre haya un usuario creador al guardar un cliente nuevo
+        if (cliente.getIdCliente() == null && cliente.getIdUsuarioCreador() == null) {
+            throw new IllegalArgumentException("El usuario creador es obligatorio");
+        }
+
         if (cliente.getTelefono() != null) {
             String tel = cliente.getTelefono().trim();
             cliente.setTelefono(tel.isEmpty() ? null : tel);

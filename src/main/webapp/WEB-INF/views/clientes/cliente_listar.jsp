@@ -24,34 +24,25 @@
 </head>
 <body>
 
-    <%-- =========================
-         BLOQUE: Navegación
-         ========================= --%>
     <p>
         <a href="${pageContext.request.contextPath}/">Volver al inicio</a>
     </p>
 
     <h2>Clientes</h2>
 
-    <%-- =========================
-         BLOQUE: Errores
-         ========================= --%>
     <c:if test="${not empty error}">
         <div style="color:red; margin-bottom:10px;">
             ${error}
         </div>
     </c:if>
 
-    <%-- =========================
-         BLOQUE: Acciones
-         ========================= --%>
     <p>
         <a href="${pageContext.request.contextPath}/clientes?action=nuevo">Nuevo Cliente</a>
     </p>
 
-    <%-- =========================
-         BLOQUE: Filtros (GET)
-         ========================= --%>
+    <%-- =========================================================
+         FILTROS
+         ========================================================= --%>
     <div class="filters">
         <form method="get" action="${pageContext.request.contextPath}/clientes">
             <input type="hidden" name="action" value="listar"/>
@@ -72,7 +63,7 @@
     </div>
 
     <%-- =========================================================
-         TABLA 1: CLIENTES PERSONA (ARRIBA)
+         TABLA 1: CLIENTES PERSONA
          ========================================================= --%>
     <div class="section">
         <h3>Clientes Persona</h3>
@@ -91,10 +82,9 @@
                             <th>Teléfono</th>
                             <th>Distrito</th>
                             <th>Localidad</th>
-                            <th>Referidor</th>
-                            <th>Fuente</th>
                             <th>Estado</th>
                             <th>Fecha Creación</th>
+                            <th>Creado por</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
@@ -107,8 +97,6 @@
                                 <td>${c.telefono}</td>
                                 <td>${c.nombreDistrito}</td>
                                 <td>${c.nombreLocalidad}</td>
-                                <td>${c.nombreReferidor}</td>
-                                <td>${c.fuenteReferencia}</td>
                                 <td>
                                     <c:choose>
                                         <c:when test="${c.activo}">ACTIVO</c:when>
@@ -118,17 +106,14 @@
                                 <td>
                                     <fmt:formatDate value="${c.fechaCreacionAsDate}" pattern="HH:mm - dd/MM/yyyy" />
                                 </td>
+                                <td>${c.nombreUsuarioCreador}</td>
                                 <td>
-                                    <%-- Toggle único Activar/Desactivar --%>
                                     <form method="post" action="${pageContext.request.contextPath}/clientes" style="margin:0;">
                                         <input type="hidden" name="action" value="toggleActivo"/>
                                         <input type="hidden" name="id" value="${c.idCliente}"/>
                                         <input type="hidden" name="activo_actual" value="${c.activo}"/>
-
-                                        <%-- Preservar filtros al volver --%>
                                         <input type="hidden" name="q" value="${q}"/>
                                         <input type="hidden" name="estado" value="${estado}"/>
-
                                         <button type="submit">
                                             <c:choose>
                                                 <c:when test="${c.activo}">Desactivar</c:when>
@@ -146,7 +131,7 @@
     </div>
 
     <%-- =========================================================
-         TABLA 2: CLIENTES EMPRESA (ABAJO)
+         TABLA 2: CLIENTES EMPRESA
          ========================================================= --%>
     <div class="section">
         <h3>Clientes Empresa</h3>
@@ -165,10 +150,9 @@
                             <th>Teléfono</th>
                             <th>Distrito</th>
                             <th>Localidad</th>
-                            <th>Referidor</th>
-                            <th>Fuente</th>
                             <th>Estado</th>
                             <th>Fecha Creación</th>
+                            <th>Creado por</th>
                             <th>Acción</th>
                         </tr>
                     </thead>
@@ -181,8 +165,6 @@
                                 <td>${c.telefono}</td>
                                 <td>${c.nombreDistrito}</td>
                                 <td>${c.nombreLocalidad}</td>
-                                <td>${c.nombreReferidor}</td>
-                                <td>${c.fuenteReferencia}</td>
                                 <td>
                                     <c:choose>
                                         <c:when test="${c.activo}">ACTIVO</c:when>
@@ -192,17 +174,14 @@
                                 <td>
                                     <fmt:formatDate value="${c.fechaCreacionAsDate}" pattern="HH:mm - dd/MM/yyyy" />
                                 </td>
+                                <td>${c.nombreUsuarioCreador}</td>
                                 <td>
-                                    <%-- Toggle único Activar/Desactivar --%>
                                     <form method="post" action="${pageContext.request.contextPath}/clientes" style="margin:0;">
                                         <input type="hidden" name="action" value="toggleActivo"/>
                                         <input type="hidden" name="id" value="${c.idCliente}"/>
                                         <input type="hidden" name="activo_actual" value="${c.activo}"/>
-
-                                        <%-- Preservar filtros al volver --%>
                                         <input type="hidden" name="q" value="${q}"/>
                                         <input type="hidden" name="estado" value="${estado}"/>
-
                                         <button type="submit">
                                             <c:choose>
                                                 <c:when test="${c.activo}">Desactivar</c:when>
