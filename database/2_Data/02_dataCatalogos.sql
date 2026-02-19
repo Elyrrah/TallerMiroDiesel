@@ -166,12 +166,12 @@ VALUES
 -- CATALOGOS / SERVICIO
 ('CATALOGOS.SERVICIO.LEER',     'Servicio - Leer | Listar/Ver/Buscar servicios', true),
 ('CATALOGOS.SERVICIO.ESCRIBIR', 'Servicio - Escribir | Crear/Editar servicios', true),
-('CATALOGOS.SERVICIO.ESTADO',   'Servicio - Estado | Activar/Desactivar servicios', true)
+('CATALOGOS.SERVICIO.ESTADO',   'Servicio - Estado | Activar/Desactivar servicios', true),
 
 -- CATALOGOS / TIPO DOCUMENTO
 ('CATALOGOS.TIPO_DOCUMENTO.LEER',     'Tipo Documento - Leer | Listar/Ver/Buscar tipos de documento', true),
 ('CATALOGOS.TIPO_DOCUMENTO.ESCRIBIR', 'Tipo Documento - Escribir | Crear/Editar tipos de documento', true),
-('CATALOGOS.TIPO_DOCUMENTO.ESTADO',   'Tipo Documento - Estado | Activar/Desactivar tipos de documento', true),
+('CATALOGOS.TIPO_DOCUMENTO.ESTADO',   'Tipo Documento - Estado | Activar/Desactivar tipos de documento', true)
 
 ON CONFLICT (nombre) DO UPDATE
 SET descripcion = EXCLUDED.descripcion,
@@ -225,7 +225,7 @@ INSERT INTO public.usuarios (
 )
 SELECT
     'ELYRRAH',
-    'PLACE_HOLDER',
+    '$2a$10$kiLX4Pvfka6K8bDuXOfTQu.A.E8CpGw3VrdnPlMYNdk72x2VMXUyi',
     'JUAN',
     'ELIAS',
     td.id_tipo_documento,
