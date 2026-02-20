@@ -22,7 +22,7 @@ public class HomeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // Crea un dispatcher para reenviar la petición a la vista index.jsp
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/index.jsp");
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/index/index.jsp");
         // Reenvía la petición y la respuesta al JSP sin cambiar la URL
         dispatcher.forward(request, response);
     }
