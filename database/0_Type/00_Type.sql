@@ -4,6 +4,35 @@
 -- =============================================================================
 
 -- =============================================================================
+-- VEHÍCULOS
+-- =============================================================================
+-- Tipo de vehículo
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_type t
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE t.typname = 'tipo_vehiculo_enum'
+          AND n.nspname = 'public'
+    ) THEN
+        CREATE TYPE public.tipo_vehiculo_enum AS ENUM (
+            'AUTOMOVIL',
+            'SUV',
+            'CAMIONETA',
+            'VAN',
+            'CAMION',
+            'OMNIBUS',
+            'MINIBUS',
+            'TRACTOR',
+            'MAQUINARIA_AGRICOLA',
+            'MAQUINARIA_INDUSTRIAL',
+            'OTRO'
+        );
+    END IF;
+END $$;
+
+-- =============================================================================
 -- ORDENES DE TRABAJO
 -- =============================================================================
 -- Tipo de ingreso de la orden

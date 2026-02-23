@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS public.vehiculos (
     id_marca bigint NOT NULL,
     id_modelo bigint,
     anio smallint,
-    tipo_vehiculo character varying(20) NOT NULL,
+    tipo_vehiculo public.tipo_vehiculo_enum NOT NULL,
     observaciones character varying(255),
     activo boolean DEFAULT true NOT NULL,
     CONSTRAINT vehiculos_id_marca_fkey

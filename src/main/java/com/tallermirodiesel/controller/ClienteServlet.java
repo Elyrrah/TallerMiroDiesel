@@ -146,8 +146,8 @@ public class ClienteServlet extends HttpServlet {
         request.setAttribute("listaClientesPersona", listaClientesPersona);
         request.setAttribute("listaClientesEmpresa", listaClientesEmpresa);
 
-        // Redirige a la vista de listado
-        request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_listar.jsp").forward(request, response);
+        // CORRECCIÓN: ruta actualizada
+        request.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/clientes/cliente_listar.jsp").forward(request, response);
     }
 
     /**
@@ -160,7 +160,9 @@ public class ClienteServlet extends HttpServlet {
         request.setAttribute("cliente", new Cliente());
         // Por defecto, el tipo es PERSONA
         request.setAttribute("tipo", "PERSONA");
-        request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_form.jsp").forward(request, response);
+
+        // CORRECCIÓN: ruta actualizada
+        request.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/clientes/cliente_form.jsp").forward(request, response);
     }
 
     /**
@@ -341,8 +343,8 @@ public class ClienteServlet extends HttpServlet {
         request.setAttribute("numero_documento", request.getParameter("numero_documento"));
         request.setAttribute("principal_documento", request.getParameter("principal_documento"));
 
-        // Renderiza el formulario nuevamente con los datos
-        request.getRequestDispatcher("/WEB-INF/views/clientes/cliente_form.jsp").forward(request, response);
+        // CORRECCIÓN: ruta actualizada
+        request.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/clientes/cliente_form.jsp").forward(request, response);
     }
 
     /**
