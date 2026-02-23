@@ -261,18 +261,20 @@ RETURNS trigger AS $$
 DECLARE
     v_marca_modelo bigint;
 BEGIN
-    SELECT id_marca
-    INTO v_marca_modelo
-    FROM public.modelos
-    WHERE id_modelo = NEW.id_modelo;
+    IF NEW.id_modelo IS NOT NULL THEN
+        SELECT id_marca
+        INTO v_marca_modelo
+        FROM public.modelos
+        WHERE id_modelo = NEW.id_modelo;
 
-    IF v_marca_modelo IS NULL THEN
-        RAISE EXCEPTION 'Modelo inválido: %', NEW.id_modelo;
-    END IF;
+        IF v_marca_modelo IS NULL THEN
+            RAISE EXCEPTION 'Modelo inválido: %', NEW.id_modelo;
+        END IF;
 
-    IF v_marca_modelo <> NEW.id_marca THEN
-        RAISE EXCEPTION
-            'El modelo % no pertenece a la marca %', NEW.id_modelo, NEW.id_marca;
+        IF v_marca_modelo <> NEW.id_marca THEN
+            RAISE EXCEPTION
+                'El modelo % no pertenece a la marca %', NEW.id_modelo, NEW.id_marca;
+        END IF;
     END IF;
 
     RETURN NEW;
