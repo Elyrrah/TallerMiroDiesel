@@ -24,11 +24,13 @@ public class ServicioServlet extends HttpServlet {
 
     private ServicioService servicioService;
 
+    // Inicialización del servicio de gestión de trabajos y mantenimiento
     @Override
     public void init() {
         this.servicioService = new ServicioServiceImpl();
     }
 
+    // Gestión de peticiones de lectura, búsqueda y navegación de formularios vía GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -43,7 +45,6 @@ public class ServicioServlet extends HttpServlet {
                 case "editar"     -> mostrarFormularioEditar(req, resp);
                 case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                // CORRECCIÓN 1: "buscar" apunta directamente a listar()
                 case "buscar"     -> listar(req, resp);
                 case "listar"     -> listar(req, resp);
                 default           -> listar(req, resp);
@@ -54,6 +55,7 @@ public class ServicioServlet extends HttpServlet {
         }
     }
 
+    // Gestión de procesamiento de datos para la persistencia de servicios vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -69,12 +71,11 @@ public class ServicioServlet extends HttpServlet {
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
-            // CORRECCIÓN 3: reutiliza reenviarFormularioConDatos()
             reenviarFormularioConDatos(req, resp);
         }
     }
 
-    // LISTAR (con filtro opcional por nombre).
+    // Lógica para recuperar la lista de servicios con soporte para filtrado por nombre
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -83,20 +84,19 @@ public class ServicioServlet extends HttpServlet {
             req.setAttribute("filtro", filtro);
         } else {
             req.setAttribute("servicios", servicioService.listarTodos());
-            // CORRECCIÓN 2: siempre seteamos "filtro" para que el JSP nunca lo reciba como null
             req.setAttribute("filtro", "");
         }
 
         req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_listar.jsp").forward(req, resp);
     }
 
-    // FORMULARIO NUEVO.
+    // Preparación del objeto vacío y despacho del formulario para nuevo registro
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("servicio", new Servicio());
         req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_form.jsp").forward(req, resp);
     }
 
-    // FORMULARIO EDITAR.
+    // Recuperación de la entidad por ID y despacho del formulario para edición
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -114,7 +114,7 @@ public class ServicioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_form.jsp").forward(req, resp);
     }
 
-    // ACTIVAR.
+    // Procesamiento de habilitación de servicio y redirección al listado
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -126,7 +126,7 @@ public class ServicioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
     }
 
-    // DESACTIVAR.
+    // Procesamiento de inhabilitación de servicio y redirección al listado
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -138,9 +138,8 @@ public class ServicioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
     }
 
-    // GUARDAR (CREAR O ACTUALIZAR).
+    // Lógica para recolectar datos, persistir cambios y redireccionar
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // CORRECCIÓN 3: reutiliza construirDesdeRequest()
         Servicio servicio = construirDesdeRequest(req);
 
         if (servicio.getIdServicio() == null) {
@@ -153,7 +152,7 @@ public class ServicioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/servicios?action=listar");
     }
 
-    // CONSTRUIR SERVICIO DESDE REQUEST.
+    // Utilidad para el mapeo de parámetros HTTP incluyendo el tratamiento de BigDecimal para precios
     private Servicio construirDesdeRequest(HttpServletRequest req) {
         Servicio servicio = new Servicio();
 
@@ -171,13 +170,13 @@ public class ServicioServlet extends HttpServlet {
         return servicio;
     }
 
-    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR EN GUARDAR).
+    // Lógica de recuperación ante errores para prevenir la pérdida de información en el formulario
     private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("servicio", construirDesdeRequest(req));
         req.getRequestDispatcher("/WEB-INF/views/catalogos/servicios/servicio_form.jsp").forward(req, resp);
     }
 
-    // PARSEO DE LONG SEGURO (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
+    // Utilidad interna para la conversión segura de cadenas a identificadores numéricos
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -189,7 +188,7 @@ public class ServicioServlet extends HttpServlet {
         }
     }
 
-    // PARSEO DE BIGDECIMAL SEGURO (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
+    // Utilidad interna para la conversión segura de cadenas a valores decimales financieros
     private BigDecimal parseBigDecimal(String value) {
         if (value == null || value.isBlank()) {
             return null;

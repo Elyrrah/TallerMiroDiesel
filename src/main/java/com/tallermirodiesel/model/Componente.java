@@ -17,11 +17,10 @@ public class Componente {
     private String numeroSerie;
     private String observaciones;
     private boolean activo;
+    private String nombreTipoComponente;    // Campos auxiliares para mostrar nombres con JOIN
+    private String nombreMarca;    // Campos auxiliares para mostrar nombres con JOIN
+    private String nombreModelo;    // Campos auxiliares para mostrar nombres con JOIN
 
-    // Campos auxiliares para mostrar nombres con JOIN
-    private String nombreTipoComponente;
-    private String nombreMarca;
-    private String nombreModelo;
 
     // Constructor vacío
     public Componente() {

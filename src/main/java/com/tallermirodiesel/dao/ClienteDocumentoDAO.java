@@ -27,12 +27,8 @@ public interface ClienteDocumentoDAO {
     boolean definirPrincipal(Long idCliente, Long idClienteDocumento);
 
     // Verifica si ya existe un documento con ese tipo y número para el cliente
-    boolean existePorClienteTipoNumero(
-            Long idCliente,
-            Long idTipoDocumento,
-            String numero
-    );
-
+    boolean existePorClienteTipoNumero(Long idCliente, Long idTipoDocumento, String numero);
+    
     // Busca un documento por su ID
     Optional<ClienteDocumento> buscarPorId(Long idClienteDocumento);
 

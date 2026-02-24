@@ -23,11 +23,13 @@ public class TipoComponenteServlet extends HttpServlet {
 
     private TipoComponenteService tipoComponenteService;
 
+    // Inicialización del servicio de Tipo de Componente
     @Override
     public void init() {
         this.tipoComponenteService = new TipoComponenteServiceImpl();
     }
 
+    // Gestión de peticiones de lectura, búsqueda y navegación de formularios vía GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -52,6 +54,7 @@ public class TipoComponenteServlet extends HttpServlet {
         }
     }
 
+    // Gestión de procesamiento de datos para la persistencia de tipos de componente vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -71,7 +74,7 @@ public class TipoComponenteServlet extends HttpServlet {
         }
     }
 
-    // LISTAR.
+    // Lógica para recuperar tipos de componente con soporte para filtrado por nombre
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -86,13 +89,13 @@ public class TipoComponenteServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipo_componente/tipo_componente_listar.jsp").forward(req, resp);
     }
 
-    // FORMULARIO NUEVO.
+    // Preparación del objeto y despacho del formulario para creación
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("tipoComponente", new TipoComponente());
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipo_componente/tipo_componente_form.jsp").forward(req, resp);
     }
 
-    // FORMULARIO EDITAR.
+    // Recuperación del registro y despacho del formulario para edición
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -110,7 +113,7 @@ public class TipoComponenteServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipo_componente/tipo_componente_form.jsp").forward(req, resp);
     }
 
-    // ACTIVAR.
+    // Procesamiento de activación de registro y redirección al listado
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -122,7 +125,7 @@ public class TipoComponenteServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-componente?action=listar");
     }
 
-    // DESACTIVAR.
+    // Procesamiento de desactivación de registro y redirección al listado
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -134,7 +137,7 @@ public class TipoComponenteServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-componente?action=listar");
     }
 
-    // GUARDAR (CREAR O ACTUALIZAR).
+    // Lógica para persistir la entidad (crear o actualizar) y redirección final
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         TipoComponente tc = construirDesdeRequest(req);
 
@@ -147,7 +150,7 @@ public class TipoComponenteServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-componente?action=listar");
     }
 
-    // CONSTRUIR TIPOCOMPONENTE DESDE REQUEST.
+    // Utilidad para el mapeo de parámetros HTTP hacia la entidad TipoComponente
     private TipoComponente construirDesdeRequest(HttpServletRequest req) {
         TipoComponente tc = new TipoComponente();
         tc.setIdTipoComponente(parseLong(req.getParameter("idTipoComponente")));
@@ -161,13 +164,13 @@ public class TipoComponenteServlet extends HttpServlet {
         return tc;
     }
 
-    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR).
+    // Lógica de recuperación de datos en el formulario ante errores de validación
     private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("tipoComponente", construirDesdeRequest(req));
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipo_componente/tipo_componente_form.jsp").forward(req, resp);
     }
 
-    // PARSEO DE LONG SEGURO.
+    // Utilidad interna para la conversión segura de parámetros a Long
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

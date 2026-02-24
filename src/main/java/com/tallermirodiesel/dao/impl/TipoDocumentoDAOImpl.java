@@ -22,6 +22,36 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
 
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO public.tipos_documento (nombre, codigo, aplica_a, activo) VALUES (?, ?, ?, ?) RETURNING id_tipo_documento";
+
+    private static final String SQL_UPDATE = "UPDATE public.tipos_documento SET nombre = ?, codigo = ?, aplica_a = ?, activo = ? WHERE id_tipo_documento = ?";
+
+    private static final String SQL_DELETE = "DELETE FROM public.tipos_documento WHERE id_tipo_documento = ?";
+
+    private static final String SQL_SET_ACTIVO = "UPDATE public.tipos_documento SET activo = ? WHERE id_tipo_documento = ?";
+
+    private static final String SQL_SELECT_BASE = "SELECT id_tipo_documento, nombre, codigo, aplica_a, activo FROM public.tipos_documento";
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_tipo_documento = ?";
+
+    private static final String SQL_BUSCAR_CODIGO = SQL_SELECT_BASE + " WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))";
+
+    private static final String SQL_BUSCAR_NOMBRE = SQL_SELECT_BASE + " WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))";
+
+    private static final String SQL_BUSCAR_PARCIAL = SQL_SELECT_BASE + " WHERE nombre ILIKE ? ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_TODOS = SQL_SELECT_BASE + " ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE activo = true ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_INACTIVOS = SQL_SELECT_BASE + " WHERE activo = false ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_POR_APLICA = SQL_SELECT_BASE + " WHERE aplica_a = ? ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS_POR_APLICA = SQL_SELECT_BASE + " WHERE activo = true AND aplica_a = ? ORDER BY nombre ASC";
+
+    // Mapea un ResultSet a un objeto TipoDocumento
     private TipoDocumento mapearTipoDocumento(ResultSet rs) throws SQLException {
         TipoDocumento tipoDocumento = new TipoDocumento();
         tipoDocumento.setIdTipoDocumento(rs.getLong("id_tipo_documento"));
@@ -35,16 +65,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         return tipoDocumento;
     }
 
+    // Método para crear un Tipo de Documento
     @Override
     public Long crear(TipoDocumento tipoDocumento) {
-        String sql = """
-                INSERT INTO public.tipos_documento (nombre, codigo, aplica_a, activo)
-                VALUES (?, ?, ?, ?)
-                RETURNING id_tipo_documento
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_INSERT)) {
 
             ps.setString(1, tipoDocumento.getNombre());
             ps.setString(2, tipoDocumento.getCodigo());
@@ -70,19 +95,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Actualizar un Tipo de Documento
     @Override
     public boolean actualizar(TipoDocumento tipoDocumento) {
-        String sql = """
-                UPDATE public.tipos_documento
-                SET nombre = ?,
-                    codigo = ?,
-                    aplica_a = ?,
-                    activo = ?
-                WHERE id_tipo_documento = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_UPDATE)) {
 
             ps.setString(1, tipoDocumento.getNombre());
             ps.setString(2, tipoDocumento.getCodigo());
@@ -104,12 +121,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Eliminar un Tipo de Documento
     @Override
     public boolean eliminar(Long id) {
-        String sql = "DELETE FROM public.tipos_documento WHERE id_tipo_documento = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DELETE)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
@@ -119,18 +135,14 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Activar un Tipo de Documento
     @Override
     public boolean activar(Long id) {
-        String sql = """
-                UPDATE public.tipos_documento
-                SET activo = true
-                WHERE id_tipo_documento = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, true);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -138,18 +150,14 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Desactivar un Tipo de Documento
     @Override
     public boolean desactivar(Long id) {
-        String sql = """
-                UPDATE public.tipos_documento
-                SET activo = false
-                WHERE id_tipo_documento = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, false);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -157,16 +165,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Documento por su id
     @Override
     public Optional<TipoDocumento> buscarPorId(Long id) {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE id_tipo_documento = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -179,16 +182,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Documento por código
     @Override
     public Optional<TipoDocumento> buscarPorCodigo(String codigo) {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE UPPER(TRIM(codigo)) = UPPER(TRIM(?))
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_CODIGO)) {
 
             ps.setString(1, codigo);
 
@@ -201,16 +199,11 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Documento por nombre
     @Override
     public Optional<TipoDocumento> buscarPorNombre(String nombre) {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_NOMBRE)) {
 
             ps.setString(1, nombre);
 
@@ -223,19 +216,13 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Documento de forma parcial por nombre
     @Override
     public List<TipoDocumento> buscarPorNombreParcial(String filtro) {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE nombre ILIKE ?
-                ORDER BY nombre ASC
-                """;
-
         List<TipoDocumento> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_PARCIAL)) {
 
             ps.setString(1, "%" + (filtro == null ? "" : filtro.trim()) + "%");
 
@@ -252,18 +239,13 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para listar todos los Tipos de Documento
     @Override
     public List<TipoDocumento> listarTodos() {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                ORDER BY nombre ASC
-                """;
-
         List<TipoDocumento> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_TODOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -277,19 +259,13 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Listar todos los Tipos de Documento Activos
     @Override
     public List<TipoDocumento> listarActivos() {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE activo = true
-                ORDER BY nombre ASC
-                """;
-
         List<TipoDocumento> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -303,19 +279,13 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Listar todos los Tipos de Documento Inactivos
     @Override
     public List<TipoDocumento> listarInactivos() {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE activo = false
-                ORDER BY nombre ASC
-                """;
-
         List<TipoDocumento> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_INACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -329,19 +299,13 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Listar Tipos de Documento según a qué aplica
     @Override
     public List<TipoDocumento> listarPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE aplica_a = ?
-                ORDER BY nombre ASC
-                """;
-
         List<TipoDocumento> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_POR_APLICA)) {
 
             ps.setObject(1, aplicaA.name(), Types.OTHER);
 
@@ -358,19 +322,13 @@ public class TipoDocumentoDAOImpl implements TipoDocumentoDAO {
         }
     }
 
+    // Método para Listar Tipos de Documento Activos según a qué aplica
     @Override
     public List<TipoDocumento> listarActivosPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
-        String sql = """
-                SELECT id_tipo_documento, nombre, codigo, aplica_a, activo
-                FROM public.tipos_documento
-                WHERE activo = true AND aplica_a = ?
-                ORDER BY nombre ASC
-                """;
-
         List<TipoDocumento> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS_POR_APLICA)) {
 
             ps.setObject(1, aplicaA.name(), Types.OTHER);
 

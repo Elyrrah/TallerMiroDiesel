@@ -18,14 +18,17 @@ public class ClienteEmpresaServiceImpl implements ClienteEmpresaService {
 
     private final ClienteEmpresaDAO clienteEmpresaDAO;
 
+    // Inicialización de la implementación del DAO para la gestión de datos corporativos de clientes
     public ClienteEmpresaServiceImpl() {
         this.clienteEmpresaDAO = new ClienteEmpresaDAOImpl();
     }
 
+    // Constructor para inyección de dependencias del DAO de clientes empresa
     public ClienteEmpresaServiceImpl(ClienteEmpresaDAO clienteEmpresaDAO) {
         this.clienteEmpresaDAO = clienteEmpresaDAO;
     }
 
+    // Validaciones de obligatoriedad para razón social y normalización de nombres comerciales
     @Override
     public boolean guardar(ClienteEmpresa empresa) {
         if (empresa == null) {
@@ -55,6 +58,7 @@ public class ClienteEmpresaServiceImpl implements ClienteEmpresaService {
         return clienteEmpresaDAO.guardar(empresa);
     }
 
+    // Lógica para verificar si un cliente ya tiene registrados datos de empresa en el sistema
     @Override
     public boolean existePorIdCliente(Long idCliente) {
         if (idCliente == null || idCliente <= 0) {
@@ -63,6 +67,7 @@ public class ClienteEmpresaServiceImpl implements ClienteEmpresaService {
         return clienteEmpresaDAO.existePorIdCliente(idCliente);
     }
 
+    // Lógica para recuperar la información corporativa detallada asociada a un cliente
     @Override
     public Optional<ClienteEmpresa> buscarPorIdCliente(Long idCliente) {
         if (idCliente == null || idCliente <= 0) {
@@ -71,11 +76,13 @@ public class ClienteEmpresaServiceImpl implements ClienteEmpresaService {
         return clienteEmpresaDAO.buscarPorIdCliente(idCliente);
     }
 
+    // Lógica para obtener el listado completo de todas las empresas registradas
     @Override
     public List<ClienteEmpresa> listarTodos() {
         return clienteEmpresaDAO.listarTodos();
     }
 
+    // Lógica para eliminar el registro corporativo de un cliente específico
     @Override
     public boolean eliminarPorIdCliente(Long idCliente) {
         if (idCliente == null || idCliente <= 0) {

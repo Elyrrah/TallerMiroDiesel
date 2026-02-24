@@ -21,24 +21,20 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
 
-    private static final String SQL_INSERT =
-        "INSERT INTO clientes_empresa (id_cliente, razon_social, nombre_fantasia) VALUES (?, ?, ?)";
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO clientes_empresa (id_cliente, razon_social, nombre_fantasia) VALUES (?, ?, ?)";
 
-    private static final String SQL_UPDATE =
-        "UPDATE clientes_empresa SET razon_social = ?, nombre_fantasia = ? WHERE id_cliente = ?";
+    private static final String SQL_UPDATE = "UPDATE clientes_empresa SET razon_social = ?, nombre_fantasia = ? WHERE id_cliente = ?";
 
-    private static final String SQL_EXISTE_ID_CLIENTE =
-        "SELECT 1 FROM clientes_empresa WHERE id_cliente = ?";
+    private static final String SQL_EXISTE_ID_CLIENTE = "SELECT 1 FROM clientes_empresa WHERE id_cliente = ?";
 
-    private static final String SQL_BUSCAR_ID_CLIENTE =
-        "SELECT id_cliente, razon_social, nombre_fantasia FROM clientes_empresa WHERE id_cliente = ?";
+    private static final String SQL_BUSCAR_ID_CLIENTE = "SELECT id_cliente, razon_social, nombre_fantasia FROM clientes_empresa WHERE id_cliente = ?";
 
-    private static final String SQL_DELETE_ID_CLIENTE =
-        "DELETE FROM clientes_empresa WHERE id_cliente = ?";
+    private static final String SQL_DELETE_ID_CLIENTE = "DELETE FROM clientes_empresa WHERE id_cliente = ?";
 
-    private static final String SQL_LISTAR_TODOS =
-        "SELECT id_cliente, razon_social, nombre_fantasia FROM clientes_empresa ORDER BY id_cliente ASC";
+    private static final String SQL_LISTAR_TODOS = "SELECT id_cliente, razon_social, nombre_fantasia FROM clientes_empresa ORDER BY id_cliente ASC";
 
+    // Método para Guardar un Cliente Empresa (insertar o actualizar)
     @Override
     public boolean guardar(ClienteEmpresa empresa) {
         if (empresa == null || empresa.getIdCliente() == null) {
@@ -56,6 +52,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
+    // Método para verificar si existe una Empresa vinculada a un ID de Cliente
     @Override
     public boolean existePorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -72,6 +69,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
+    // Método para Buscar los datos de Empresa por ID de Cliente
     @Override
     public Optional<ClienteEmpresa> buscarPorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -92,6 +90,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
+    // Método para Eliminar los datos de Empresa por ID de Cliente
     @Override
     public boolean eliminarPorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -105,6 +104,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
+    // Método para Listar todas las Empresas registradas
     @Override
     public List<ClienteEmpresa> listarTodos() {
         List<ClienteEmpresa> lista = new ArrayList<>();
@@ -124,6 +124,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         return lista;
     }
 
+    // Método privado para insertar una Empresa
     private boolean insertar(Connection conn, ClienteEmpresa empresa) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
@@ -140,6 +141,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
+    // Método privado para actualizar una Empresa
     private boolean actualizar(Connection conn, ClienteEmpresa empresa) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
 
@@ -156,6 +158,7 @@ public class ClienteEmpresaDAOImpl implements ClienteEmpresaDAO {
         }
     }
 
+    // Método para Mapear una Empresa desde un ResultSet
     private ClienteEmpresa mapEmpresa(ResultSet rs) throws SQLException {
         ClienteEmpresa e = new ClienteEmpresa();
         e.setIdCliente(rs.getLong("id_cliente"));

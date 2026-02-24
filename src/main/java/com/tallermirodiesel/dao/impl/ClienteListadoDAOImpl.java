@@ -22,65 +22,45 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteListadoDAOImpl implements ClienteListadoDAO {
 
+    // Consultas SQL unificadas para listados complejos (Persona y Empresa)
     private static final String SQL_LISTAR_PERSONAS = """
-        SELECT
-            c.id_cliente,
-            c.id_localidad,
-            c.id_distrito,
-            c.telefono,
-            c.activo,
-            c.fecha_creacion,
-
-            cp.nombre,
-            cp.apellido,
-            cp.apodo,
-
-            d.nombre  AS nombre_distrito,
-            l.nombre  AS nombre_localidad,
-
-            TRIM(u.nombre || ' ' || u.apellido) AS nombre_usuario_creador
-
-        FROM public.clientes c
-        JOIN public.clientes_persona cp ON cp.id_cliente = c.id_cliente
-        LEFT JOIN public.distritos d ON d.id_distrito = c.id_distrito
-        LEFT JOIN public.localidades l ON l.id_localidad = c.id_localidad
-        LEFT JOIN public.usuarios u ON u.id_usuario = c.id_usuario_creador
-        WHERE ( ? IS NULL OR (cp.nombre ILIKE '%'||?||'%' OR cp.apellido ILIKE '%'||?||'%' OR c.telefono ILIKE '%'||?||'%') )
-          AND ( ? IS NULL OR c.activo = ? )
-        ORDER BY c.id_cliente ASC
-    """;
+                SELECT
+                    c.id_cliente, c.id_localidad, c.id_distrito, c.telefono, c.activo, c.fecha_creacion,
+                    cp.nombre, cp.apellido, cp.apodo,
+                    d.nombre AS nombre_distrito,
+                    l.nombre AS nombre_localidad,
+                    TRIM(u.nombre || ' ' || u.apellido) AS nombre_usuario_creador
+                FROM public.clientes c
+                JOIN public.clientes_persona cp ON cp.id_cliente = c.id_cliente
+                LEFT JOIN public.distritos d ON d.id_distrito = c.id_distrito
+                LEFT JOIN public.localidades l ON l.id_localidad = c.id_localidad
+                LEFT JOIN public.usuarios u ON u.id_usuario = c.id_usuario_creador
+                WHERE ( ? IS NULL OR (cp.nombre ILIKE '%'||?||'%' OR cp.apellido ILIKE '%'||?||'%' OR c.telefono ILIKE '%'||?||'%') )
+                  AND ( ? IS NULL OR c.activo = ? )
+                ORDER BY c.id_cliente ASC
+                """;
 
     private static final String SQL_LISTAR_EMPRESAS = """
-        SELECT
-            c.id_cliente,
-            c.id_localidad,
-            c.id_distrito,
-            c.telefono,
-            c.activo,
-            c.fecha_creacion,
+                SELECT
+                    c.id_cliente, c.id_localidad, c.id_distrito, c.telefono, c.activo, c.fecha_creacion,
+                    ce.razon_social, ce.nombre_fantasia,
+                    d.nombre AS nombre_distrito,
+                    l.nombre AS nombre_localidad,
+                    TRIM(u.nombre || ' ' || u.apellido) AS nombre_usuario_creador
+                FROM public.clientes c
+                JOIN public.clientes_empresa ce ON ce.id_cliente = c.id_cliente
+                LEFT JOIN public.distritos d ON d.id_distrito = c.id_distrito
+                LEFT JOIN public.localidades l ON l.id_localidad = c.id_localidad
+                LEFT JOIN public.usuarios u ON u.id_usuario = c.id_usuario_creador
+                WHERE ( ? IS NULL OR (ce.razon_social ILIKE '%'||?||'%' OR ce.nombre_fantasia ILIKE '%'||?||'%' OR c.telefono ILIKE '%'||?||'%') )
+                  AND ( ? IS NULL OR c.activo = ? )
+                ORDER BY c.id_cliente ASC
+                """;
 
-            ce.razon_social,
-            ce.nombre_fantasia,
-
-            d.nombre  AS nombre_distrito,
-            l.nombre  AS nombre_localidad,
-
-            TRIM(u.nombre || ' ' || u.apellido) AS nombre_usuario_creador
-
-        FROM public.clientes c
-        JOIN public.clientes_empresa ce ON ce.id_cliente = c.id_cliente
-        LEFT JOIN public.distritos d ON d.id_distrito = c.id_distrito
-        LEFT JOIN public.localidades l ON l.id_localidad = c.id_localidad
-        LEFT JOIN public.usuarios u ON u.id_usuario = c.id_usuario_creador
-        WHERE ( ? IS NULL OR (ce.razon_social ILIKE '%'||?||'%' OR ce.nombre_fantasia ILIKE '%'||?||'%' OR c.telefono ILIKE '%'||?||'%') )
-          AND ( ? IS NULL OR c.activo = ? )
-        ORDER BY c.id_cliente ASC
-    """;
-
+    // Método para Listar Clientes de tipo Persona con filtros dinámicos
     @Override
     public List<ClientePersonaListadoDTO> listarPersonas(String q, Boolean activo) {
         String qNorm = (q == null || q.trim().isBlank()) ? null : q.trim();
-
         List<ClientePersonaListadoDTO> lista = new ArrayList<>();
 
         try (Connection conn = DatabaseConnection.getConexion();
@@ -112,10 +92,10 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         }
     }
 
+    // Método para Listar Clientes de tipo Empresa con filtros dinámicos
     @Override
     public List<ClienteEmpresaListadoDTO> listarEmpresas(String q, Boolean activo) {
         String qNorm = (q == null || q.trim().isBlank()) ? null : q.trim();
-
         List<ClienteEmpresaListadoDTO> lista = new ArrayList<>();
 
         try (Connection conn = DatabaseConnection.getConexion();
@@ -147,6 +127,7 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         }
     }
 
+    // Método para Mapear el ResultSet a un DTO de Cliente Persona
     private ClientePersonaListadoDTO mapPersona(ResultSet rs) throws SQLException {
         ClientePersonaListadoDTO dto = new ClientePersonaListadoDTO();
 
@@ -170,6 +151,7 @@ public class ClienteListadoDAOImpl implements ClienteListadoDAO {
         return dto;
     }
 
+    // Método para Mapear el ResultSet a un DTO de Cliente Empresa
     private ClienteEmpresaListadoDTO mapEmpresa(ResultSet rs) throws SQLException {
         ClienteEmpresaListadoDTO dto = new ClienteEmpresaListadoDTO();
 

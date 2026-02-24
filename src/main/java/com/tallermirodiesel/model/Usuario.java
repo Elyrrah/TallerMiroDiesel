@@ -30,10 +30,8 @@ public class Usuario {
     }
 
     // Constructor con parámetros
-    public Usuario(Long idUsuario, String username, String password, String nombre,
-                   String apellido, Long idTipoDocumento, String numeroDocumento,
-                   String email, String telefono, Boolean activo,
-                   LocalDateTime fechaCreacion, Rol rol) {
+    public Usuario(Long idUsuario, String username, String password, String nombre, String apellido, Long idTipoDocumento, String numeroDocumento,
+                   String email, String telefono, Boolean activo, LocalDateTime fechaCreacion, Rol rol) {
         this.idUsuario = idUsuario;
         this.username = username;
         this.password = password;

@@ -30,6 +30,7 @@ public class VehiculoServlet extends HttpServlet {
     private MarcaDAO marcaDAO;
     private ModeloDAO modeloDAO;
 
+    // Inicialización de servicios y acceso a datos para marcas y modelos
     @Override
     public void init() {
         this.vehiculoService = new VehiculoServiceImpl();
@@ -37,6 +38,7 @@ public class VehiculoServlet extends HttpServlet {
         this.modeloDAO       = new ModeloDAOImpl();
     }
 
+    // Procesamiento de navegación y consultas GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -61,6 +63,7 @@ public class VehiculoServlet extends HttpServlet {
         }
     }
 
+    // Procesamiento de envío de formularios vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -80,7 +83,7 @@ public class VehiculoServlet extends HttpServlet {
         }
     }
 
-    // LISTAR.
+    // Recuperación de la lista de vehículos registrados
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -92,20 +95,17 @@ public class VehiculoServlet extends HttpServlet {
             req.setAttribute("filtro", "");
         }
 
-        // CORRECCIÓN: ruta actualizada
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/vehiculos/vehiculo_listar.jsp").forward(req, resp);
     }
 
-    // FORMULARIO NUEVO.
+    // Despacho del formulario de creación con carga de catálogos y enums
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         cargarDatosFormulario(req);
         req.setAttribute("vehiculo", new Vehiculo());
-
-        // CORRECCIÓN: ruta actualizada
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/vehiculos/vehiculo_form.jsp").forward(req, resp);
     }
 
-    // FORMULARIO EDITAR.
+    // Carga de vehículo existente para edición y preparación de selectores
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -121,12 +121,10 @@ public class VehiculoServlet extends HttpServlet {
 
         cargarDatosFormulario(req);
         req.setAttribute("vehiculo", v.get());
-
-        // CORRECCIÓN: ruta actualizada
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/vehiculos/vehiculo_form.jsp").forward(req, resp);
     }
 
-    // ACTIVAR.
+    // Lógica para habilitar un vehículo
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
         if (id == null) throw new IllegalArgumentException("ID inválido");
@@ -134,7 +132,7 @@ public class VehiculoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/vehiculos?action=listar");
     }
 
-    // DESACTIVAR.
+    // Lógica para inhabilitar un vehículo
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
         if (id == null) throw new IllegalArgumentException("ID inválido");
@@ -142,7 +140,7 @@ public class VehiculoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/vehiculos?action=listar");
     }
 
-    // GUARDAR (CREAR O ACTUALIZAR).
+    // Ejecución de persistencia de datos (Crear/Actualizar)
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Vehiculo v = construirDesdeRequest(req);
 
@@ -155,7 +153,7 @@ public class VehiculoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/vehiculos?action=listar");
     }
 
-    // CONSTRUIR VEHICULO DESDE REQUEST.
+    // Mapeo de parámetros del Request hacia el objeto Vehiculo
     private Vehiculo construirDesdeRequest(HttpServletRequest req) {
         Vehiculo v = new Vehiculo();
         v.setIdVehiculo(parseLong(req.getParameter("idVehiculo")));
@@ -182,23 +180,21 @@ public class VehiculoServlet extends HttpServlet {
         return v;
     }
 
-    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR).
+    // Reenvío al formulario con persistencia de datos ante errores
     private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         cargarDatosFormulario(req);
         req.setAttribute("vehiculo", construirDesdeRequest(req));
-
-        // CORRECCIÓN: ruta actualizada
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/vehiculos/vehiculo_form.jsp").forward(req, resp);
     }
 
-    // CARGAR MARCAS Y TIPOS PARA COMBOS DEL FORMULARIO.
+    // Inyección de catálogos y valores de enumeración para la interfaz
     private void cargarDatosFormulario(HttpServletRequest req) {
         req.setAttribute("marcas", marcaDAO.listarActivos());
         req.setAttribute("modelos", modeloDAO.listarActivos());
         req.setAttribute("tiposVehiculo", TipoVehiculoEnum.values());
     }
 
-    // PARSEO SEGURO DE LONG.
+    // Utilidad de parseo para identificadores
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) return null;
         try {
@@ -208,7 +204,7 @@ public class VehiculoServlet extends HttpServlet {
         }
     }
 
-    // PARSEO SEGURO DE SHORT (para año).
+    // Utilidad de parseo para el campo de año
     private Short parseShort(String value) {
         if (value == null || value.isBlank()) return null;
         try {

@@ -18,10 +18,12 @@ public class ServicioServiceImpl implements ServicioService {
 
     private final ServicioDAO servicioDAO;
 
+    // Inicialización de la implementación del DAO para el servicio de servicios técnicos
     public ServicioServiceImpl() {
         this.servicioDAO = new ServicioDAOImpl();
     }
 
+    // Validaciones de formato, obligatoriedad y coherencia de precios para los campos de un servicio
     private void validarCampos(Servicio servicio) {
         String codigo      = servicio.getCodigo()      == null ? null : servicio.getCodigo().trim().toUpperCase();
         String nombre      = servicio.getNombre()      == null ? null : servicio.getNombre().trim().toUpperCase();
@@ -45,6 +47,7 @@ public class ServicioServiceImpl implements ServicioService {
         servicio.setDescripcion(descripcion);
     }
 
+    // Validaciones para crear un nuevo servicio
     @Override
     public Long crear(Servicio servicio) {
         if (servicio == null) {
@@ -60,6 +63,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.crear(servicio);
     }
 
+    // Validaciones para actualizar la información de un servicio existente
     @Override
     public boolean actualizar(Servicio servicio) {
         if (servicio == null || servicio.getIdServicio() == null) {
@@ -80,6 +84,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.actualizar(servicio);
     }
 
+    // Validaciones para activar un servicio en el catálogo
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -93,6 +98,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.activar(id);
     }
 
+    // Validaciones para desactivar un servicio del catálogo
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -106,6 +112,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de un servicio por su identificador único
     @Override
     public Optional<Servicio> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -115,6 +122,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.buscarPorId(id);
     }
 
+    // Lógica para buscar un servicio utilizando su código identificador único
     @Override
     public Optional<Servicio> buscarPorCodigo(String codigo) {
         if (codigo == null || codigo.isBlank()) {
@@ -124,6 +132,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.buscarPorCodigo(codigo.trim().toUpperCase());
     }
 
+    // Lógica para buscar un servicio utilizando su nombre exacto
     @Override
     public Optional<Servicio> buscarPorNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
@@ -133,6 +142,7 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.buscarPorNombre(nombre.trim().toUpperCase());
     }
 
+    // Lógica para filtrar servicios según una coincidencia parcial en el nombre
     @Override
     public List<Servicio> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -142,16 +152,19 @@ public class ServicioServiceImpl implements ServicioService {
         return servicioDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de servicios registrados
     @Override
     public List<Servicio> listarTodos() {
         return servicioDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los servicios con estado activo
     @Override
     public List<Servicio> listarActivos() {
         return servicioDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los servicios con estado inactivo
     @Override
     public List<Servicio> listarInactivos() {
         return servicioDAO.listarInactivos();

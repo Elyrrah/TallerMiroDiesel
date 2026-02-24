@@ -42,6 +42,7 @@
     <a href="${pageContext.request.contextPath}/clientes?action=listar">Clientes</a><br>
     <a href="${pageContext.request.contextPath}/vehiculos?action=listar">Vehículos</a><br>
     <a href="${pageContext.request.contextPath}/componentes?action=listar">Componentes</a><br>
+    <a href="${pageContext.request.contextPath}/ordenes-trabajo?action=listar">Órdenes de Trabajo</a><br>
     
     <h3>Sistema</h3>
     <a href="${pageContext.request.contextPath}/usuarios?action=listar">Usuarios</a><br>

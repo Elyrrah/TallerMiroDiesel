@@ -20,6 +20,30 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class TipoComponenteDAOImpl implements TipoComponenteDAO {
 
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO public.tipos_componente (nombre, descripcion, activo) VALUES (?, ?, ?) RETURNING id_tipo_componente";
+
+    private static final String SQL_UPDATE = "UPDATE public.tipos_componente SET nombre = ?, descripcion = ?, activo = ? WHERE id_tipo_componente = ?";
+
+    private static final String SQL_DELETE = "DELETE FROM public.tipos_componente WHERE id_tipo_componente = ?";
+
+    private static final String SQL_SET_ACTIVO = "UPDATE public.tipos_componente SET activo = ? WHERE id_tipo_componente = ?";
+
+    private static final String SQL_SELECT_BASE = "SELECT id_tipo_componente, nombre, descripcion, activo FROM public.tipos_componente";
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_tipo_componente = ?";
+
+    private static final String SQL_BUSCAR_NOMBRE = SQL_SELECT_BASE + " WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))";
+
+    private static final String SQL_BUSCAR_PARCIAL = SQL_SELECT_BASE + " WHERE nombre ILIKE ? ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_TODOS = SQL_SELECT_BASE + " ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE activo = true ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_INACTIVOS = SQL_SELECT_BASE + " WHERE activo = false ORDER BY nombre ASC";
+
+    // Método para Mapear un Tipo de Componente
     private TipoComponente mapearTipoComponente(ResultSet rs) throws SQLException {
         TipoComponente tc = new TipoComponente();
         tc.setIdTipoComponente(rs.getLong("id_tipo_componente"));
@@ -29,16 +53,11 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         return tc;
     }
 
+    // Método para crear un Tipo de Componente
     @Override
     public Long crear(TipoComponente tc) {
-        String sql = """
-                INSERT INTO public.tipos_componente (nombre, descripcion, activo)
-                VALUES (?, ?, ?)
-                RETURNING id_tipo_componente
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_INSERT)) {
 
             ps.setString(1, tc.getNombre());
             ps.setString(2, tc.getDescripcion());
@@ -56,18 +75,11 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Actualizar un Tipo de Componente
     @Override
     public boolean actualizar(TipoComponente tc) {
-        String sql = """
-                UPDATE public.tipos_componente
-                SET nombre      = ?,
-                    descripcion = ?,
-                    activo      = ?
-                WHERE id_tipo_componente = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_UPDATE)) {
 
             ps.setString(1, tc.getNombre());
             ps.setString(2, tc.getDescripcion());
@@ -81,12 +93,11 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Eliminar un Tipo de Componente
     @Override
     public boolean eliminar(Long id) {
-        String sql = "DELETE FROM public.tipos_componente WHERE id_tipo_componente = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DELETE)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -96,14 +107,14 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Activar un Tipo de Componente
     @Override
     public boolean activar(Long id) {
-        String sql = "UPDATE public.tipos_componente SET activo = true WHERE id_tipo_componente = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, true);
+            ps.setLong(2, id);
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -111,14 +122,14 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Desactivar un Tipo de Componente
     @Override
     public boolean desactivar(Long id) {
-        String sql = "UPDATE public.tipos_componente SET activo = false WHERE id_tipo_componente = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, false);
+            ps.setLong(2, id);
             return ps.executeUpdate() > 0;
 
         } catch (SQLException e) {
@@ -126,16 +137,11 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Componente por su id
     @Override
     public Optional<TipoComponente> buscarPorId(Long id) {
-        String sql = """
-                SELECT id_tipo_componente, nombre, descripcion, activo
-                FROM public.tipos_componente
-                WHERE id_tipo_componente = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -148,16 +154,11 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Componente por nombre
     @Override
     public Optional<TipoComponente> buscarPorNombre(String nombre) {
-        String sql = """
-                SELECT id_tipo_componente, nombre, descripcion, activo
-                FROM public.tipos_componente
-                WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_NOMBRE)) {
 
             ps.setString(1, nombre);
 
@@ -170,19 +171,13 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Buscar un Tipo de Componente de forma parcial por nombre
     @Override
     public List<TipoComponente> buscarPorNombreParcial(String filtro) {
-        String sql = """
-                SELECT id_tipo_componente, nombre, descripcion, activo
-                FROM public.tipos_componente
-                WHERE nombre ILIKE ?
-                ORDER BY nombre ASC
-                """;
-
         List<TipoComponente> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_PARCIAL)) {
 
             ps.setString(1, "%" + (filtro == null ? "" : filtro.trim()) + "%");
 
@@ -199,18 +194,13 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para listar todos los Tipos de Componente
     @Override
     public List<TipoComponente> listarTodos() {
-        String sql = """
-                SELECT id_tipo_componente, nombre, descripcion, activo
-                FROM public.tipos_componente
-                ORDER BY nombre ASC
-                """;
-
         List<TipoComponente> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_TODOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -224,19 +214,13 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Listar todos los Tipos de Componente Activos
     @Override
     public List<TipoComponente> listarActivos() {
-        String sql = """
-                SELECT id_tipo_componente, nombre, descripcion, activo
-                FROM public.tipos_componente
-                WHERE activo = true
-                ORDER BY nombre ASC
-                """;
-
         List<TipoComponente> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -250,19 +234,13 @@ public class TipoComponenteDAOImpl implements TipoComponenteDAO {
         }
     }
 
+    // Método para Listar todos los Tipos de Componente Inactivos
     @Override
     public List<TipoComponente> listarInactivos() {
-        String sql = """
-                SELECT id_tipo_componente, nombre, descripcion, activo
-                FROM public.tipos_componente
-                WHERE activo = false
-                ORDER BY nombre ASC
-                """;
-
         List<TipoComponente> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_INACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {

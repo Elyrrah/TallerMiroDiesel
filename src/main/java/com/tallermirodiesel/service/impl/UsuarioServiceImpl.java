@@ -17,10 +17,14 @@ import com.tallermirodiesel.util.PasswordHash;
  */
 public class UsuarioServiceImpl implements UsuarioService {
 
-    // DAO para acceder a la base de datos
-    private final UsuarioDAO usuarioDAO = new UsuarioDAOImpl();
+    private final UsuarioDAO usuarioDAO;
 
-    // Crea un nuevo usuario, recibe la contraseña en texto plano y la hashea internamente
+    // Inicialización de la implementación del DAO para el servicio de gestión de usuarios y seguridad
+    public UsuarioServiceImpl() {
+        this.usuarioDAO = new UsuarioDAOImpl();
+    }
+
+    // Validaciones para registrar un nuevo usuario con cifrado de contraseña
     @Override
     public Long crear(Usuario usuario, String passwordPlana) {
 
@@ -53,7 +57,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioDAO.crear(usuario);
     }
 
-    // Actualiza los datos de un usuario existente
+    // Validaciones para actualizar los datos personales y de rol de un usuario
     @Override
     public boolean actualizar(Usuario usuario) {
 
@@ -76,7 +80,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioDAO.actualizar(usuario);
     }
 
-    // Cambia la contraseña de un usuario, recibe la nueva en texto plano y la hashea internamente
+    // Lógica para actualizar la credencial de acceso mediante cifrado seguro
     @Override
     public boolean cambiarPassword(Long id, String passwordNueva) {
 
@@ -93,7 +97,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioDAO.cambiarPassword(id, PasswordHash.hashear(passwordNueva));
     }
 
-    // Activa un usuario
+    // Validaciones para habilitar el acceso de un usuario al sistema
     @Override
     public boolean activar(Long id) {
         usuarioDAO.buscarPorId(id)
@@ -101,7 +105,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioDAO.activar(id);
     }
 
-    // Desactiva un usuario
+    // Validaciones para restringir el acceso de un usuario al sistema
     @Override
     public boolean desactivar(Long id) {
         usuarioDAO.buscarPorId(id)
@@ -109,37 +113,37 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioDAO.desactivar(id);
     }
 
-    // Busca un usuario por su id
+    // Lógica para obtener la información de un usuario por su identificador único
     @Override
     public Optional<Usuario> buscarPorId(Long id) {
         return usuarioDAO.buscarPorId(id);
     }
 
-    // Busca un usuario por su username
+    // Lógica para localizar un usuario mediante su nombre de cuenta (username)
     @Override
     public Optional<Usuario> buscarPorUsername(String username) {
         return usuarioDAO.buscarPorUsername(username);
     }
 
-    // Busca usuarios cuyo nombre, apellido o username coincida parcialmente
+    // Lógica para filtrar usuarios por coincidencias en nombres, apellidos o cuenta
     @Override
     public List<Usuario> buscarPorNombreParcial(String filtro) {
         return usuarioDAO.buscarPorNombreParcial(filtro);
     }
 
-    // Lista todos los usuarios
+    // Lógica para obtener la lista completa de usuarios registrados en el sistema
     @Override
     public List<Usuario> listarTodos() {
         return usuarioDAO.listarTodos();
     }
 
-    // Lista solo los usuarios activos
+    // Lógica para listar únicamente los usuarios con permisos de acceso vigentes
     @Override
     public List<Usuario> listarActivos() {
         return usuarioDAO.listarActivos();
     }
 
-    // Lista solo los usuarios inactivos
+    // Lógica para listar únicamente los usuarios con acceso restringido
     @Override
     public List<Usuario> listarInactivos() {
         return usuarioDAO.listarInactivos();

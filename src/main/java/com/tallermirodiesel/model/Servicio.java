@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
  * @author elyrr
  */
 public class Servicio {
-    
     // Inicializamos las columnas de la tabla como variables privadas
     private Long idServicio;
     private String codigo;

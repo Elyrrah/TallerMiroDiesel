@@ -24,11 +24,13 @@ public class TipoDocumentoServlet extends HttpServlet {
 
     private TipoDocumentoService tipoDocumentoService;
 
+    // Inicialización del servicio de Tipos de Documento
     @Override
     public void init() {
         this.tipoDocumentoService = new TipoDocumentoServiceImpl();
     }
 
+    // Gestión de peticiones de lectura y navegación de formularios vía GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -43,7 +45,6 @@ public class TipoDocumentoServlet extends HttpServlet {
                 case "editar"     -> mostrarFormularioEditar(req, resp);
                 case "activar"    -> activar(req, resp);
                 case "desactivar" -> desactivar(req, resp);
-                // CORRECCIÓN 1: "buscar" apunta directamente a listar()
                 case "buscar"     -> listar(req, resp);
                 case "listar"     -> listar(req, resp);
                 default           -> listar(req, resp);
@@ -54,6 +55,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         }
     }
 
+    // Gestión de procesamiento de datos para la persistencia vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -69,12 +71,11 @@ public class TipoDocumentoServlet extends HttpServlet {
             }
         } catch (RuntimeException e) {
             req.setAttribute("error", e.getMessage());
-            // CORRECCIÓN 3: reutiliza reenviarFormularioConDatos()
             reenviarFormularioConDatos(req, resp);
         }
     }
 
-    // LISTAR (con filtro opcional por nombre).
+    // Lógica para recuperar la lista de tipos de documento con soporte de búsqueda
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -83,21 +84,20 @@ public class TipoDocumentoServlet extends HttpServlet {
             req.setAttribute("filtro", filtro);
         } else {
             req.setAttribute("tiposDocumento", tipoDocumentoService.listarTodos());
-            // CORRECCIÓN 2: siempre seteamos "filtro" para que el JSP nunca lo reciba como null
             req.setAttribute("filtro", "");
         }
 
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_listar.jsp").forward(req, resp);
     }
 
-    // FORMULARIO NUEVO.
+    // Preparación del objeto y despacho del formulario con opciones de aplicación (Enum)
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("tipoDocumento", new TipoDocumento());
         req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
     }
 
-    // FORMULARIO EDITAR.
+    // Recuperación del registro y despacho del formulario para edición
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -116,7 +116,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
     }
 
-    // ACTIVAR.
+    // Procesamiento de activación y redirección al listado principal
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -128,7 +128,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
-    // DESACTIVAR.
+    // Procesamiento de desactivación y redirección al listado principal
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -140,9 +140,8 @@ public class TipoDocumentoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
-    // GUARDAR (CREAR O ACTUALIZAR).
+    // Lógica para persistir la entidad y redirección final
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        // CORRECCIÓN 3: reutiliza construirDesdeRequest()
         TipoDocumento td = construirDesdeRequest(req);
 
         if (td.getIdTipoDocumento() == null) {
@@ -155,7 +154,7 @@ public class TipoDocumentoServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/tipos-documento?action=listar");
     }
 
-    // CONSTRUIR TIPODOCUMENTO DESDE REQUEST.
+    // Utilidad interna para el mapeo de parámetros HTTP incluyendo la conversión del Enum
     private TipoDocumento construirDesdeRequest(HttpServletRequest req) {
         TipoDocumento td = new TipoDocumento();
 
@@ -179,14 +178,14 @@ public class TipoDocumentoServlet extends HttpServlet {
         return td;
     }
 
-    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR EN GUARDAR).
+    // Lógica de recuperación de datos y opciones ante errores de guardado
     private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("tipoDocumento", construirDesdeRequest(req));
         req.setAttribute("aplicaAOptions", TipoDocumentoAplicaEnum.values());
         req.getRequestDispatcher("/WEB-INF/views/catalogos/tipos_documento/tipo_documento_form.jsp").forward(req, resp);
     }
 
-    // PARSEO DE LONG SEGURO (RETORNA NULL SI NO APLICA O ES INVÁLIDO).
+    // Utilidad interna para la conversión segura de parámetros a Long
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

@@ -15,15 +15,22 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * @author elyrr
  */
-@WebServlet(name = "HomeServlet", urlPatterns = {"", "/home"}) // Mapea este servlet a la raíz de la aplicación
+// Define este Servlet y lo vincula tanto a la raíz ("") como a la ruta "/home"
+@WebServlet(name = "HomeServlet", urlPatterns = {"", "/home"})
 public class HomeServlet extends HttpServlet {
     
-    @Override // Sobrescribe el método doGet de HttpServlet para manejar peticiones HTTP GET
+    // Procesa las solicitudes de tipo GET enviadas al servidor
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // Crea un dispatcher para reenviar la petición a la vista index.jsp
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/views/index/index.jsp");
-        // Reenvía la petición y la respuesta al JSP sin cambiar la URL
+        
+        // Define la ruta interna del archivo JSP que servirá como página de inicio
+        String viewPath = "/WEB-INF/views/index/index.jsp";
+        
+        // Crea el despachador encargado de transferir el control a la vista especificada
+        RequestDispatcher dispatcher = request.getRequestDispatcher(viewPath);
+        
+        // Ejecuta el reenvío de la solicitud y la respuesta hacia el JSP de forma interna
         dispatcher.forward(request, response);
     }
 }

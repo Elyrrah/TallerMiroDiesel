@@ -18,14 +18,17 @@ public class ClientePersonaServiceImpl implements ClientePersonaService {
 
     private final ClientePersonaDAO clientePersonaDAO;
 
+    // Inicialización de la implementación del DAO para la gestión de datos de personas naturales
     public ClientePersonaServiceImpl() {
         this.clientePersonaDAO = new ClientePersonaDAOImpl();
     }
 
+    // Constructor para inyección de dependencias del DAO de clientes persona física
     public ClientePersonaServiceImpl(ClientePersonaDAO clientePersonaDAO) {
         this.clientePersonaDAO = clientePersonaDAO;
     }
 
+    // Validaciones de obligatoriedad para nombres y apellidos, y normalización de apodos o alias
     @Override
     public boolean guardar(ClientePersona persona) {
         if (persona == null) {
@@ -62,6 +65,7 @@ public class ClientePersonaServiceImpl implements ClientePersonaService {
         return clientePersonaDAO.guardar(persona);
     }
 
+    // Lógica para verificar si un cliente ya tiene registrados datos de persona física en el sistema
     @Override
     public boolean existePorIdCliente(Long idCliente) {
         if (idCliente == null || idCliente <= 0) {
@@ -70,6 +74,7 @@ public class ClientePersonaServiceImpl implements ClientePersonaService {
         return clientePersonaDAO.existePorIdCliente(idCliente);
     }
 
+    // Lógica para recuperar la información personal detallada asociada a un cliente específico
     @Override
     public Optional<ClientePersona> buscarPorIdCliente(Long idCliente) {
         if (idCliente == null || idCliente <= 0) {
@@ -78,11 +83,13 @@ public class ClientePersonaServiceImpl implements ClientePersonaService {
         return clientePersonaDAO.buscarPorIdCliente(idCliente);
     }
 
+    // Lógica para obtener el listado completo de todas las personas físicas registradas
     @Override
     public List<ClientePersona> listarTodos() {
         return clientePersonaDAO.listarTodos();
     }
 
+    // Lógica para eliminar el registro de datos personales de un cliente específico
     @Override
     public boolean eliminarPorIdCliente(Long idCliente) {
         if (idCliente == null || idCliente <= 0) {

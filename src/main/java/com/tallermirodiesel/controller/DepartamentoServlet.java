@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.tallermirodiesel.controller;
 
 import jakarta.servlet.ServletException;
@@ -27,12 +31,14 @@ public class DepartamentoServlet extends HttpServlet {
     private DepartamentoService departamentoService;
     private PaisService paisService;
 
+    // Inicialización de los servicios de geografía (Departamentos y Países) al cargar el servlet
     @Override
     public void init() {
         this.departamentoService = new DepartamentoServiceImpl();
         this.paisService = new PaisServiceImpl();
     }
 
+    // Gestión de peticiones de lectura, navegación de formularios y cambios de estado vía GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -57,6 +63,7 @@ public class DepartamentoServlet extends HttpServlet {
         }
     }
 
+    // Gestión de procesamiento de datos enviados desde formularios para persistencia vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -86,6 +93,7 @@ public class DepartamentoServlet extends HttpServlet {
         }
     }
 
+    // Lógica para recuperar departamentos filtrados por país o nombre y despachar la vista de listado
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long idPais = parseLong(req.getParameter("idPais"));
         String filtro = req.getParameter("filtro");
@@ -114,12 +122,14 @@ public class DepartamentoServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_listar.jsp").forward(req, resp);
     }
 
+    // Preparación de datos (lista de países activos) y despacho del formulario para un nuevo registro
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("paises", paisService.listarActivos());
         req.setAttribute("departamento", new Departamento());
         req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_form.jsp").forward(req, resp);
     }
 
+    // Recuperación de datos existentes junto con la lista de países para edición de departamento
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -138,6 +148,7 @@ public class DepartamentoServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/geografia/departamentos/departamento_form.jsp").forward(req, resp);
     }
 
+    // Procesamiento de habilitación de departamento con mantenimiento de filtros de búsqueda en la redirección
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -159,6 +170,7 @@ public class DepartamentoServlet extends HttpServlet {
         resp.sendRedirect(url);
     }
 
+    // Procesamiento de inhabilitación de departamento con mantenimiento de filtros de búsqueda en la redirección
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -180,6 +192,7 @@ public class DepartamentoServlet extends HttpServlet {
         resp.sendRedirect(url);
     }
 
+    // Lógica para recolectar datos, persistir cambios y redireccionar manteniendo el contexto del país seleccionado
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long idDepartamento = parseLong(req.getParameter("idDepartamento"));
 
@@ -203,6 +216,7 @@ public class DepartamentoServlet extends HttpServlet {
         resp.sendRedirect(url);
     }
 
+    // Utilidad interna para la conversión segura de cadenas de texto a identificadores numéricos
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

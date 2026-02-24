@@ -19,10 +19,12 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
 
     private final TipoDocumentoDAO tipoDocumentoDAO;
 
+    // Inicialización de la implementación del DAO para el servicio de tipos de documento
     public TipoDocumentoServiceImpl() {
         this.tipoDocumentoDAO = new TipoDocumentoDAOImpl();
     }
 
+    // Validaciones de formato, longitud y obligatoriedad para los campos de un tipo de documento
     private void validarCampos(TipoDocumento tipoDocumento) {
         String nombre  = tipoDocumento.getNombre() == null ? null : tipoDocumento.getNombre().trim().toUpperCase();
         String codigo  = tipoDocumento.getCodigo() == null ? null : tipoDocumento.getCodigo().trim().toUpperCase();
@@ -46,6 +48,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         tipoDocumento.setAplicaA(aplicaA);
     }
 
+    // Validaciones para crear un tipo de documento
     @Override
     public Long crear(TipoDocumento tipoDocumento) {
         if (tipoDocumento == null) {
@@ -61,6 +64,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.crear(tipoDocumento);
     }
 
+    // Validaciones para actualizar la información de un tipo de documento
     @Override
     public boolean actualizar(TipoDocumento tipoDocumento) {
         if (tipoDocumento == null || tipoDocumento.getIdTipoDocumento() == null) {
@@ -81,6 +85,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.actualizar(tipoDocumento);
     }
 
+    // Validaciones para activar un tipo de documento en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -94,6 +99,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.activar(id);
     }
 
+    // Validaciones para desactivar un tipo de documento en el sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -107,6 +113,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de un tipo de documento por su identificador único
     @Override
     public Optional<TipoDocumento> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -116,6 +123,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.buscarPorId(id);
     }
 
+    // Lógica para buscar un tipo de documento utilizando su nombre exacto
     @Override
     public Optional<TipoDocumento> buscarPorNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
@@ -125,6 +133,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.buscarPorNombre(nombre.trim().toUpperCase());
     }
 
+    // Lógica para buscar un tipo de documento utilizando su código identificador
     @Override
     public Optional<TipoDocumento> buscarPorCodigo(String codigo) {
         if (codigo == null || codigo.isBlank()) {
@@ -134,6 +143,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.buscarPorCodigo(codigo.trim().toUpperCase());
     }
 
+    // Lógica para filtrar tipos de documento según una coincidencia parcial en el nombre
     @Override
     public List<TipoDocumento> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -143,21 +153,25 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de tipos de documento registrados
     @Override
     public List<TipoDocumento> listarTodos() {
         return tipoDocumentoDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los tipos de documento con estado activo
     @Override
     public List<TipoDocumento> listarActivos() {
         return tipoDocumentoDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los tipos de documento con estado inactivo
     @Override
     public List<TipoDocumento> listarInactivos() {
         return tipoDocumentoDAO.listarInactivos();
     }
 
+    // Lógica para filtrar tipos de documento según la entidad a la que aplican (Persona, Empresa, etc.)
     @Override
     public List<TipoDocumento> listarPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
         if (aplicaA == null) {
@@ -167,6 +181,7 @@ public class TipoDocumentoServiceImpl implements TipoDocumentoService {
         return tipoDocumentoDAO.listarPorAplicaA(aplicaA);
     }
 
+    // Lógica para listar tipos de documento activos filtrados por su ámbito de aplicación
     @Override
     public List<TipoDocumento> listarActivosPorAplicaA(TipoDocumentoAplicaEnum aplicaA) {
         if (aplicaA == null) {

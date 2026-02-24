@@ -20,6 +20,29 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class MarcaDAOImpl implements MarcaDAO {
 
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO public.marcas (nombre, activo) VALUES (?, ?) RETURNING id_marca";
+
+    private static final String SQL_UPDATE = "UPDATE public.marcas SET nombre = ?, activo = ? WHERE id_marca = ?";
+
+    private static final String SQL_DELETE = "DELETE FROM public.marcas WHERE id_marca = ?";
+
+    private static final String SQL_SET_ACTIVO = "UPDATE public.marcas SET activo = ? WHERE id_marca = ?";
+
+    private static final String SQL_SELECT_BASE = "SELECT id_marca, nombre, activo FROM public.marcas";
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_marca = ?";
+
+    private static final String SQL_BUSCAR_NOMBRE = SQL_SELECT_BASE + " WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))";
+
+    private static final String SQL_BUSCAR_PARCIAL = SQL_SELECT_BASE + "WHERE UPPER(nombre) LIKE UPPER(?) ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_TODOS = SQL_SELECT_BASE + " ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE activo = true ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_INACTIVOS = SQL_SELECT_BASE + " WHERE activo = false ORDER BY nombre ASC";
+
     // Mapea un ResultSet a un objeto Marca
     private Marca mapearMarca(ResultSet rs) throws SQLException {
         Marca m = new Marca();
@@ -29,16 +52,11 @@ public class MarcaDAOImpl implements MarcaDAO {
         return m;
     }
 
+    // Método para crear una Marca
     @Override
     public Long crear(Marca marca) {
-        String sql = """
-                INSERT INTO public.marcas (nombre, activo)
-                VALUES (?, ?)
-                RETURNING id_marca
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_INSERT)) {
 
             ps.setString(1, marca.getNombre());
             ps.setBoolean(2, marca.isActivo());
@@ -55,17 +73,11 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Actualizar una Marca
     @Override
     public boolean actualizar(Marca marca) {
-        String sql = """
-                UPDATE public.marcas
-                SET nombre = ?,
-                    activo = ?
-                WHERE id_marca = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_UPDATE)) {
 
             ps.setString(1, marca.getNombre());
             ps.setBoolean(2, marca.isActivo());
@@ -78,12 +90,11 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Eliminar una Marca
     @Override
     public boolean eliminar(Long id) {
-        String sql = "DELETE FROM public.marcas WHERE id_marca = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DELETE)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
@@ -93,18 +104,14 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Activar una Marca
     @Override
     public boolean activar(Long id) {
-        String sql = """
-            UPDATE public.marcas
-            SET activo = true
-            WHERE id_marca = ?
-        """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, true);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -112,18 +119,14 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Desactivar una Marca
     @Override
     public boolean desactivar(Long id) {
-        String sql = """
-                UPDATE public.marcas
-                SET activo = false
-                WHERE id_marca = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, false);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -131,16 +134,11 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Buscar una Marca por su id
     @Override
     public Optional<Marca> buscarPorId(Long id) {
-        String sql = """
-                SELECT id_marca, nombre, activo
-                FROM public.marcas
-                WHERE id_marca = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -156,16 +154,11 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Buscar una Marca por nombre.
     @Override
     public Optional<Marca> buscarPorNombre(String nombre) {
-        String sql = """
-                SELECT id_marca, nombre, activo
-                FROM public.marcas
-                WHERE UPPER(TRIM(nombre)) = UPPER(TRIM(?))
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_NOMBRE)) {
 
             String nombreNorm = (nombre == null) ? "" : nombre.trim();
             ps.setString(1, nombreNorm);
@@ -182,19 +175,13 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Buscar una Marca de forma parcial por nombre
     @Override
     public List<Marca> buscarPorNombreParcial(String filtro) {
-        String sql = """
-                SELECT id_marca, nombre, activo
-                FROM public.marcas
-                WHERE UPPER(nombre) LIKE UPPER(?)
-                ORDER BY nombre ASC
-                """;
-
         List<Marca> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_PARCIAL)) {
 
             String filtroNorm = (filtro == null) ? "" : filtro.trim();
             ps.setString(1, "%" + filtroNorm + "%");
@@ -212,18 +199,13 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para listar todas las Marcas
     @Override
     public List<Marca> listarTodos() {
-        String sql = """
-                SELECT id_marca, nombre, activo
-                FROM public.marcas
-                ORDER BY nombre ASC
-                """;
-
         List<Marca> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_TODOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -237,19 +219,13 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Método para Listar todas las Marcas Activas
     @Override
     public List<Marca> listarActivos() {
-        String sql = """
-                SELECT id_marca, nombre, activo
-                FROM public.marcas
-                WHERE activo = true
-                ORDER BY nombre ASC
-                """;
-
         List<Marca> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -263,19 +239,13 @@ public class MarcaDAOImpl implements MarcaDAO {
         }
     }
 
+    // Métodos para Listar todas las Marcas Inactivas
     @Override
     public List<Marca> listarInactivos() {
-        String sql = """
-                SELECT id_marca, nombre, activo
-                FROM public.marcas
-                WHERE activo = false
-                ORDER BY nombre ASC
-                """;
-
         List<Marca> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_INACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {

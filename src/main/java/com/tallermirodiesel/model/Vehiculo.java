@@ -20,10 +20,8 @@ public class Vehiculo {
     private TipoVehiculoEnum tipoVehiculo;
     private String observaciones;
     private boolean activo;
-
-    // Campos auxiliares para mostrar nombres con JOIN
-    private String nombreMarca;
-    private String nombreModelo;
+    private String nombreMarca;    // Campos auxiliares para mostrar nombres con JOIN
+    private String nombreModelo;    // Campos auxiliares para mostrar nombres con JOIN
 
     // Constructor vacío
     public Vehiculo() {

@@ -25,12 +25,14 @@ public class VehiculoServiceImpl implements VehiculoService {
     private final MarcaDAO marcaDAO;
     private final ModeloDAO modeloDAO;
 
+    // Inicialización de las implementaciones DAO para el servicio de vehículos, marcas y modelos
     public VehiculoServiceImpl() {
         this.vehiculoDAO = new VehiculoDAOImpl();
         this.marcaDAO    = new MarcaDAOImpl();
         this.modeloDAO   = new ModeloDAOImpl();
     }
 
+    // Validaciones de integridad referencial, formato de placa y obligatoriedad de campos para un vehículo
     private void validarCampos(Vehiculo v) {
         // Marca obligatoria
         if (v.getIdMarca() == null || v.getIdMarca() <= 0) {
@@ -69,6 +71,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         }
     }
 
+    // Validaciones para registrar un nuevo vehículo en el sistema
     @Override
     public Long crear(Vehiculo v) {
         if (v == null) {
@@ -86,6 +89,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.crear(v);
     }
 
+    // Validaciones para actualizar la información técnica de un vehículo
     @Override
     public boolean actualizar(Vehiculo v) {
         if (v == null || v.getIdVehiculo() == null) {
@@ -109,6 +113,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.actualizar(v);
     }
 
+    // Validaciones para activar un vehículo para su uso en órdenes de trabajo
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -120,6 +125,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.activar(id);
     }
 
+    // Validaciones para desactivar un vehículo del sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -131,6 +137,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.desactivar(id);
     }
 
+    // Lógica para obtener los detalles de un vehículo por su identificador único
     @Override
     public Optional<Vehiculo> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -139,11 +146,13 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.buscarPorId(id);
     }
 
+    // Lógica para redirigir la búsqueda por nombre hacia la búsqueda por placa
     @Override
     public Optional<Vehiculo> buscarPorNombre(String placa) {
         return buscarPorPlaca(placa);
     }
 
+    // Lógica para localizar un vehículo mediante su número de placa exacto
     @Override
     public Optional<Vehiculo> buscarPorPlaca(String placa) {
         if (placa == null || placa.isBlank()) {
@@ -152,6 +161,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.buscarPorPlaca(placa.trim().toUpperCase());
     }
 
+    // Lógica para filtrar vehículos según una coincidencia parcial en la placa u otro criterio
     @Override
     public List<Vehiculo> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -160,21 +170,25 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener el listado completo de vehículos registrados
     @Override
     public List<Vehiculo> listarTodos() {
         return vehiculoDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los vehículos habilitados en el sistema
     @Override
     public List<Vehiculo> listarActivos() {
         return vehiculoDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los vehículos que han sido desactivados
     @Override
     public List<Vehiculo> listarInactivos() {
         return vehiculoDAO.listarInactivos();
     }
 
+    // Lógica para obtener todos los vehículos pertenecientes a una marca específica
     @Override
     public List<Vehiculo> listarPorMarca(Long idMarca) {
         if (idMarca == null || idMarca <= 0) {
@@ -183,6 +197,7 @@ public class VehiculoServiceImpl implements VehiculoService {
         return vehiculoDAO.listarPorMarca(idMarca);
     }
 
+    // Lógica para filtrar vehículos según su categoría técnica (Camión, Camioneta, etc.)
     @Override
     public List<Vehiculo> listarPorTipo(TipoVehiculoEnum tipo) {
         if (tipo == null) {

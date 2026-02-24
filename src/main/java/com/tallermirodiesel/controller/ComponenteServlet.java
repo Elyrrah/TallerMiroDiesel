@@ -32,6 +32,7 @@ public class ComponenteServlet extends HttpServlet {
     private MarcaDAO marcaDAO;
     private ModeloDAO modeloDAO;
 
+    // Inicialización de servicios y DAOs necesarios para las relaciones del componente
     @Override
     public void init() {
         this.componenteService  = new ComponenteServiceImpl();
@@ -40,6 +41,7 @@ public class ComponenteServlet extends HttpServlet {
         this.modeloDAO          = new ModeloDAOImpl();
     }
 
+    // Gestión de peticiones GET para navegación, edición y cambio de estado
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -64,6 +66,7 @@ public class ComponenteServlet extends HttpServlet {
         }
     }
 
+    // Procesamiento de persistencia de datos vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -83,7 +86,7 @@ public class ComponenteServlet extends HttpServlet {
         }
     }
 
-    // LISTAR.
+    // Recuperación de componentes con soporte para búsqueda por texto
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -98,14 +101,14 @@ public class ComponenteServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/componentes/componente_listar.jsp").forward(req, resp);
     }
 
-    // FORMULARIO NUEVO.
+    // Preparación del contexto relacional para la creación de un nuevo componente
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         cargarDatosFormulario(req);
         req.setAttribute("componente", new Componente());
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/componentes/componente_form.jsp").forward(req, resp);
     }
 
-    // FORMULARIO EDITAR.
+    // Recuperación de la entidad y preparación de listas para el modo edición
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -124,7 +127,7 @@ public class ComponenteServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/componentes/componente_form.jsp").forward(req, resp);
     }
 
-    // ACTIVAR.
+    // Lógica para habilitar un componente en el sistema
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
         if (id == null) throw new IllegalArgumentException("ID inválido");
@@ -132,7 +135,7 @@ public class ComponenteServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/componentes?action=listar");
     }
 
-    // DESACTIVAR.
+    // Lógica para inhabilitar un componente en el sistema
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
         if (id == null) throw new IllegalArgumentException("ID inválido");
@@ -140,7 +143,7 @@ public class ComponenteServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/componentes?action=listar");
     }
 
-    // GUARDAR (CREAR O ACTUALIZAR).
+    // Persistencia de la entidad componente y redirección al listado maestro
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Componente c = construirDesdeRequest(req);
 
@@ -153,7 +156,7 @@ public class ComponenteServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/componentes?action=listar");
     }
 
-    // CONSTRUIR COMPONENTE DESDE REQUEST.
+    // Utilidad para el mapeo de parámetros HTTP hacia la entidad Componente
     private Componente construirDesdeRequest(HttpServletRequest req) {
         Componente c = new Componente();
         c.setIdComponente(parseLong(req.getParameter("idComponente")));
@@ -170,21 +173,21 @@ public class ComponenteServlet extends HttpServlet {
         return c;
     }
 
-    // REENVIAR FORMULARIO CON DATOS (EN CASO DE ERROR).
+    // Recuperación de datos y listas ante fallos de validación en el servidor
     private void reenviarFormularioConDatos(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         cargarDatosFormulario(req);
         req.setAttribute("componente", construirDesdeRequest(req));
         req.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/componentes/componente_form.jsp").forward(req, resp);
     }
 
-    // CARGAR DATOS PARA COMBOS DEL FORMULARIO.
+    // Inyección de listas de catálogos activos para los selectores del formulario
     private void cargarDatosFormulario(HttpServletRequest req) {
         req.setAttribute("tiposComponente", tipoComponenteDAO.listarActivos());
         req.setAttribute("marcas", marcaDAO.listarActivos());
         req.setAttribute("modelos", modeloDAO.listarActivos());
     }
 
-    // PARSEO SEGURO DE LONG.
+    // Utilidad para la conversión segura de cadenas a identificadores Long
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) return null;
         try {

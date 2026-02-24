@@ -21,44 +21,34 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
 
-    private static final String SQL_INSERT =
-        "INSERT INTO cliente_documentos (id_cliente, id_tipo_documento, numero, principal, activo) " +
-        "VALUES (?, ?, ?, ?, ?) " +
-        "RETURNING id_cliente_documento";
+    // Inicialización de constantes SQL
+    private static final String SQL_INSERT = """
+                INSERT INTO cliente_documentos (id_cliente, id_tipo_documento, numero, principal, activo) VALUES (?, ?, ?, ?, ?) RETURNING id_cliente_documento""";
 
-    private static final String SQL_UPDATE =
-        "UPDATE cliente_documentos SET id_tipo_documento = ?, numero = ?, principal = ?, activo = ? " +
-        "WHERE id_cliente_documento = ?";
+    private static final String SQL_UPDATE = """
+                UPDATE cliente_documentos SET id_tipo_documento = ?, numero = ?, principal = ?, activo = ? WHERE id_cliente_documento = ?""";
 
-    private static final String SQL_EXISTE_ID =
-        "SELECT 1 FROM cliente_documentos WHERE id_cliente_documento = ?";
+    private static final String SQL_EXISTE_ID = "SELECT 1 FROM cliente_documentos WHERE id_cliente_documento = ?";
 
-    private static final String SQL_SET_ACTIVO =
-        "UPDATE cliente_documentos SET activo = ? WHERE id_cliente_documento = ?";
+    private static final String SQL_SET_ACTIVO = "UPDATE cliente_documentos SET activo = ? WHERE id_cliente_documento = ?";
 
-    private static final String SQL_EXISTE_POR_CLIENTE_TIPO_NUMERO =
-        "SELECT 1 FROM cliente_documentos " +
-        "WHERE id_cliente = ? AND id_tipo_documento = ? AND numero = ?";
+    private static final String SQL_EXISTE_POR_CLIENTE_TIPO_NUMERO = "SELECT 1 FROM cliente_documentos WHERE id_cliente = ? AND id_tipo_documento = ? AND numero = ?";
 
-    private static final String SQL_BUSCAR_ID =
-        "SELECT * FROM cliente_documentos WHERE id_cliente_documento = ?";
+    private static final String SQL_SELECT_BASE = "SELECT * FROM cliente_documentos";
 
-    private static final String SQL_LISTAR_POR_CLIENTE =
-        "SELECT * FROM cliente_documentos WHERE id_cliente = ? ORDER BY id_cliente_documento ASC";
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_cliente_documento = ?";
 
-    private static final String SQL_LISTAR_ACTIVOS_POR_CLIENTE =
-        "SELECT * FROM cliente_documentos WHERE id_cliente = ? " +
-        "AND activo = true ORDER BY id_cliente_documento ASC";
+    private static final String SQL_LISTAR_POR_CLIENTE = SQL_SELECT_BASE + " WHERE id_cliente = ? ORDER BY id_cliente_documento ASC";
 
-    private static final String SQL_OBTENER_PRINCIPAL =
-        "SELECT * FROM cliente_documentos WHERE id_cliente = ? AND principal = true AND activo = true";
+    private static final String SQL_LISTAR_ACTIVOS_POR_CLIENTE = SQL_SELECT_BASE + " WHERE id_cliente = ? AND activo = true ORDER BY id_cliente_documento ASC";
 
-    private static final String SQL_DESMARCAR_PRINCIPALES =
-        "UPDATE cliente_documentos SET principal = false WHERE id_cliente = ?";
+    private static final String SQL_OBTENER_PRINCIPAL = SQL_SELECT_BASE + " WHERE id_cliente = ? AND principal = true AND activo = true";
 
-    private static final String SQL_MARCAR_PRINCIPAL =
-        "UPDATE cliente_documentos SET principal = true WHERE id_cliente_documento = ?";
+    private static final String SQL_DESMARCAR_PRINCIPALES = "UPDATE cliente_documentos SET principal = false WHERE id_cliente = ?";
 
+    private static final String SQL_MARCAR_PRINCIPAL = "UPDATE cliente_documentos SET principal = true WHERE id_cliente_documento = ?";
+
+    // Método para Guardar un Documento de Cliente
     @Override
     public boolean guardar(ClienteDocumento clienteDocumento) {
         Long id = clienteDocumento.getIdClienteDocumento();
@@ -71,6 +61,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         return idGenerado != null;
     }
 
+    // Método para verificar si existe un Documento por su ID
     @Override
     public boolean existePorId(Long idClienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -87,6 +78,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método para establecer el estado Activo/Inactivo de un Documento
     @Override
     public boolean setActivo(Long idClienteDocumento, boolean activo) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -101,6 +93,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método para definir un Documento como Principal para un Cliente
     @Override
     public boolean definirPrincipal(Long idCliente, Long idClienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion()) {
@@ -131,6 +124,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método para verificar la existencia de un documento por Cliente, Tipo y Número
     @Override
     public boolean existePorClienteTipoNumero(Long idCliente, Long idTipoDocumento, String numero) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -154,6 +148,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método para Buscar un Documento por su ID
     @Override
     public Optional<ClienteDocumento> buscarPorId(Long idClienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -174,16 +169,19 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método para Listar todos los Documentos de un Cliente
     @Override
     public List<ClienteDocumento> listarPorCliente(Long idCliente) {
         return listar(SQL_LISTAR_POR_CLIENTE, idCliente);
     }
 
+    // Método para Listar solo los Documentos Activos de un Cliente
     @Override
     public List<ClienteDocumento> listarActivosPorCliente(Long idCliente) {
         return listar(SQL_LISTAR_ACTIVOS_POR_CLIENTE, idCliente);
     }
 
+    // Método para obtener el Documento Principal de un Cliente
     @Override
     public Optional<ClienteDocumento> obtenerPrincipalPorCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -204,6 +202,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método privado para insertar internamente un documento
     private Long crearInterno(ClienteDocumento clienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
@@ -235,6 +234,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método privado para actualizar internamente un documento
     private boolean actualizarInterno(ClienteDocumento clienteDocumento) {
         try (Connection conn = DatabaseConnection.getConexion();
              PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
@@ -258,6 +258,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         }
     }
 
+    // Método genérico para listar documentos por ID de Cliente
     private List<ClienteDocumento> listar(String sql, Long idCliente) {
         List<ClienteDocumento> lista = new ArrayList<>();
 
@@ -279,6 +280,7 @@ public class ClienteDocumentoDAOImpl implements ClienteDocumentoDAO {
         return lista;
     }
 
+    // Método para Mapear un Documento de Cliente
     private ClienteDocumento mapear(ResultSet rs) throws SQLException {
         ClienteDocumento cd = new ClienteDocumento();
         cd.setIdClienteDocumento(rs.getLong("id_cliente_documento"));

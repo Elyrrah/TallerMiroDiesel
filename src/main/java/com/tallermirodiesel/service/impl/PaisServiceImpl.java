@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.tallermirodiesel.service.impl;
 
 import java.util.List;
@@ -14,10 +18,12 @@ public class PaisServiceImpl implements PaisService {
 
     private final PaisDAO paisDAO;
 
+    // Inicialización de la implementación del DAO para el servicio de países
     public PaisServiceImpl() {
         this.paisDAO = new PaisDAOImpl();
     }
 
+    // Validaciones de formato y obligatoriedad para los campos de un país
     private void validarCampos(Pais pais) {
         String nombre = pais.getNombre() == null ? null : pais.getNombre().trim().toUpperCase();
         String iso2   = pais.getIso2()   == null ? null : pais.getIso2().trim().toUpperCase();
@@ -41,6 +47,7 @@ public class PaisServiceImpl implements PaisService {
         pais.setIso3(iso3);
     }
 
+    // Validaciones para crear un país
     @Override
     public Long crear(Pais pais) {
         if (pais == null) {
@@ -56,6 +63,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.crear(pais);
     }
 
+    // Validaciones para actualizar la información de un país
     @Override
     public boolean actualizar(Pais pais) {
         if (pais == null || pais.getIdPais() == null) {
@@ -76,6 +84,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.actualizar(pais);
     }
 
+    // Validaciones para activar un país en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -87,6 +96,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.activar(id);
     }
 
+    // Validaciones para desactivar un país en el sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -98,6 +108,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de un país por su identificador único
     @Override
     public Optional<Pais> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -106,6 +117,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.buscarPorId(id);
     }
 
+    // Lógica para buscar un país utilizando su código ISO2
     @Override
     public Optional<Pais> buscarPorIso2(String iso2) {
         if (iso2 == null || iso2.isBlank()) {
@@ -114,6 +126,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.buscarPorIso2(iso2.trim().toUpperCase());
     }
 
+    // Lógica para buscar un país por su nombre exacto
     @Override
     public Optional<Pais> buscarPorNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
@@ -122,6 +135,7 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.buscarPorNombre(nombre.trim().toUpperCase());
     }
 
+    // Lógica para filtrar países según una coincidencia parcial en el nombre
     @Override
     public List<Pais> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -130,16 +144,19 @@ public class PaisServiceImpl implements PaisService {
         return paisDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de países registrados
     @Override
     public List<Pais> listarTodos() {
         return paisDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los países con estado activo
     @Override
     public List<Pais> listarActivos() {
         return paisDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los países con estado inactivo
     @Override
     public List<Pais> listarInactivos() {
         return paisDAO.listarInactivos();

@@ -15,11 +15,14 @@ import com.tallermirodiesel.util.PasswordHash;
  */
 public class AutenticacionServiceImpl implements AutenticacionService {
 
-    // DAO para buscar usuarios en la base de datos
-    private final UsuarioDAO usuarioDAO = new UsuarioDAOImpl();
+    private final UsuarioDAO usuarioDAO;
 
-    // Verifica las credenciales y devuelve el usuario completo si son correctas
-    // Lanza una excepción si el usuario no existe, está inactivo o la contraseña es incorrecta
+    // Inicialización de la implementación del DAO para el servicio de seguridad y validación de credenciales
+    public AutenticacionServiceImpl() {
+        this.usuarioDAO = new UsuarioDAOImpl();
+    }
+
+    // Lógica para la validación de acceso al sistema mediante verificación de credenciales y estado del usuario
     @Override
     public Usuario login(String username, String password) {
 
@@ -49,8 +52,7 @@ public class AutenticacionServiceImpl implements AutenticacionService {
         return usuario;
     }
 
-    // Actualiza la contraseña del usuario autenticado
-    // Lanza una excepción si la contraseña actual es incorrecta
+    // Lógica para la actualización de contraseñas con validación previa de la identidad actual
     @Override
     public boolean cambiarPassword(Long idUsuario, String passwordActual, String passwordNueva) {
 

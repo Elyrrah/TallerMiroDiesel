@@ -1,3 +1,7 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package com.tallermirodiesel.controller;
 
 import jakarta.servlet.ServletException;
@@ -19,11 +23,13 @@ public class PaisServlet extends HttpServlet {
 
     private PaisService paisService;
 
+    // Inicialización del servicio de países al cargar el servlet en el contenedor
     @Override
     public void init() {
         this.paisService = new PaisServiceImpl();
     }
 
+    // Gestión de peticiones de lectura, navegación de formularios y cambios de estado vía GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -48,6 +54,7 @@ public class PaisServlet extends HttpServlet {
         }
     }
 
+    // Gestión de procesamiento de datos enviados desde formularios para persistencia vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -72,11 +79,13 @@ public class PaisServlet extends HttpServlet {
             p.setIso3(req.getParameter("iso3"));
             p.setActivo("true".equals(req.getParameter("activo")));
 
+            req.setAttribute("error", e.getMessage());
             req.setAttribute("pais", p);
             req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_form.jsp").forward(req, resp);
         }
     }
 
+    // Lógica para recuperar la lista de países y despachar la vista principal de listado
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -91,11 +100,13 @@ public class PaisServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_listar.jsp").forward(req, resp);
     }
 
+    // Preparación de un objeto vacío y despacho del formulario para registro de un nuevo país
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("pais", new Pais());
         req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_form.jsp").forward(req, resp);
     }
 
+    // Recuperación de datos existentes y despacho del formulario en modo edición
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -113,6 +124,7 @@ public class PaisServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/geografia/paises/pais_form.jsp").forward(req, resp);
     }
 
+    // Procesamiento de la solicitud para habilitar un país y redirección al listado actualizado
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -124,6 +136,7 @@ public class PaisServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/paises?action=listar");
     }
 
+    // Procesamiento de la solicitud para inhabilitar un país y redirección al listado actualizado
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -135,6 +148,7 @@ public class PaisServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/paises?action=listar");
     }
 
+    // Lógica para recolectar datos del formulario, determinar operación (crear/actualizar) y persistir
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Pais p = new Pais();
 
@@ -155,6 +169,7 @@ public class PaisServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/paises?action=listar");
     }
 
+    // Utilidad interna para la conversión segura de cadenas de texto a identificadores numéricos
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

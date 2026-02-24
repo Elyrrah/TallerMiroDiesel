@@ -18,10 +18,12 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
 
     private final TipoComponenteDAO tipoComponenteDAO;
 
+    // Inicialización de la implementación del DAO para el servicio de tipos de componente
     public TipoComponenteServiceImpl() {
         this.tipoComponenteDAO = new TipoComponenteDAOImpl();
     }
 
+    // Validaciones de formato y obligatoriedad para los campos de un tipo de componente
     private void validarCampos(TipoComponente tc) {
         String nombre = tc.getNombre() == null ? null : tc.getNombre().trim().toUpperCase();
         String descripcion = tc.getDescripcion() == null ? null : tc.getDescripcion().trim();
@@ -34,6 +36,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         tc.setDescripcion(descripcion);
     }
 
+    // Validaciones para crear un tipo de componente
     @Override
     public Long crear(TipoComponente tc) {
         if (tc == null) {
@@ -50,6 +53,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.crear(tc);
     }
 
+    // Validaciones para actualizar la información de un tipo de componente
     @Override
     public boolean actualizar(TipoComponente tc) {
         if (tc == null || tc.getIdTipoComponente() == null) {
@@ -70,6 +74,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.actualizar(tc);
     }
 
+    // Validaciones para activar un tipo de componente en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -83,6 +88,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.activar(id);
     }
 
+    // Validaciones para desactivar un tipo de componente en el sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -96,6 +102,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de un tipo de componente por su identificador único
     @Override
     public Optional<TipoComponente> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -105,6 +112,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.buscarPorId(id);
     }
 
+    // Lógica para buscar un tipo de componente utilizando su nombre exacto
     @Override
     public Optional<TipoComponente> buscarPorNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
@@ -114,6 +122,7 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.buscarPorNombre(nombre.trim().toUpperCase());
     }
 
+    // Lógica para filtrar tipos de componente según una coincidencia parcial en el nombre
     @Override
     public List<TipoComponente> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -123,16 +132,19 @@ public class TipoComponenteServiceImpl implements TipoComponenteService {
         return tipoComponenteDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de tipos de componente registrados
     @Override
     public List<TipoComponente> listarTodos() {
         return tipoComponenteDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los tipos de componente con estado activo
     @Override
     public List<TipoComponente> listarActivos() {
         return tipoComponenteDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los tipos de componente con estado inactivo
     @Override
     public List<TipoComponente> listarInactivos() {
         return tipoComponenteDAO.listarInactivos();

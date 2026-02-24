@@ -24,7 +24,16 @@ public class RolDAOImpl implements RolDAO {
     // Usamos PermisoDAO para cargar los permisos de cada rol
     private final PermisoDAO permisoDAO = new PermisoDAOImpl();
 
-    // Mapea un ResultSet a un objeto Rol (sin permisos aún)
+    // Inicialización de consultas SQL
+    private static final String SQL_SELECT_BASE = "SELECT id_rol, nombre, descripcion, activo FROM public.roles";
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_rol = ?";
+
+    private static final String SQL_LISTAR_TODOS = SQL_SELECT_BASE + " ORDER BY nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE activo = true ORDER BY nombre ASC";
+
+    // Método para Mapear un Rol (sin permisos aún)
     private Rol mapearRol(ResultSet rs) throws SQLException {
         Rol r = new Rol();
         r.setIdRol(rs.getLong("id_rol"));
@@ -34,17 +43,11 @@ public class RolDAOImpl implements RolDAO {
         return r;
     }
 
-    // Busca un rol por su id, con su lista de permisos ya cargada
+    // Método para Buscar un rol por su id, con su lista de permisos ya cargada
     @Override
     public Optional<Rol> buscarPorId(Long id) {
-        String sql = """
-                SELECT id_rol, nombre, descripcion, activo
-                FROM public.roles
-                WHERE id_rol = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -63,19 +66,13 @@ public class RolDAOImpl implements RolDAO {
         }
     }
 
-    // Lista todos los roles con sus permisos cargados
+    // Método para Lista todos los roles con sus permisos cargados
     @Override
     public List<Rol> listarTodos() {
-        String sql = """
-                SELECT id_rol, nombre, descripcion, activo
-                FROM public.roles
-                ORDER BY nombre ASC
-                """;
-
         List<Rol> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_TODOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -91,20 +88,13 @@ public class RolDAOImpl implements RolDAO {
         }
     }
 
-    // Lista solo los roles activos con sus permisos cargados
+    // Método para Lista solo los roles activos con sus permisos cargados
     @Override
     public List<Rol> listarActivos() {
-        String sql = """
-                SELECT id_rol, nombre, descripcion, activo
-                FROM public.roles
-                WHERE activo = true
-                ORDER BY nombre ASC
-                """;
-
         List<Rol> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {

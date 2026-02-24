@@ -23,11 +23,13 @@ public class MarcaServlet extends HttpServlet {
 
     private MarcaService marcaService;
 
+    // Inicialización del servicio de Marcas al cargar el servlet
     @Override
     public void init() {
         this.marcaService = new MarcaServiceImpl();
     }
 
+    // Gestión de peticiones de lectura, búsqueda y navegación de formularios de marcas vía GET
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -52,6 +54,7 @@ public class MarcaServlet extends HttpServlet {
         }
     }
 
+    // Gestión de procesamiento de datos para la persistencia de marcas vía POST
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String action = req.getParameter("action");
@@ -79,6 +82,7 @@ public class MarcaServlet extends HttpServlet {
         }
     }
 
+    // Lógica para recuperar la lista de marcas con soporte para filtrado por nombre parcial
     private void listar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String filtro = req.getParameter("filtro");
 
@@ -93,11 +97,13 @@ public class MarcaServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_listar.jsp").forward(req, resp);
     }
 
+    // Preparación del objeto y despacho del formulario para la creación de una nueva marca
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute("marca", new Marca());
         req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_form.jsp").forward(req, resp);
     }
 
+    // Recuperación de la marca existente y despacho del formulario para su edición
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -115,6 +121,7 @@ public class MarcaServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/catalogos/marcas/marca_form.jsp").forward(req, resp);
     }
 
+    // Procesamiento de habilitación de marca y redirección al listado principal
     private void activar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -126,6 +133,7 @@ public class MarcaServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
     }
 
+    // Procesamiento de inhabilitación de marca y redirección al listado principal
     private void desactivar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Long id = parseLong(req.getParameter("id"));
 
@@ -137,6 +145,7 @@ public class MarcaServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
     }
 
+    // Lógica para recolectar datos, persistir cambios (crear/actualizar) y redireccionar
     private void guardar(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Marca marca = new Marca();
 
@@ -155,6 +164,7 @@ public class MarcaServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/marcas?action=listar");
     }
 
+    // Utilidad interna para la conversión segura de cadenas de texto a identificadores numéricos
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

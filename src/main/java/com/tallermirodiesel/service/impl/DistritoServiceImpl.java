@@ -19,10 +19,12 @@ public class DistritoServiceImpl implements DistritoService {
 
     private final DistritoDAO distritoDAO;
 
+    // Inicialización de la implementación del DAO para el servicio de distritos
     public DistritoServiceImpl() {
         this.distritoDAO = new DistritoDAOImpl();
     }
 
+    // Validaciones de formato y obligatoriedad para los campos de un distrito
     private void validarCampos(Distrito distrito) {
         if (distrito.getIdDepartamento() == null || distrito.getIdDepartamento() <= 0) {
             throw new IllegalArgumentException("El departamento (idDepartamento) debe ser válido.");
@@ -37,6 +39,7 @@ public class DistritoServiceImpl implements DistritoService {
         distrito.setNombre(nombre);
     }
 
+    // Validaciones para crear un distrito
     @Override
     public Long crear(Distrito distrito) {
         if (distrito == null) {
@@ -52,6 +55,7 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.crear(distrito);
     }
 
+    // Validaciones para actualizar la información de un distrito
     @Override
     public boolean actualizar(Distrito distrito) {
         if (distrito == null || distrito.getIdDistrito() == null) {
@@ -76,6 +80,7 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.actualizar(distrito);
     }
 
+    // Validaciones para activar un distrito en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -89,6 +94,7 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.activar(id);
     }
 
+    // Validaciones para desactivar un distrito en el sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -102,6 +108,7 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de un distrito por su identificador único
     @Override
     public Optional<Distrito> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -111,11 +118,7 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.buscarPorId(id);
     }
 
-    /**
-     * No usar este método para Distrito.
-     * Usar buscarPorNombre(String nombre, Long idDepartamento) en su lugar,
-     * ya que el nombre de un distrito solo es único dentro de un departamento.
-     */
+    // Restricción de búsqueda de distrito únicamente por nombre global
     @Override
     public Optional<Distrito> buscarPorNombre(String nombre) {
         throw new UnsupportedOperationException(
@@ -123,6 +126,7 @@ public class DistritoServiceImpl implements DistritoService {
         );
     }
 
+    // Lógica para buscar un distrito utilizando su nombre dentro de un departamento específico
     @Override
     public Optional<Distrito> buscarPorNombre(String nombre, Long idDepartamento) {
         if (nombre == null || nombre.isBlank()) {
@@ -136,6 +140,7 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.buscarPorNombre(nombre.trim().toUpperCase(Locale.ROOT), idDepartamento);
     }
 
+    // Lógica para filtrar distritos según una coincidencia parcial en el nombre
     @Override
     public List<Distrito> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -145,21 +150,25 @@ public class DistritoServiceImpl implements DistritoService {
         return distritoDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de distritos registrados
     @Override
     public List<Distrito> listarTodos() {
         return distritoDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los distritos con estado activo
     @Override
     public List<Distrito> listarActivos() {
         return distritoDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los distritos con estado inactivo
     @Override
     public List<Distrito> listarInactivos() {
         return distritoDAO.listarInactivos();
     }
 
+    // Lógica para listar todos los distritos pertenecientes a un departamento específico
     @Override
     public List<Distrito> listarPorDepartamento(Long idDepartamento) {
         if (idDepartamento == null || idDepartamento <= 0) {

@@ -20,9 +20,11 @@ import com.tallermirodiesel.dao.RolDAO;
 import com.tallermirodiesel.dao.impl.RolDAOImpl;
 import com.tallermirodiesel.dao.TipoDocumentoDAO;
 import com.tallermirodiesel.dao.impl.TipoDocumentoDAOImpl;
+
 /**
  * @author elyrr
  */
+// Mapea el servlet para la gestión integral de usuarios del sistema
 @WebServlet(name = "UsuarioServlet", urlPatterns = {"/usuarios"})
 public class UsuarioServlet extends HttpServlet {
 
@@ -31,14 +33,16 @@ public class UsuarioServlet extends HttpServlet {
     private RolDAO rolDAO;
     private TipoDocumentoDAO tipoDocumentoDAO;
 
+    // Inicializa los servicios y DAOs necesarios para la gestión de personal y seguridad
     @Override
     public void init() {
         this.usuarioService       = new UsuarioServiceImpl();
         this.autenticacionService = new AutenticacionServiceImpl();
-        this.rolDAO               = new RolDAOImpl();
-        this.tipoDocumentoDAO     = new TipoDocumentoDAOImpl();
+        this.rolDAO                = new RolDAOImpl();
+        this.tipoDocumentoDAO      = new TipoDocumentoDAOImpl();
     }
 
+    // Distribuye las peticiones de lectura y navegación (listado, formularios, estados)
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -66,6 +70,7 @@ public class UsuarioServlet extends HttpServlet {
         }
     }
 
+    // Procesa el envío de formularios para creación, actualización y seguridad
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
@@ -78,7 +83,7 @@ public class UsuarioServlet extends HttpServlet {
 
         try {
             switch (action) {
-                case "guardar"         -> guardar(req, resp);
+                case "guardar"          -> guardar(req, resp);
                 case "cambiarPassword" -> cambiarPassword(req, resp);
                 default -> resp.sendRedirect(req.getContextPath() + "/usuarios?action=listar");
             }
@@ -88,7 +93,7 @@ public class UsuarioServlet extends HttpServlet {
         }
     }
 
-    // Lista todos los usuarios con filtro opcional por nombre o username
+    // Obtiene y filtra la nómina de usuarios registrados para su visualización
     private void listar(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -105,7 +110,7 @@ public class UsuarioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/sistema/usuarios/usuario_listar.jsp").forward(req, resp);
     }
 
-    // Muestra el formulario para crear un nuevo usuario
+    // Prepara el entorno para registrar un nuevo colaborador con sus roles y documentos
     private void mostrarFormularioNuevo(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -115,7 +120,7 @@ public class UsuarioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/sistema/usuarios/usuario_form.jsp").forward(req, resp);
     }
 
-    // Muestra el formulario para editar un usuario existente
+    // Carga los datos de un usuario específico para su modificación
     private void mostrarFormularioEditar(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -134,7 +139,7 @@ public class UsuarioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/sistema/usuarios/usuario_form.jsp").forward(req, resp);
     }
 
-    // Muestra el formulario para cambiar la contraseña de un usuario
+    // Dirige a la interfaz de actualización de credenciales de seguridad
     private void mostrarCambiarPassword(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -151,7 +156,7 @@ public class UsuarioServlet extends HttpServlet {
         req.getRequestDispatcher("/WEB-INF/views/sistema/usuarios/usuario_cambiar_password.jsp").forward(req, resp);
     }
 
-    // Activa un usuario y vuelve al listado
+    // Habilita el acceso de un usuario al sistema
     private void activar(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
@@ -165,7 +170,7 @@ public class UsuarioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/usuarios?action=listar");
     }
 
-    // Desactiva un usuario y vuelve al listado
+    // Revoca el acceso de un usuario al sistema sin eliminar su historial
     private void desactivar(HttpServletRequest req, HttpServletResponse resp)
             throws IOException {
 
@@ -179,7 +184,7 @@ public class UsuarioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/usuarios?action=listar");
     }
 
-    // Crea o actualiza un usuario según si viene o no el idUsuario
+    // Ejecuta la lógica de persistencia para nuevos registros o actualizaciones de perfil
     private void guardar(HttpServletRequest req, HttpServletResponse resp)
             throws IOException, ServletException {
 
@@ -192,11 +197,9 @@ public class UsuarioServlet extends HttpServlet {
         String telefono       = req.getParameter("telefono");
         Long idRol            = parseLong(req.getParameter("idRol"));
 
-        // Construimos el objeto Rol con el id seleccionado
         Rol rol = new Rol();
         rol.setIdRol(idRol);
 
-        // Construimos el objeto Usuario
         Usuario usuario = new Usuario();
         usuario.setIdUsuario(idUsuario);
         usuario.setNombre(nombre);
@@ -208,12 +211,10 @@ public class UsuarioServlet extends HttpServlet {
         usuario.setRol(rol);
 
         if (idUsuario == null) {
-            // CREAR — tomamos username y password del formulario
             usuario.setUsername(req.getParameter("username"));
             usuario.setActivo(true);
             usuarioService.crear(usuario, req.getParameter("password"));
         } else {
-            // ACTUALIZAR — tomamos el campo activo del formulario
             usuario.setActivo("true".equals(req.getParameter("activo")));
             usuarioService.actualizar(usuario);
         }
@@ -221,7 +222,7 @@ public class UsuarioServlet extends HttpServlet {
         resp.sendRedirect(req.getContextPath() + "/usuarios?action=listar");
     }
 
-    // Cambia la contraseña de un usuario verificando la actual primero
+    // Gestiona el cambio de contraseña con validación de concordancia y cierre de sesión forzado
     private void cambiarPassword(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
@@ -230,7 +231,6 @@ public class UsuarioServlet extends HttpServlet {
         String passwordNueva   = req.getParameter("passwordNueva");
         String passwordConfirm = req.getParameter("passwordConfirmar");
 
-        // Verificamos que las nuevas contraseñas coincidan
         if (passwordNueva == null || !passwordNueva.equals(passwordConfirm)) {
             Usuario usuario = usuarioService.buscarPorId(idUsuario).orElse(new Usuario());
             req.setAttribute("usuario", usuario);
@@ -239,14 +239,13 @@ public class UsuarioServlet extends HttpServlet {
             return;
         }
 
-        // Delegamos al servicio de autenticación que verifica la contraseña actual
         autenticacionService.cambiarPassword(idUsuario, passwordActual, passwordNueva);
 
-        // Invalidamos la sesión y redirigimos al login
         req.getSession(false).invalidate();
         resp.sendRedirect(req.getContextPath() + "/login");
     }
 
+    // Utilidad interna para la conversión segura de parámetros de texto a identificadores numéricos
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             return null;

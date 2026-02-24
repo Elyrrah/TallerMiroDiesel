@@ -22,11 +22,13 @@ public class ModeloServiceImpl implements ModeloService {
     private final ModeloDAO modeloDAO;
     private final MarcaDAO marcaDAO;
 
+    // Inicialización de las implementaciones DAO para el servicio de modelos y marcas
     public ModeloServiceImpl() {
         this.modeloDAO = new ModeloDAOImpl();
         this.marcaDAO = new MarcaDAOImpl();
     }
 
+    // Validaciones de formato, integridad de marca y obligatoriedad para los campos de un modelo
     private void validarCampos(Modelo modelo) {
         if (modelo.getIdMarca() == null || modelo.getIdMarca() <= 0) {
             throw new IllegalArgumentException("El id de la marca debe ser válido.");
@@ -50,6 +52,7 @@ public class ModeloServiceImpl implements ModeloService {
         modelo.setNombre(nombre);
     }
 
+    // Validaciones para crear un modelo
     @Override
     public Long crear(Modelo modelo) {
         if (modelo == null) {
@@ -61,6 +64,7 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.crear(modelo);
     }
 
+    // Validaciones para actualizar la información de un modelo
     @Override
     public boolean actualizar(Modelo modelo) {
         if (modelo == null || modelo.getIdModelo() == null) {
@@ -76,6 +80,7 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.actualizar(modelo);
     }
 
+    // Validaciones para activar un modelo en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -89,6 +94,7 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.activar(id);
     }
 
+    // Validaciones para desactivar un modelo en el sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -102,6 +108,7 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de un modelo por su identificador único
     @Override
     public Optional<Modelo> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -111,6 +118,7 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.buscarPorId(id);
     }
 
+    // Lógica para buscar un modelo utilizando su nombre exacto
     @Override
     public Optional<Modelo> buscarPorNombre(String nombre) {
         if (nombre == null || nombre.isBlank()) {
@@ -121,6 +129,7 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.buscarPorNombre(nombreNorm);
     }
 
+    // Lógica para filtrar modelos según una coincidencia parcial en el nombre
     @Override
     public List<Modelo> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -130,21 +139,25 @@ public class ModeloServiceImpl implements ModeloService {
         return modeloDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de modelos registrados
     @Override
     public List<Modelo> listarTodos() {
         return modeloDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los modelos con estado activo
     @Override
     public List<Modelo> listarActivos() {
         return modeloDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los modelos con estado inactivo
     @Override
     public List<Modelo> listarInactivos() {
         return modeloDAO.listarInactivos();
     }
 
+    // Lógica para listar todos los modelos pertenecientes a una marca específica
     @Override
     public List<Modelo> listarPorMarca(Long idMarca) {
         if (idMarca == null || idMarca <= 0) {

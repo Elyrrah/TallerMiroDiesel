@@ -27,6 +27,7 @@ public class ComponenteServiceImpl implements ComponenteService {
     private final MarcaDAO marcaDAO;
     private final ModeloDAO modeloDAO;
 
+    // Inicialización de las implementaciones DAO para el servicio de componentes, tipos, marcas y modelos
     public ComponenteServiceImpl() {
         this.componenteDAO     = new ComponenteDAOImpl();
         this.tipoComponenteDAO = new TipoComponenteDAOImpl();
@@ -34,6 +35,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         this.modeloDAO         = new ModeloDAOImpl();
     }
 
+    // Validaciones de integridad referencial, pertenencia de modelo a marca y normalización de número de serie
     private void validarCampos(Componente c) {
         // Tipo de componente obligatorio
         if (c.getIdTipoComponente() == null || c.getIdTipoComponente() <= 0) {
@@ -76,6 +78,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         }
     }
 
+    // Validaciones para registrar un nuevo componente en el inventario o sistema
     @Override
     public Long crear(Componente c) {
         if (c == null) {
@@ -93,6 +96,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.crear(c);
     }
 
+    // Validaciones para actualizar los datos técnicos o de identificación de un componente
     @Override
     public boolean actualizar(Componente c) {
         if (c == null || c.getIdComponente() == null) {
@@ -116,6 +120,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.actualizar(c);
     }
 
+    // Validaciones para habilitar un componente en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -127,6 +132,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.activar(id);
     }
 
+    // Validaciones para inhabilitar un componente del sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -138,6 +144,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información detallada de un componente por su ID
     @Override
     public Optional<Componente> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -146,11 +153,13 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.buscarPorId(id);
     }
 
+    // Lógica para redirigir la búsqueda por nombre hacia el número de serie
     @Override
     public Optional<Componente> buscarPorNombre(String numeroSerie) {
         return buscarPorNumeroSerie(numeroSerie);
     }
 
+    // Lógica para localizar un componente mediante su número de serie único
     @Override
     public Optional<Componente> buscarPorNumeroSerie(String numeroSerie) {
         if (numeroSerie == null || numeroSerie.isBlank()) {
@@ -159,6 +168,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.buscarPorNumeroSerie(numeroSerie.trim().toUpperCase());
     }
 
+    // Lógica para filtrar componentes mediante coincidencias parciales en el número de serie
     @Override
     public List<Componente> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -167,21 +177,25 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener el listado completo de componentes registrados
     @Override
     public List<Componente> listarTodos() {
         return componenteDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente los componentes en estado activo
     @Override
     public List<Componente> listarActivos() {
         return componenteDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente los componentes que han sido desactivados
     @Override
     public List<Componente> listarInactivos() {
         return componenteDAO.listarInactivos();
     }
 
+    // Lógica para listar componentes filtrados por su categoría técnica
     @Override
     public List<Componente> listarPorTipoComponente(Long idTipoComponente) {
         if (idTipoComponente == null || idTipoComponente <= 0) {
@@ -190,6 +204,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.listarPorTipoComponente(idTipoComponente);
     }
 
+    // Lógica para listar componentes según el fabricante o marca
     @Override
     public List<Componente> listarPorMarca(Long idMarca) {
         if (idMarca == null || idMarca <= 0) {
@@ -198,6 +213,7 @@ public class ComponenteServiceImpl implements ComponenteService {
         return componenteDAO.listarPorMarca(idMarca);
     }
 
+    // Lógica para listar componentes diseñados para un modelo de vehículo específico
     @Override
     public List<Componente> listarPorModelo(Long idModelo) {
         if (idModelo == null || idModelo <= 0) {

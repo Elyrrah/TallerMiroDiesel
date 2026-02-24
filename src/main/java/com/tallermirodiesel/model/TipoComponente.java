@@ -19,6 +19,14 @@ public class TipoComponente {
     public TipoComponente() {
     }
 
+    // Constructor con parámetros
+    public TipoComponente(Long idTipoComponente, String nombre, String descripcion, boolean activo) {
+        this.idTipoComponente = idTipoComponente;
+        this.nombre = nombre;
+        this.descripcion = descripcion;
+        this.activo = activo;
+    }
+    
     // Getters y setters
     public Long getIdTipoComponente() {
         return idTipoComponente;

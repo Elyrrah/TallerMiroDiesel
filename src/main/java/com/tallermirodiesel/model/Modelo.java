@@ -14,9 +14,7 @@ public class Modelo {
     private Long idMarca;
     private String nombre;
     private boolean activo;
-
-    // Campo auxiliar para mostrar el nombre de la marca con JOIN
-    private String nombreMarca;
+    private String nombreMarca;    // Campo auxiliar para mostrar el nombre de la marca con JOIN
 
     // Constructor vacío
     public Modelo() {

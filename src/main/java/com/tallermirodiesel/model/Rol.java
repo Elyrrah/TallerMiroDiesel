@@ -16,9 +16,7 @@ public class Rol {
     private String nombre;
     private String descripcion;
     private Boolean activo;
-
-    // Lista de permisos asignados a este rol (se carga desde roles_permisos)
-    private List<Permiso> permisos;
+    private List<Permiso> permisos;    // Lista de permisos asignados a este rol (se carga desde roles_permisos)
 
     // Constructor vacío
     public Rol() {

@@ -48,7 +48,6 @@ import com.tallermirodiesel.service.impl.TipoDocumentoServiceImpl;
 @WebServlet(name = "ClienteServlet", urlPatterns = {"/clientes"})
 public class ClienteServlet extends HttpServlet {
 
-    // Inicializa todos los servicios necesarios para la gestión de clientes
     private final ClienteService clienteService = new ClienteServiceImpl();
     private final ClienteListadoService clienteListadoService = new ClienteListadoServiceImpl();
     private final DistritoService distritoService = new DistritoServiceImpl();
@@ -58,18 +57,16 @@ public class ClienteServlet extends HttpServlet {
     private final ClienteEmpresaService clienteEmpresaService = new ClienteEmpresaServiceImpl();
     private final ClienteDocumentoService clienteDocumentoService = new ClienteDocumentoServiceImpl();
 
+    // Orquestación de peticiones GET para navegación y filtrado avanzado
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Obtiene el parámetro 'action' de la URL
         String action = request.getParameter("action");
 
-        // Si no hay acción, por defecto es 'listar'
         if (action == null || action.isBlank()) {
             action = "listar";
         }
 
         try {
-            // Switch para manejar las diferentes acciones GET
             switch (action) {
                 case "nuevo"  -> mostrarFormularioNuevo(request, response);
                 case "buscar" -> listar(request, response);
@@ -82,18 +79,16 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
+    // Procesamiento de operaciones de escritura y cambios de estado de clientes
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Obtiene el parámetro 'action' de la petición POST
         String action = request.getParameter("action");
 
-        // Si no hay acción, por defecto es 'guardar'
         if (action == null || action.isBlank()) {
             action = "guardar";
         }
 
         try {
-            // Switch para manejar las diferentes acciones POST
             switch (action) {
                 case "guardar"      -> guardar(request, response);
                 case "toggleActivo" -> cambiarEstadoActivo(request, response);
@@ -102,12 +97,10 @@ public class ClienteServlet extends HttpServlet {
         } catch (RuntimeException e) {
             request.setAttribute("error", e.getMessage());
 
-            // Si hay una causa subyacente, la muestra también
             if (e.getCause() != null && e.getCause().getMessage() != null) {
                 request.setAttribute("errorDetalle", e.getCause().getMessage());
             }
 
-            // Para toggleActivo, redirige al listado; para guardar, vuelve al formulario
             if ("toggleActivo".equalsIgnoreCase(action)) {
                 response.sendRedirect(construirUrlRetornoListado(request));
                 return;
@@ -117,101 +110,73 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Muestra el listado de clientes (personas y empresas) con filtros opcionales
-     */
+    // Generación del listado dual (Personas y Empresas) con filtros de búsqueda y estado
     private void listar(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Lee el filtro de búsqueda (acepta 'q' o 'filtro')
         String q = request.getParameter("q");
         if (q == null) q = request.getParameter("filtro");
 
-        // Lee el filtro de estado (ACTIVOS, INACTIVOS, TODOS)
         String estado = request.getParameter("estado");
 
-        // Convierte el estado a boolean para el filtro
         Boolean activo = null;
         if (estado != null) {
             if ("ACTIVOS".equalsIgnoreCase(estado)) activo = true;
             if ("INACTIVOS".equalsIgnoreCase(estado)) activo = false;
         }
 
-        // Envía los filtros actuales a la vista
         request.setAttribute("q", q);
         request.setAttribute("estado", estado);
 
-        // Obtiene las listas de clientes (personas y empresas) según los filtros
         List<ClientePersonaListadoDTO> listaClientesPersona = clienteListadoService.listarPersonas(q, activo);
         List<ClienteEmpresaListadoDTO> listaClientesEmpresa = clienteListadoService.listarEmpresas(q, activo);
 
         request.setAttribute("listaClientesPersona", listaClientesPersona);
         request.setAttribute("listaClientesEmpresa", listaClientesEmpresa);
 
-        // CORRECCIÓN: ruta actualizada
         request.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/clientes/cliente_listar.jsp").forward(request, response);
     }
 
-    /**
-     * Muestra el formulario para crear un nuevo cliente
-     */
+    // Inicialización del formulario de cliente con sus dependencias geográficas y documentales
     private void mostrarFormularioNuevo(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Carga los combos necesarios (distritos, localidades, tipos de documento)
         cargarCombos(request);
-        // Crea un objeto Cliente vacío para el formulario
         request.setAttribute("cliente", new Cliente());
-        // Por defecto, el tipo es PERSONA
         request.setAttribute("tipo", "PERSONA");
 
-        // CORRECCIÓN: ruta actualizada
         request.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/clientes/cliente_form.jsp").forward(request, response);
     }
 
-    /**
-     * Cambia el estado activo/inactivo de un cliente (toggle)
-     */
+    // Lógica para la alternancia de estado (Activo/Inactivo) preservando la navegación actual
     private void cambiarEstadoActivo(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Long id = parseLong(request.getParameter("id"));
-        // Lee el estado actual y lo invierte
         boolean activoActual = Boolean.parseBoolean(request.getParameter("activo_actual"));
         boolean nuevoActivo = !activoActual;
 
-        // Llama al servicio para cambiar el estado
         clienteService.setActivo(id, nuevoActivo);
-        // Redirige al listado preservando los filtros
         response.sendRedirect(construirUrlRetornoListado(request));
     }
 
-    /**
-     * Guarda un nuevo cliente (puede ser PERSONA o EMPRESA)
-     * Este método coordina la creación del cliente base + sus datos específicos + documentos
-     */
+    // Transacción manual para la creación secuencial de Cliente, Perfil (Persona/Empresa) y Documento
     private void guardar(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // 1. Valida que se haya seleccionado el tipo de cliente
         String tipo = request.getParameter("tipo");
         if (tipo == null || tipo.isBlank()) {
             throw new IllegalArgumentException("Debe seleccionar un tipo de cliente (PERSONA o EMPRESA).");
         }
 
-        // 2. Lee el usuario logueado desde la sesión
         HttpSession sesion = request.getSession(false);
         SesionDeUsuario usuarioSesion = (SesionDeUsuario) sesion.getAttribute("usuarioSesion");
 
-        // 3. Crea el objeto Cliente base con datos comunes
         Cliente c = new Cliente();
         c.setIdUsuarioCreador(usuarioSesion.getIdUsuario());
         c.setTelefono(request.getParameter("telefono"));
         c.setIdDistrito(parseLongNullableEstricto(request.getParameter("id_distrito")));
         c.setIdLocalidad(parseLongNullableEstricto(request.getParameter("id_localidad")));
-        c.setActivo(true); // Los nuevos clientes siempre están activos
+        c.setActivo(true);
 
-        // 4. Guarda el cliente base y obtiene el ID generado
         Long idCreado = clienteService.guardar(c);
         if (idCreado == null) {
             throw new RuntimeException("No se pudo guardar el cliente.");
         }
 
-        // 5. Guarda los datos específicos según el tipo de cliente
         if ("PERSONA".equalsIgnoreCase(tipo)) {
-            // Valida campos obligatorios para personas
             String nombre = request.getParameter("nombre");
             String apellido = request.getParameter("apellido");
             String apodo = request.getParameter("apodo");
@@ -223,7 +188,6 @@ public class ClienteServlet extends HttpServlet {
                 throw new IllegalArgumentException("Apellido es obligatorio.");
             }
 
-            // Crea y guarda los datos de persona
             ClientePersona p = new ClientePersona();
             p.setIdCliente(idCreado);
             p.setNombre(nombre);
@@ -236,7 +200,6 @@ public class ClienteServlet extends HttpServlet {
             }
 
         } else if ("EMPRESA".equalsIgnoreCase(tipo)) {
-            // Valida campos obligatorios para empresas
             String razonSocial = request.getParameter("razon_social");
             String nombreFantasia = request.getParameter("nombre_fantasia");
 
@@ -244,7 +207,6 @@ public class ClienteServlet extends HttpServlet {
                 throw new IllegalArgumentException("Razón Social es obligatoria.");
             }
 
-            // Crea y guarda los datos de empresa
             ClienteEmpresa e = new ClienteEmpresa();
             e.setIdCliente(idCreado);
             e.setRazonSocial(razonSocial);
@@ -259,11 +221,9 @@ public class ClienteServlet extends HttpServlet {
             throw new IllegalArgumentException("Tipo inválido. Use PERSONA o EMPRESA.");
         }
 
-        // 6. Si se proporcionó documento, lo guarda
         Long idTipoDocumento = parseLongNullableEstricto(request.getParameter("id_tipo_documento"));
         String numeroDocumento = request.getParameter("numero_documento");
 
-        // Verifica si el documento es principal
         boolean principalDocumento = false;
         String principalParam = request.getParameter("principal_documento");
         if (principalParam != null) {
@@ -273,7 +233,6 @@ public class ClienteServlet extends HttpServlet {
                     || principalParam.equalsIgnoreCase("yes");
         }
 
-        // Si hay tipo de documento y número, guarda el documento
         if (idTipoDocumento != null && numeroDocumento != null && !numeroDocumento.trim().isBlank()) {
             ClienteDocumento cd = new ClienteDocumento();
             cd.setIdCliente(idCreado);
@@ -288,35 +247,25 @@ public class ClienteServlet extends HttpServlet {
             }
         }
 
-        // 7. Redirige al listado después de guardar
         response.sendRedirect(request.getContextPath() + "/clientes?action=listar");
     }
 
-    /**
-     * Carga todos los combos necesarios para el formulario de cliente
-     */
+    // Inyección de catálogos geográficos y tipos de identidad para formularios
     private void cargarCombos(HttpServletRequest request) {
-        // Carga distritos activos
         List<Distrito> distritos = distritoService.listarActivos();
         request.setAttribute("distritos", distritos);
 
-        // Carga localidades activas
         List<Localidad> localidades = localidadService.listarActivos();
         request.setAttribute("localidades", localidades);
 
-        // Carga tipos de documento activos
         List<TipoDocumento> tiposDocumento = tipoDocumentoService.listarActivos();
         request.setAttribute("tiposDocumento", tiposDocumento);
     }
 
-    /**
-     * Reenvía al formulario con los datos ingresados (en caso de error)
-     */
+    // Reconstrucción del estado del formulario para gestión de errores de validación
     private void reenviarFormularioConDatos(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Carga los combos necesarios
         cargarCombos(request);
 
-        // Reconstruye el objeto Cliente con los parámetros del request
         Cliente c = new Cliente();
         c.setTelefono(request.getParameter("telefono"));
         c.setIdDistrito(parseLongNullableEstricto(request.getParameter("id_distrito")));
@@ -324,11 +273,9 @@ public class ClienteServlet extends HttpServlet {
 
         request.setAttribute("cliente", c);
 
-        // Recupera el tipo de cliente
         String tipo = request.getParameter("tipo");
         request.setAttribute("tipo", tipo);
 
-        // Recupera los campos específicos según el tipo
         if ("PERSONA".equalsIgnoreCase(tipo)) {
             request.setAttribute("nombre", request.getParameter("nombre"));
             request.setAttribute("apellido", request.getParameter("apellido"));
@@ -338,18 +285,14 @@ public class ClienteServlet extends HttpServlet {
             request.setAttribute("nombre_fantasia", request.getParameter("nombre_fantasia"));
         }
 
-        // Recupera los datos del documento
         request.setAttribute("id_tipo_documento", parseLongNullableEstricto(request.getParameter("id_tipo_documento")));
         request.setAttribute("numero_documento", request.getParameter("numero_documento"));
         request.setAttribute("principal_documento", request.getParameter("principal_documento"));
 
-        // CORRECCIÓN: ruta actualizada
         request.getRequestDispatcher("/WEB-INF/views/ordenes_de_trabajo/clientes/cliente_form.jsp").forward(request, response);
     }
 
-    /**
-     * Convierte un String a Long de forma obligatoria (lanza excepción si falla)
-     */
+    // Validación y parseo estricto de identificadores numéricos
     private Long parseLong(String value) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException("Parámetro numérico obligatorio.");
@@ -365,10 +308,7 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Convierte un String a Long de forma opcional estricta
-     * Retorna null si está vacío, pero lanza excepción si el formato es inválido
-     */
+    // Validación y parseo flexible para campos numéricos opcionales
     private Long parseLongNullableEstricto(String value) {
         if (value == null || value.isBlank()) {
             return null;
@@ -384,15 +324,10 @@ public class ClienteServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Resuelve el nombre completo de un cliente (persona o empresa)
-     * @param idCliente ID del cliente
-     * @return Nombre completo del cliente o null si no se encuentra
-     */
+    // Lógica de resolución de identidad para visualización de nombres de clientes
     private String resolverNombreCliente(Long idCliente) {
         if (idCliente == null) return null;
 
-        // Intenta buscar como persona
         Optional<ClientePersona> pOpt = clientePersonaService.buscarPorIdCliente(idCliente);
         if (pOpt.isPresent()) {
             ClientePersona p = pOpt.get();
@@ -409,7 +344,6 @@ public class ClienteServlet extends HttpServlet {
             return "PERSONA";
         }
 
-        // Intenta buscar como empresa
         Optional<ClienteEmpresa> eOpt = clienteEmpresaService.buscarPorIdCliente(idCliente);
         if (eOpt.isPresent()) {
             ClienteEmpresa e = eOpt.get();
@@ -426,19 +360,15 @@ public class ClienteServlet extends HttpServlet {
         return null;
     }
 
-    /**
-     * Construye la URL de retorno al listado preservando los filtros
-     */
+    // Utilidad para la persistencia de filtros en la navegación del cliente
     private String construirUrlRetornoListado(HttpServletRequest request) {
         String url = request.getContextPath() + "/clientes?action=listar";
 
-        // Preserva el filtro de búsqueda
         String q = request.getParameter("q");
         if (q != null && !q.isBlank()) {
             url += "&q=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
         }
 
-        // Preserva el filtro de estado
         String estado = request.getParameter("estado");
         if (estado != null && !estado.isBlank()) {
             url += "&estado=" + URLEncoder.encode(estado, StandardCharsets.UTF_8);

@@ -10,22 +10,27 @@ import com.tallermirodiesel.dao.impl.ClienteListadoDAOImpl;
 import com.tallermirodiesel.dto.ClienteEmpresaListadoDTO;
 import com.tallermirodiesel.dto.ClientePersonaListadoDTO;
 import com.tallermirodiesel.service.ClienteListadoService;
+
 /**
  * @author elyrr
- * ServiceImpl: ClienteListadoServiceImpl
- * - Validaciones mínimas / normalización.
- * - El DAO hace el JOIN (consulta).
  */
 public class ClienteListadoServiceImpl implements ClienteListadoService {
 
-    private final ClienteListadoDAO clienteListadoDAO = new ClienteListadoDAOImpl();
+    private final ClienteListadoDAO clienteListadoDAO;
 
+    // Inicialización de la implementación del DAO especializado en consultas complejas y reportes de clientes
+    public ClienteListadoServiceImpl() {
+        this.clienteListadoDAO = new ClienteListadoDAOImpl();
+    }
+
+    // Lógica para listar y filtrar personas físicas aplicando normalización de parámetros de búsqueda
     @Override
     public List<ClientePersonaListadoDTO> listarPersonas(String q, Boolean activo) {
         String qNorm = (q == null || q.trim().isEmpty()) ? null : q.trim();
         return clienteListadoDAO.listarPersonas(qNorm, activo);
     }
 
+    // Lógica para listar y filtrar empresas aplicando normalización de parámetros de búsqueda
     @Override
     public List<ClienteEmpresaListadoDTO> listarEmpresas(String q, Boolean activo) {
         String qNorm = (q == null || q.trim().isEmpty()) ? null : q.trim();

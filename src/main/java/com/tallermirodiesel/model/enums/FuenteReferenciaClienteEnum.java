@@ -6,11 +6,11 @@ package com.tallermirodiesel.model.enums;
 
 /**
  * @author elyrr
- * Indica a qué tipo de recomendación tuvo el cliente.
- * Coincide con el enum fuente_referencia_cliente_enum de PostgreSQL.
+ * Indica cómo llegó el cliente al taller en esta visita.
+ * Coincide con el enum fuente_referencia_enum de PostgreSQL.
  */
 public enum FuenteReferenciaClienteEnum {
     NINGUNA,
-    RECOMENDACION,
+    CLIENTE,
     MECANICO
 }

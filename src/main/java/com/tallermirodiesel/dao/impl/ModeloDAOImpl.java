@@ -20,27 +20,50 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ModeloDAOImpl implements ModeloDAO {
 
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO public.modelos (id_marca, nombre, activo) VALUES (?, ?, ?) RETURNING id_modelo";
+
+    private static final String SQL_UPDATE = "UPDATE public.modelos SET id_marca = ?, nombre = ?, activo = ? WHERE id_modelo = ?";
+
+    private static final String SQL_DELETE = "DELETE FROM public.modelos WHERE id_modelo = ?";
+
+    private static final String SQL_SET_ACTIVO = "UPDATE public.modelos SET activo = ? WHERE id_modelo = ?";
+
+    private static final String SQL_SELECT_BASE = """
+                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
+                FROM public.modelos mo
+                JOIN public.marcas ma ON ma.id_marca = mo.id_marca""";
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE mo.id_modelo = ?";
+
+    private static final String SQL_BUSCAR_NOMBRE = SQL_SELECT_BASE + " WHERE UPPER(TRIM(mo.nombre)) = UPPER(TRIM(?))";
+
+    private static final String SQL_BUSCAR_PARCIAL = SQL_SELECT_BASE + "WHERE UPPER(mo.nombre) LIKE UPPER(?) ORDER BY ma.nombre ASC, mo.nombre ASC";
+
+    private static final String SQL_LISTAR_TODOS = SQL_SELECT_BASE + " ORDER BY ma.nombre ASC, mo.nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE mo.activo = true ORDER BY ma.nombre ASC, mo.nombre ASC";
+
+    private static final String SQL_LISTAR_INACTIVOS = SQL_SELECT_BASE + " WHERE mo.activo = false ORDER BY ma.nombre ASC, mo.nombre ASC";
+
+    private static final String SQL_LISTAR_POR_MARCA = SQL_SELECT_BASE + " WHERE mo.id_marca = ? ORDER BY mo.nombre ASC";
+
+    // Método para Mapear un Modelo
     private Modelo mapearModelo(ResultSet rs) throws SQLException {
         Modelo m = new Modelo();
         m.setIdModelo(rs.getLong("id_modelo"));
         m.setIdMarca(rs.getLong("id_marca"));
         m.setNombre(rs.getString("nombre"));
         m.setActivo(rs.getBoolean("activo"));
-        // CORRECCIÓN 1: eliminado el try-catch innecesario, igual que en LocalidadDAOImpl
         m.setNombreMarca(rs.getString("nombre_marca"));
         return m;
     }
 
+    // Método para crear un Modelo
     @Override
     public Long crear(Modelo modelo) {
-        String sql = """
-                INSERT INTO public.modelos (id_marca, nombre, activo)
-                VALUES (?, ?, ?)
-                RETURNING id_modelo
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_INSERT)) {
 
             ps.setLong(1, modelo.getIdMarca());
             ps.setString(2, modelo.getNombre());
@@ -58,18 +81,11 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Actualizar un Modelo
     @Override
     public boolean actualizar(Modelo modelo) {
-        String sql = """
-                UPDATE public.modelos
-                SET id_marca = ?,
-                    nombre = ?,
-                    activo = ?
-                WHERE id_modelo = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_UPDATE)) {
 
             ps.setLong(1, modelo.getIdMarca());
             ps.setString(2, modelo.getNombre());
@@ -83,12 +99,11 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Eliminar un Modelo
     @Override
     public boolean eliminar(Long id) {
-        String sql = "DELETE FROM public.modelos WHERE id_modelo = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DELETE)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
@@ -98,18 +113,14 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Activar un Modelo
     @Override
     public boolean activar(Long id) {
-        String sql = """
-                UPDATE public.modelos
-                SET activo = true
-                WHERE id_modelo = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, true);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -117,18 +128,14 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Desactivar un Modelo
     @Override
     public boolean desactivar(Long id) {
-        String sql = """
-                UPDATE public.modelos
-                SET activo = false
-                WHERE id_modelo = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, false);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -136,17 +143,11 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Buscar un Modelo por su id
     @Override
     public Optional<Modelo> buscarPorId(Long id) {
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                WHERE mo.id_modelo = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -159,17 +160,11 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Buscar un Modelo por nombre.
     @Override
     public Optional<Modelo> buscarPorNombre(String nombre) {
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                WHERE UPPER(TRIM(mo.nombre)) = UPPER(TRIM(?))
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_NOMBRE)) {
 
             String nombreNorm = (nombre == null) ? "" : nombre.trim();
             ps.setString(1, nombreNorm);
@@ -183,20 +178,13 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Buscar un Modelo de forma parcial por nombre
     @Override
     public List<Modelo> buscarPorNombreParcial(String filtro) {
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                WHERE UPPER(mo.nombre) LIKE UPPER(?)
-                ORDER BY ma.nombre ASC, mo.nombre ASC
-                """;
-
         List<Modelo> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_PARCIAL)) {
 
             String filtroNorm = (filtro == null) ? "" : filtro.trim();
             ps.setString(1, "%" + filtroNorm + "%");
@@ -214,19 +202,13 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para listar todos los Modelos
     @Override
     public List<Modelo> listarTodos() {
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                ORDER BY ma.nombre ASC, mo.nombre ASC
-                """;
-
         List<Modelo> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_TODOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -240,20 +222,13 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Método para Listar todos los Modelos Activos
     @Override
     public List<Modelo> listarActivos() {
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                WHERE mo.activo = true
-                ORDER BY ma.nombre ASC, mo.nombre ASC
-                """;
-
         List<Modelo> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -267,20 +242,13 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Métodos para Listar todos los Modelos Inactivas
     @Override
     public List<Modelo> listarInactivos() {
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                WHERE mo.activo = false
-                ORDER BY ma.nombre ASC, mo.nombre ASC
-                """;
-
         List<Modelo> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_INACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -294,25 +262,17 @@ public class ModeloDAOImpl implements ModeloDAO {
         }
     }
 
+    // Metodo para Listar todos los Modelos de una Marca
     @Override
     public List<Modelo> listarPorMarca(Long idMarca) {
-        // CORRECCIÓN 2: validación de null igual que listarPorDistrito() en LocalidadDAOImpl
         if (idMarca == null) {
             return List.of();
         }
 
-        String sql = """
-                SELECT mo.id_modelo, mo.id_marca, mo.nombre, mo.activo, ma.nombre AS nombre_marca
-                FROM public.modelos mo
-                JOIN public.marcas ma ON ma.id_marca = mo.id_marca
-                WHERE mo.id_marca = ?
-                ORDER BY mo.nombre ASC
-                """;
-
         List<Modelo> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_POR_MARCA)) {
 
             ps.setLong(1, idMarca);
 

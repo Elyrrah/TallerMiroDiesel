@@ -18,9 +18,7 @@ public class SesionDeUsuario {
     private String nombre;
     private String apellido;
     private String nombreRol;
-
-    // Conjunto de códigos de permisos del usuario (ej: "SISTEMA.USUARIO.LEER")
-    private Set<String> permisos = new HashSet<>();
+    private Set<String> permisos = new HashSet<>();    // Conjunto de códigos de permisos del usuario (ej: "SISTEMA.USUARIO.LEER")
 
     // Constructor vacío
     public SesionDeUsuario() {

@@ -22,54 +22,32 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class VehiculoDAOImpl implements VehiculoDAO {
 
-    // BASE SELECT con JOIN a marcas y modelos para traer los nombres
+    // Inicialización de consultas SQL en una sola línea
     private static final String SELECT_BASE = """
-            SELECT v.id_vehiculo,
-                   v.placa,
-                   v.id_marca,
-                   v.id_modelo,
-                   v.anio,
-                   v.tipo_vehiculo,
-                   v.observaciones,
-                   v.activo,
-                   ma.nombre AS nombre_marca,
-                   mo.nombre AS nombre_modelo
-            FROM public.vehiculos v
-            JOIN public.marcas ma ON ma.id_marca = v.id_marca
-            LEFT JOIN public.modelos mo ON mo.id_modelo = v.id_modelo
-            """;
+                        SELECT v.id_vehiculo, v.placa, v.id_marca, v.id_modelo, v.anio, v.tipo_vehiculo, v.observaciones, v.activo, 
+                        ma.nombre AS nombre_marca, mo.nombre AS nombre_modelo 
+                        FROM public.vehiculos v JOIN public.marcas ma ON ma.id_marca = v.id_marca 
+                        LEFT JOIN public.modelos mo ON mo.id_modelo = v.id_modelo""";
+    
+    private static final String SQL_INSERT = """
+                        INSERT INTO public.vehiculos (placa, id_marca, id_modelo, anio, tipo_vehiculo, observaciones, activo) 
+                        VALUES (?, ?, ?, ?, ?::public.tipo_vehiculo_enum, ?, ?) RETURNING id_vehiculo""";
+    
+    private static final String SQL_UPDATE = """
+                        UPDATE public.vehiculos SET placa = ?, id_marca = ?, id_modelo = ?, anio = ?, tipo_vehiculo = ?::public.tipo_vehiculo_enum, 
+                        observaciones = ?, activo = ? WHERE id_vehiculo = ?""";
+    
+    private static final String SQL_DELETE = "DELETE FROM public.vehiculos WHERE id_vehiculo = ?";
+    
+    private static final String SQL_ACTIVAR = "UPDATE public.vehiculos SET activo = true WHERE id_vehiculo = ?";
+    
+    private static final String SQL_DESACTIVAR = "UPDATE public.vehiculos SET activo = false WHERE id_vehiculo = ?";
 
-    private Vehiculo mapear(ResultSet rs) throws SQLException {
-        Vehiculo v = new Vehiculo();
-        v.setIdVehiculo(rs.getLong("id_vehiculo"));
-        v.setPlaca(rs.getString("placa"));
-        v.setIdMarca(rs.getLong("id_marca"));
-
-        long idModelo = rs.getLong("id_modelo");
-        v.setIdModelo(rs.wasNull() ? null : idModelo);
-
-        short anio = rs.getShort("anio");
-        v.setAnio(rs.wasNull() ? null : anio);
-
-        v.setTipoVehiculo(TipoVehiculoEnum.valueOf(rs.getString("tipo_vehiculo")));
-        v.setObservaciones(rs.getString("observaciones"));
-        v.setActivo(rs.getBoolean("activo"));
-        v.setNombreMarca(rs.getString("nombre_marca"));
-        v.setNombreModelo(rs.getString("nombre_modelo"));
-        return v;
-    }
-
+    // Método para Crear un nuevo Vehículo y retornar su ID
     @Override
     public Long crear(Vehiculo v) {
-        String sql = """
-                INSERT INTO public.vehiculos
-                    (placa, id_marca, id_modelo, anio, tipo_vehiculo, observaciones, activo)
-                VALUES (?, ?, ?, ?, ?::public.tipo_vehiculo_enum, ?, ?)
-                RETURNING id_vehiculo
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_INSERT)) {
 
             ps.setString(1, v.getPlaca());
             ps.setLong(2, v.getIdMarca());
@@ -102,22 +80,11 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Actualizar los datos de un Vehículo existente
     @Override
     public boolean actualizar(Vehiculo v) {
-        String sql = """
-                UPDATE public.vehiculos
-                SET placa         = ?,
-                    id_marca      = ?,
-                    id_modelo     = ?,
-                    anio          = ?,
-                    tipo_vehiculo = ?::public.tipo_vehiculo_enum,
-                    observaciones = ?,
-                    activo        = ?
-                WHERE id_vehiculo = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_UPDATE)) {
 
             ps.setString(1, v.getPlaca());
             ps.setLong(2, v.getIdMarca());
@@ -146,12 +113,11 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Eliminar físicamente un Vehículo por ID
     @Override
     public boolean eliminar(Long id) {
-        String sql = "DELETE FROM public.vehiculos WHERE id_vehiculo = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DELETE)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -161,12 +127,11 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Activar un Vehículo (borrado lógico inverso)
     @Override
     public boolean activar(Long id) {
-        String sql = "UPDATE public.vehiculos SET activo = true WHERE id_vehiculo = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_ACTIVAR)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -176,12 +141,11 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Desactivar un Vehículo (borrado lógico)
     @Override
     public boolean desactivar(Long id) {
-        String sql = "UPDATE public.vehiculos SET activo = false WHERE id_vehiculo = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DESACTIVAR)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -191,6 +155,7 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Buscar un Vehículo por su ID
     @Override
     public Optional<Vehiculo> buscarPorId(Long id) {
         String sql = SELECT_BASE + " WHERE v.id_vehiculo = ?";
@@ -209,12 +174,13 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Buscar un Vehículo por nombre (enlace con placa)
     @Override
     public Optional<Vehiculo> buscarPorNombre(String nombre) {
-        // En vehículos el "nombre" equivale a la placa
         return buscarPorPlaca(nombre);
     }
 
+    // Método para Buscar un Vehículo por su Placa exacta
     @Override
     public Optional<Vehiculo> buscarPorPlaca(String placa) {
         String sql = SELECT_BASE + " WHERE UPPER(TRIM(v.placa)) = UPPER(TRIM(?))";
@@ -233,11 +199,10 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Buscar Vehículos por coincidencia parcial de Placa
     @Override
     public List<Vehiculo> buscarPorNombreParcial(String filtro) {
-        // En vehículos buscamos por placa parcial
         String sql = SELECT_BASE + " WHERE v.placa ILIKE ? ORDER BY v.placa ASC";
-
         List<Vehiculo> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
@@ -250,7 +215,6 @@ public class VehiculoDAOImpl implements VehiculoDAO {
                     lista.add(mapear(rs));
                 }
             }
-
             return lista;
 
         } catch (SQLException e) {
@@ -258,114 +222,98 @@ public class VehiculoDAOImpl implements VehiculoDAO {
         }
     }
 
+    // Método para Listar todos los Vehículos registrados
     @Override
     public List<Vehiculo> listarTodos() {
         String sql = SELECT_BASE + " ORDER BY ma.nombre ASC, v.placa ASC";
-
-        List<Vehiculo> lista = new ArrayList<>();
-
-        try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                lista.add(mapear(rs));
-            }
-
-            return lista;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error en BD al listar todos los vehículos: " + e.getMessage(), e);
-        }
+        return listarGenerico(sql);
     }
 
+    // Método para Listar los Vehículos con estado Activo
     @Override
     public List<Vehiculo> listarActivos() {
         String sql = SELECT_BASE + " WHERE v.activo = true ORDER BY ma.nombre ASC, v.placa ASC";
-
-        List<Vehiculo> lista = new ArrayList<>();
-
-        try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                lista.add(mapear(rs));
-            }
-
-            return lista;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error en BD al listar vehículos activos: " + e.getMessage(), e);
-        }
+        return listarGenerico(sql);
     }
 
+    // Método para Listar los Vehículos con estado Inactivo
     @Override
     public List<Vehiculo> listarInactivos() {
         String sql = SELECT_BASE + " WHERE v.activo = false ORDER BY ma.nombre ASC, v.placa ASC";
-
-        List<Vehiculo> lista = new ArrayList<>();
-
-        try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-
-            while (rs.next()) {
-                lista.add(mapear(rs));
-            }
-
-            return lista;
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Error en BD al listar vehículos inactivos: " + e.getMessage(), e);
-        }
+        return listarGenerico(sql);
     }
 
+    // Método para Listar Vehículos filtrados por Marca
     @Override
     public List<Vehiculo> listarPorMarca(Long idMarca) {
         String sql = SELECT_BASE + " WHERE v.id_marca = ? ORDER BY v.placa ASC";
-
         List<Vehiculo> lista = new ArrayList<>();
-
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setLong(1, idMarca);
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(mapear(rs));
                 }
             }
-
             return lista;
-
         } catch (SQLException e) {
             throw new RuntimeException("Error en BD al listar vehículos por marca: " + e.getMessage(), e);
         }
     }
 
+    // Método para Listar Vehículos filtrados por Tipo
     @Override
     public List<Vehiculo> listarPorTipo(TipoVehiculoEnum tipo) {
         String sql = SELECT_BASE + " WHERE v.tipo_vehiculo = ?::public.tipo_vehiculo_enum ORDER BY ma.nombre ASC, v.placa ASC";
-
         List<Vehiculo> lista = new ArrayList<>();
-
         try (Connection con = DatabaseConnection.getConexion();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
             ps.setString(1, tipo.name());
-
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     lista.add(mapear(rs));
                 }
             }
-
             return lista;
-
         } catch (SQLException e) {
             throw new RuntimeException("Error en BD al listar vehículos por tipo: " + e.getMessage(), e);
         }
+    }
+
+    // Método genérico privado para ejecutar consultas de listado
+    private List<Vehiculo> listarGenerico(String sql) {
+        List<Vehiculo> lista = new ArrayList<>();
+        try (Connection con = DatabaseConnection.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                lista.add(mapear(rs));
+            }
+            return lista;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error en BD al listar vehículos: " + e.getMessage(), e);
+        }
+    }
+
+    // Método para Mapear el ResultSet a un objeto Vehiculo
+    private Vehiculo mapear(ResultSet rs) throws SQLException {
+        Vehiculo v = new Vehiculo();
+        v.setIdVehiculo(rs.getLong("id_vehiculo"));
+        v.setPlaca(rs.getString("placa"));
+        v.setIdMarca(rs.getLong("id_marca"));
+
+        long idModelo = rs.getLong("id_modelo");
+        v.setIdModelo(rs.wasNull() ? null : idModelo);
+
+        short anio = rs.getShort("anio");
+        v.setAnio(rs.wasNull() ? null : anio);
+
+        v.setTipoVehiculo(TipoVehiculoEnum.valueOf(rs.getString("tipo_vehiculo")));
+        v.setObservaciones(rs.getString("observaciones"));
+        v.setActivo(rs.getBoolean("activo"));
+        v.setNombreMarca(rs.getString("nombre_marca"));
+        v.setNombreModelo(rs.getString("nombre_modelo"));
+        return v;
     }
 }

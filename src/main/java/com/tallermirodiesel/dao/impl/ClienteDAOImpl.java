@@ -22,41 +22,29 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClienteDAOImpl implements ClienteDAO {
 
-    private static final String SQL_INSERT =
-        "INSERT INTO clientes (" +
-        "id_usuario_creador, id_localidad, id_distrito, telefono, activo" +
-        ") VALUES (?, ?, ?, ?, ?) " +
-        "RETURNING id_cliente";
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO clientes (id_usuario_creador, id_localidad, id_distrito, telefono, activo) VALUES (?,?,?,?,?) RETURNING id_cliente";
 
-    private static final String SQL_UPDATE =
-        "UPDATE clientes SET " +
-        "id_localidad = ?, id_distrito = ?, telefono = ? " +
-        "WHERE id_cliente = ?";
+    private static final String SQL_UPDATE = "UPDATE clientes SET id_localidad = ?, id_distrito = ?, telefono = ? WHERE id_cliente = ?";
 
-    private static final String SQL_EXISTE_ID =
-        "SELECT 1 FROM clientes WHERE id_cliente = ?";
+    private static final String SQL_EXISTE_ID = "SELECT 1 FROM clientes WHERE id_cliente = ?";
 
-    private static final String SQL_SET_ACTIVO =
-        "UPDATE clientes SET activo = ? WHERE id_cliente = ?";
+    private static final String SQL_SET_ACTIVO = "UPDATE clientes SET activo = ? WHERE id_cliente = ?";
 
-    private static final String SQL_BUSCAR_ID =
-        "SELECT * FROM clientes WHERE id_cliente = ?";
+    private static final String SQL_SELECT_BASE = "SELECT * FROM clientes";
 
-    private static final String SQL_LISTAR =
-        "SELECT * FROM clientes ORDER BY id_cliente ASC";
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_cliente = ?";
 
-    private static final String SQL_LISTAR_ACTIVOS =
-        "SELECT * FROM clientes WHERE activo = true ORDER BY id_cliente ASC";
+    private static final String SQL_LISTAR = SQL_SELECT_BASE + " ORDER BY id_cliente ASC";
 
-    private static final String SQL_LISTAR_INACTIVOS =
-        "SELECT * FROM clientes WHERE activo = false ORDER BY id_cliente ASC";
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE activo = true ORDER BY id_cliente ASC";
 
-    private static final String SQL_BUSCAR_BASE =
-        "SELECT * FROM clientes " +
-        "WHERE ( ? IS NULL OR telefono ILIKE '%' || ? || '%' ) " +
-        "AND ( ? IS NULL OR activo = ? ) " +
-        "ORDER BY id_cliente ASC";
+    private static final String SQL_LISTAR_INACTIVOS = SQL_SELECT_BASE + " WHERE activo = false ORDER BY id_cliente ASC";
 
+    private static final String SQL_BUSCAR_DINAMICO = "SELECT * FROM clientes WHERE (? IS NULL OR telefono ILIKE '%' || ? || '%') "
+                                                    + "AND (? IS NULL OR activo = ?) ORDER BY id_cliente ASC";
+
+    // Método para Guardar un Cliente
     @Override
     public Long guardar(Cliente cliente) {
         try (Connection conn = DatabaseConnection.getConexion()) {
@@ -71,6 +59,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método para establecer el estado Activo/Inactivo de un Cliente
     @Override
     public boolean setActivo(Long idCliente, boolean activo) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -85,6 +74,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método para verificar si existe un Cliente por su ID
     @Override
     public boolean existePorId(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -100,6 +90,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método para Buscar un Cliente por su ID
     @Override
     public Optional<Cliente> buscarPorId(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -120,29 +111,32 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método para Listar todos los Clientes
     @Override
     public List<Cliente> listarTodos() {
         return listar(SQL_LISTAR);
     }
 
+    // Método para Listar todos los Clientes Activos
     @Override
     public List<Cliente> listarActivos() {
         return listar(SQL_LISTAR_ACTIVOS);
     }
 
+    // Método para Listar todos los Clientes Inactivos
     @Override
     public List<Cliente> listarInactivos() {
         return listar(SQL_LISTAR_INACTIVOS);
     }
 
+    // Método para Buscar Clientes por filtro y estado
     @Override
     public List<Cliente> buscar(String q, Boolean activo) {
         List<Cliente> lista = new ArrayList<>();
-
         String qNormalizado = (q == null || q.trim().isBlank()) ? null : q.trim();
 
         try (Connection conn = DatabaseConnection.getConexion();
-             PreparedStatement ps = conn.prepareStatement(SQL_BUSCAR_BASE)) {
+             PreparedStatement ps = conn.prepareStatement(SQL_BUSCAR_DINAMICO)) {
 
             ps.setString(1, qNormalizado);
             ps.setString(2, qNormalizado);
@@ -168,6 +162,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método privado para insertar un Cliente
     private Long insertar(Connection conn, Cliente cliente) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
@@ -183,6 +178,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método privado para actualizar un Cliente
     private boolean actualizar(Connection conn, Cliente cliente) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
 
@@ -195,6 +191,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         }
     }
 
+    // Método genérico para listar Clientes basándose en una consulta SQL
     private List<Cliente> listar(String sql) {
         List<Cliente> lista = new ArrayList<>();
 
@@ -213,6 +210,7 @@ public class ClienteDAOImpl implements ClienteDAO {
         return lista;
     }
 
+    // Método para Mapear un Cliente desde un ResultSet
     private Cliente mapCliente(ResultSet rs) throws SQLException {
         Cliente c = new Cliente();
 
@@ -230,4 +228,4 @@ public class ClienteDAOImpl implements ClienteDAO {
 
         return c;
     }
-}
+} 

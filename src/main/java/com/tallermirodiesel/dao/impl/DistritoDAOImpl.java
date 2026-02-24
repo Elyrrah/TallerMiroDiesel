@@ -20,6 +20,54 @@ import com.tallermirodiesel.dao.DistritoDAO;
  */
 public class DistritoDAOImpl implements DistritoDAO {
 
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = """
+            INSERT INTO public.distritos (id_departamento, nombre, activo)
+            VALUES (?, ?, ?)
+            RETURNING id_distrito
+            """;
+
+    private static final String SQL_UPDATE = """
+            UPDATE public.distritos
+            SET id_departamento = ?,
+                nombre = ?,
+                activo = ?
+            WHERE id_distrito = ?
+            """;
+
+    private static final String SQL_DELETE = "DELETE FROM public.distritos WHERE id_distrito = ?";
+
+    private static final String SQL_SET_ACTIVO = "UPDATE public.distritos SET activo = ? WHERE id_distrito = ?";
+
+    private static final String SQL_SELECT_BASE = """
+            SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo,
+                   dp.nombre AS nombre_departamento
+            FROM public.distritos di
+            JOIN public.departamentos dp
+              ON dp.id_departamento = di.id_departamento
+            """;
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE di.id_distrito = ?";
+
+    private static final String SQL_BUSCAR_NOMBRE = SQL_SELECT_BASE + """
+            WHERE UPPER(TRIM(di.nombre)) = UPPER(TRIM(?))
+              AND di.id_departamento = ?
+            """;
+
+    private static final String SQL_BUSCAR_PARCIAL = SQL_SELECT_BASE + """
+            WHERE UPPER(di.nombre) LIKE UPPER(?)
+            ORDER BY di.nombre ASC
+            """;
+
+    private static final String SQL_LISTAR_TODOS = SQL_SELECT_BASE + " ORDER BY di.nombre ASC";
+
+    private static final String SQL_LISTAR_ACTIVOS = SQL_SELECT_BASE + " WHERE di.activo = true ORDER BY di.nombre ASC";
+
+    private static final String SQL_LISTAR_INACTIVOS = SQL_SELECT_BASE + " WHERE di.activo = false ORDER BY di.nombre ASC";
+
+    private static final String SQL_LISTAR_POR_DEPTO = SQL_SELECT_BASE + " WHERE di.id_departamento = ? ORDER BY di.nombre ASC";
+
+    // Método para Mapear un Distrito
     private Distrito mapearDistrito(ResultSet rs) throws SQLException {
         Distrito d = new Distrito();
         d.setIdDistrito(rs.getLong("id_distrito"));
@@ -30,16 +78,11 @@ public class DistritoDAOImpl implements DistritoDAO {
         return d;
     }
 
+    // Método para crear un Distrito
     @Override
     public Long crear(Distrito distrito) {
-        String sql = """
-                INSERT INTO public.distritos (id_departamento, nombre, activo)
-                VALUES (?, ?, ?)
-                RETURNING id_distrito
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_INSERT)) {
 
             ps.setLong(1, distrito.getIdDepartamento());
             ps.setString(2, distrito.getNombre());
@@ -57,18 +100,11 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Actualizar un Distrito
     @Override
     public boolean actualizar(Distrito distrito) {
-        String sql = """
-                UPDATE public.distritos
-                SET id_departamento = ?,
-                    nombre = ?,
-                    activo = ?
-                WHERE id_distrito = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_UPDATE)) {
 
             ps.setLong(1, distrito.getIdDepartamento());
             ps.setString(2, distrito.getNombre());
@@ -82,12 +118,11 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Eliminar un Distrito
     @Override
     public boolean eliminar(Long id) {
-        String sql = "DELETE FROM public.distritos WHERE id_distrito = ?";
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_DELETE)) {
 
             ps.setLong(1, id);
             return ps.executeUpdate() == 1;
@@ -97,18 +132,14 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Activar un Distrito
     @Override
     public boolean activar(Long id) {
-        String sql = """
-                UPDATE public.distritos
-                SET activo = true
-                WHERE id_distrito = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, true);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -116,18 +147,14 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Desactivar un Distrito
     @Override
     public boolean desactivar(Long id) {
-        String sql = """
-                UPDATE public.distritos
-                SET activo = false
-                WHERE id_distrito = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_SET_ACTIVO)) {
 
-            ps.setLong(1, id);
+            ps.setBoolean(1, false);
+            ps.setLong(2, id);
             return ps.executeUpdate() == 1;
 
         } catch (SQLException e) {
@@ -135,17 +162,11 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Buscar un Distrito por su ID
     @Override
     public Optional<Distrito> buscarPorId(Long id) {
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                WHERE di.id_distrito = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -158,11 +179,7 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
-    /**
-     * No usar este método para Distrito.
-     * Usar buscarPorNombre(String nombre, Long idDepartamento) en su lugar,
-     * ya que el nombre de un distrito solo es único dentro de un departamento.
-     */
+    // Método no usado en este caso
     @Override
     public Optional<Distrito> buscarPorNombre(String nombre) {
         throw new UnsupportedOperationException(
@@ -170,20 +187,14 @@ public class DistritoDAOImpl implements DistritoDAO {
         );
     }
 
+    // Método para Buscar un Distrito por nombre y departamento
     @Override
     public Optional<Distrito> buscarPorNombre(String nombre, Long idDepartamento) {
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                WHERE UPPER(TRIM(di.nombre)) = UPPER(TRIM(?))
-                  AND di.id_departamento = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_NOMBRE)) {
 
             String nombreNorm = (nombre == null) ? "" : nombre.trim();
+
             ps.setString(1, nombreNorm);
             ps.setLong(2, idDepartamento);
 
@@ -196,20 +207,13 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Buscar un Distrito de forma parcial por nombre
     @Override
     public List<Distrito> buscarPorNombreParcial(String filtro) {
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                WHERE UPPER(di.nombre) LIKE UPPER(?)
-                ORDER BY di.nombre ASC
-                """;
-
         List<Distrito> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_PARCIAL)) {
 
             String filtroNorm = (filtro == null) ? "" : filtro.trim();
             ps.setString(1, "%" + filtroNorm + "%");
@@ -227,19 +231,13 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para listar todos los Distritos
     @Override
     public List<Distrito> listarTodos() {
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                ORDER BY di.nombre ASC
-                """;
-
         List<Distrito> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_TODOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -253,20 +251,13 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Listar todos los Distritos Activos
     @Override
     public List<Distrito> listarActivos() {
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                WHERE di.activo = true
-                ORDER BY di.nombre ASC
-                """;
-
         List<Distrito> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_ACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -280,20 +271,13 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Listar todos los Distritos Inactivos
     @Override
     public List<Distrito> listarInactivos() {
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                WHERE di.activo = false
-                ORDER BY di.nombre ASC
-                """;
-
         List<Distrito> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql);
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_INACTIVOS);
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
@@ -307,24 +291,17 @@ public class DistritoDAOImpl implements DistritoDAO {
         }
     }
 
+    // Método para Listar todos los Distritos de un Departamento
     @Override
     public List<Distrito> listarPorDepartamento(Long idDepartamento) {
         if (idDepartamento == null) {
             return List.of();
         }
 
-        String sql = """
-                SELECT di.id_distrito, di.id_departamento, di.nombre, di.activo, dp.nombre AS nombre_departamento
-                FROM public.distritos di
-                JOIN public.departamentos dp ON dp.id_departamento = di.id_departamento
-                WHERE di.id_departamento = ?
-                ORDER BY di.nombre ASC
-                """;
-
         List<Distrito> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_POR_DEPTO)) {
 
             ps.setLong(1, idDepartamento);
 

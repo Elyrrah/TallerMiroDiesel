@@ -20,7 +20,17 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class PermisoDAOImpl implements PermisoDAO {
 
-    // Mapea un ResultSet a un objeto Permiso
+    // Inicialización de consultas SQL
+    private static final String SQL_SELECT_BASE = "SELECT id_permiso, nombre, descripcion, activo FROM public.permisos";
+
+    private static final String SQL_BUSCAR_ID = SQL_SELECT_BASE + " WHERE id_permiso = ?";
+
+    private static final String SQL_LISTAR_POR_ROL = """
+                SELECT p.id_permiso, p.nombre, p.descripcion, p.activo FROM public.permisos p
+                JOIN public.roles_permisos rp ON rp.id_permiso = p.id_permiso
+                WHERE rp.id_rol = ? AND rp.activo = true AND p.activo = true ORDER BY p.nombre""";
+
+    // Método para Mapear un Permiso
     private Permiso mapearPermiso(ResultSet rs) throws SQLException {
         Permiso p = new Permiso();
         p.setIdPermiso(rs.getLong("id_permiso"));
@@ -30,17 +40,11 @@ public class PermisoDAOImpl implements PermisoDAO {
         return p;
     }
 
-    // Busca un permiso por su id
+    // Método para Buscar un permiso por su id
     @Override
     public Optional<Permiso> buscarPorId(Long id) {
-        String sql = """
-                SELECT id_permiso, nombre, descripcion, activo
-                FROM public.permisos
-                WHERE id_permiso = ?
-                """;
-
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_BUSCAR_ID)) {
 
             ps.setLong(1, id);
 
@@ -56,23 +60,13 @@ public class PermisoDAOImpl implements PermisoDAO {
         }
     }
 
-    // Lista todos los permisos activos asignados a un rol
+    // Método para Listar todos los permisos activos asignados a un rol
     @Override
     public List<Permiso> listarPorRol(Long idRol) {
-        String sql = """
-                SELECT p.id_permiso, p.nombre, p.descripcion, p.activo
-                FROM public.permisos p
-                JOIN public.roles_permisos rp ON rp.id_permiso = p.id_permiso
-                WHERE rp.id_rol = ?
-                AND rp.activo = true
-                AND p.activo = true
-                ORDER BY p.nombre
-                """;
-
         List<Permiso> lista = new ArrayList<>();
 
         try (Connection con = DatabaseConnection.getConexion();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(SQL_LISTAR_POR_ROL)) {
 
             ps.setLong(1, idRol);
 

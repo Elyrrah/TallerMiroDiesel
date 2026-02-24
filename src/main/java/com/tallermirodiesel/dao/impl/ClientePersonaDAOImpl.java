@@ -21,24 +21,20 @@ import com.tallermirodiesel.util.DatabaseConnection;
  */
 public class ClientePersonaDAOImpl implements ClientePersonaDAO {
 
-    private static final String SQL_INSERT =
-        "INSERT INTO clientes_persona (id_cliente, nombre, apellido, apodo) VALUES (?, ?, ?, ?)";
+    // Inicialización de consultas SQL
+    private static final String SQL_INSERT = "INSERT INTO clientes_persona (id_cliente, nombre, apellido, apodo) VALUES (?, ?, ?, ?)";
 
-    private static final String SQL_UPDATE =
-        "UPDATE clientes_persona SET nombre = ?, apellido = ?, apodo = ? WHERE id_cliente = ?";
+    private static final String SQL_UPDATE = "UPDATE clientes_persona SET nombre = ?, apellido = ?, apodo = ? WHERE id_cliente = ?";
 
-    private static final String SQL_EXISTE_ID_CLIENTE =
-        "SELECT 1 FROM clientes_persona WHERE id_cliente = ?";
+    private static final String SQL_EXISTE_ID_CLIENTE = "SELECT 1 FROM clientes_persona WHERE id_cliente = ?";
 
-    private static final String SQL_BUSCAR_ID_CLIENTE =
-        "SELECT id_cliente, nombre, apellido, apodo FROM clientes_persona WHERE id_cliente = ?";
+    private static final String SQL_BUSCAR_ID_CLIENTE = "SELECT id_cliente, nombre, apellido, apodo FROM clientes_persona WHERE id_cliente = ?";
 
-    private static final String SQL_DELETE_ID_CLIENTE =
-        "DELETE FROM clientes_persona WHERE id_cliente = ?";
+    private static final String SQL_DELETE_ID_CLIENTE = "DELETE FROM clientes_persona WHERE id_cliente = ?";
 
-    private static final String SQL_LISTAR_TODOS =
-        "SELECT id_cliente, nombre, apellido, apodo FROM clientes_persona ORDER BY id_cliente ASC";
+    private static final String SQL_LISTAR_TODOS = "SELECT id_cliente, nombre, apellido, apodo FROM clientes_persona ORDER BY id_cliente ASC";
 
+    // Método para Guardar un Cliente Persona (insertar o actualizar)
     @Override
     public boolean guardar(ClientePersona persona) {
         if (persona == null || persona.getIdCliente() == null) {
@@ -56,6 +52,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         }
     }
 
+    // Método para verificar si existe una Persona vinculada a un ID de Cliente
     @Override
     public boolean existePorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -72,6 +69,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         }
     }
 
+    // Método para Buscar los datos de Persona por ID de Cliente
     @Override
     public Optional<ClientePersona> buscarPorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -92,6 +90,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         }
     }
 
+    // Método para Eliminar los datos de Persona por ID de Cliente
     @Override
     public boolean eliminarPorIdCliente(Long idCliente) {
         try (Connection conn = DatabaseConnection.getConexion();
@@ -105,6 +104,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         }
     }
 
+    // Método para Listar todas las Personas registradas
     @Override
     public List<ClientePersona> listarTodos() {
         List<ClientePersona> lista = new ArrayList<>();
@@ -124,6 +124,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         return lista;
     }
 
+    // Método privado para insertar una Persona
     private boolean insertar(Connection conn, ClientePersona persona) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_INSERT)) {
 
@@ -141,6 +142,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         }
     }
 
+    // Método privado para actualizar una Persona
     private boolean actualizar(Connection conn, ClientePersona persona) throws SQLException {
         try (PreparedStatement ps = conn.prepareStatement(SQL_UPDATE)) {
 
@@ -158,6 +160,7 @@ public class ClientePersonaDAOImpl implements ClientePersonaDAO {
         }
     }
 
+    // Método para Mapear una Persona desde un ResultSet
     private ClientePersona mapPersona(ResultSet rs) throws SQLException {
         ClientePersona p = new ClientePersona();
         p.setIdCliente(rs.getLong("id_cliente"));

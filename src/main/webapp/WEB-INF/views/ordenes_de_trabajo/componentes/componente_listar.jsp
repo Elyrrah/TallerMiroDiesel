@@ -3,7 +3,7 @@
     Created on : 23 feb. 2026, 8:59:48 a. m.
     Author     : elyrr
 --%>
-E
+
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 

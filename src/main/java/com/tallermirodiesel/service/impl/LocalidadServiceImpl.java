@@ -19,10 +19,12 @@ public class LocalidadServiceImpl implements LocalidadService {
 
     private final LocalidadDAO localidadDAO;
 
+    // Inicialización de la implementación del DAO para el servicio de localidades
     public LocalidadServiceImpl() {
         this.localidadDAO = new LocalidadDAOImpl();
     }
 
+    // Validaciones de formato y obligatoriedad para los campos de una localidad
     private void validarCampos(Localidad localidad) {
         if (localidad.getIdDistrito() == null || localidad.getIdDistrito() <= 0) {
             throw new IllegalArgumentException("El distrito (idDistrito) debe ser válido.");
@@ -37,6 +39,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         localidad.setNombre(nombre);
     }
 
+    // Validaciones para crear una localidad
     @Override
     public Long crear(Localidad localidad) {
         if (localidad == null) {
@@ -52,6 +55,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.crear(localidad);
     }
 
+    // Validaciones para actualizar la información de una localidad
     @Override
     public boolean actualizar(Localidad localidad) {
         if (localidad == null || localidad.getIdLocalidad() == null) {
@@ -76,6 +80,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.actualizar(localidad);
     }
 
+    // Validaciones para activar una localidad en el sistema
     @Override
     public boolean activar(Long id) {
         if (id == null || id <= 0) {
@@ -89,6 +94,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.activar(id);
     }
 
+    // Validaciones para desactivar una localidad en el sistema
     @Override
     public boolean desactivar(Long id) {
         if (id == null || id <= 0) {
@@ -102,6 +108,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.desactivar(id);
     }
 
+    // Lógica para obtener la información de una localidad por su identificador único
     @Override
     public Optional<Localidad> buscarPorId(Long id) {
         if (id == null || id <= 0) {
@@ -111,11 +118,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.buscarPorId(id);
     }
 
-    /**
-     * No usar este método para Localidad.
-     * Usar buscarPorNombre(String nombre, Long idDistrito) en su lugar,
-     * ya que el nombre de una localidad solo es único dentro de un distrito.
-     */
+    // Restricción de búsqueda de localidad únicamente por nombre global
     @Override
     public Optional<Localidad> buscarPorNombre(String nombre) {
         throw new UnsupportedOperationException(
@@ -123,6 +126,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         );
     }
 
+    // Lógica para buscar una localidad utilizando su nombre dentro de un distrito específico
     @Override
     public Optional<Localidad> buscarPorNombre(String nombre, Long idDistrito) {
         if (nombre == null || nombre.isBlank()) {
@@ -136,6 +140,7 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.buscarPorNombre(nombre.trim().toUpperCase(Locale.ROOT), idDistrito);
     }
 
+    // Lógica para filtrar localidades según una coincidencia parcial en el nombre
     @Override
     public List<Localidad> buscarPorNombreParcial(String filtro) {
         if (filtro == null) {
@@ -145,21 +150,25 @@ public class LocalidadServiceImpl implements LocalidadService {
         return localidadDAO.buscarPorNombreParcial(filtro.trim());
     }
 
+    // Lógica para obtener la lista completa de localidades registradas
     @Override
     public List<Localidad> listarTodos() {
         return localidadDAO.listarTodos();
     }
 
+    // Lógica para listar únicamente las localidades con estado activo
     @Override
     public List<Localidad> listarActivos() {
         return localidadDAO.listarActivos();
     }
 
+    // Lógica para listar únicamente las localidades con estado inactivo
     @Override
     public List<Localidad> listarInactivos() {
         return localidadDAO.listarInactivos();
     }
 
+    // Lógica para listar todas las localidades pertenecientes a un distrito específico
     @Override
     public List<Localidad> listarPorDistrito(Long idDistrito) {
         if (idDistrito == null || idDistrito <= 0) {
