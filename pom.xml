@@ -1,41 +1,117 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    POM (Project Object Model): es el archivo de configuración principal de Maven.
+    Todo proyecto Maven necesita este archivo para saber cómo construirse.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com</groupId>
-    <artifactId>TallerMiroDiesel</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>war</packaging>
-    <name>TallerMiroDiesel-1.0-SNAPSHOT</name>
     
+    <!-- Versión del formato POM. Siempre es 4.0.0, no se cambia. -->
+    <modelVersion>4.0.0</modelVersion>
+    
+    <!-- ===== IDENTIDAD DEL PROYECTO ===== -->
+
+    <groupId>com</groupId>                      <!-- Apellido del proyecto-->
+    <artifactId>TallerMiroDiesel</artifactId>   <!-- Nombre del proyecto-->
+    <version>1.0-SNAPSHOT</version>             <!-- Version Actual del proyecto-->
+    <packaging>war</packaging>                  <!-- Formato del archivo de salida -->
+    <name>TallerMiroDiesel</name>               <!-- Nombre legible del proyecto (solo informativo) -->
+    
+    <!-- ===== PROPIEDADES (variables reutilizables) ===== -->
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>17</maven.compiler.release>
         <jakartaee>10.0.0</jakartaee>
     </properties>
     
+    <!-- ===== DEPENDENCIAS (librerías externas que Maven descarga automáticamente) ===== -->
     <dependencies>
+
+        <!-- Jakarta EE API: proporciona Servlets, JSP y todas las tecnologías del servidor.
+             scope "provided" significa que el servidor ya la incluye, no se empaqueta en el WAR -->
         <dependency>
             <groupId>jakarta.platform</groupId>
             <artifactId>jakarta.jakartaee-api</artifactId>
             <version>${jakartaee}</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Driver de PostgreSQL: permite que Java se comunique con la base de datos PostgreSQL -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>42.7.4</version>
+        </dependency>
+
+        <!-- HikariCP: gestiona un "pool" de conexiones a la base de datos.
+             En lugar de abrir y cerrar una conexión cada vez, las reutiliza. Es muy eficiente. -->
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
+        <!-- SLF4J API: interfaz estándar para escribir logs (mensajes de seguimiento) en la aplicación -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+
+        <!-- SLF4J Simple: implementación sencilla que muestra los logs por consola -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.9</version>
+        </dependency>
+
+        <!-- jBCrypt: librería para hashear (cifrar de forma segura) las contraseñas de los usuarios.
+             Nunca se deben guardar contraseñas en texto plano en la base de datos. -->
+        <dependency>
+            <groupId>org.mindrot</groupId>
+            <artifactId>jbcrypt</artifactId>
+            <version>0.4</version>
+        </dependency>
+
+        <!-- JSTL API: define las etiquetas estándar que se usan en los archivos JSP
+             por ejemplo: <c:forEach>, <c:if>, <c:out>, etc. -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- Implementación de JSTL de GlassFish: es la que realmente ejecuta esas etiquetas en tiempo de ejecución -->
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
     </dependencies>
     
+    <!-- ===== BUILD (cómo se compila y empaqueta el proyecto) ===== -->
     <build>
         <plugins>
+            <!-- Plugin compilador: se encarga de convertir el código Java en bytecode (.class) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.12.1</version>
                 <configuration>
-                    <source>11</source>
-                    <target>11</target>
+                    <!-- Usa la versión de Java definida arriba en las propiedades (Java 17) -->
+                    <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
+            
+            <!-- Plugin WAR: empaqueta todo el proyecto en un archivo .war listo para desplegar en el servidor -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
-                <version>3.3.2</version>
+                <version>3.4.0</version>
             </plugin>
         </plugins>
     </build>

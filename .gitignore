@@ -1,0 +1,48 @@
+# =============================================================================
+# MAVEN
+# =============================================================================
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# =============================================================================
+# NETBEANS (Específicos para proyectos Maven)
+# =============================================================================
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+nbproject/project.properties
+nbproject/project.xml
+
+# =============================================================================
+# IDEs / SISTEMA OPERATIVO
+# =============================================================================
+.idea/
+.vscode/
+*.swp
+*.bak
+.DS_Store
+thumbs.db
+desktop.ini
+
+# =============================================================================
+# CONFIGURACIÓN Y CREDENCIALES
+# =============================================================================
+src/main/resources/config.properties
+
+# =============================================================================
+# LOGS Y ARCHIVOS TEMPORALES
+# =============================================================================
+*.log
+logs/
+temp/
+tmp/
